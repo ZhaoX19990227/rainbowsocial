@@ -1,0 +1,66 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../services/app_flags.dart';
+import '../models/app_user.dart';
+import '../models/auth_session.dart';
+import '../usecases/auth_usecases.dart';
+import '../usecases/session_usecases.dart';
+
+final authControllerProvider =
+    StateNotifierProvider<AuthController, AsyncValue<AuthSession?>>((ref) {
+  return AuthController(ref);
+});
+
+class AuthController extends StateNotifier<AsyncValue<AuthSession?>> {
+  AuthController(this._ref) : super(const AsyncValue.loading()) {
+    restoreSession();
+  }
+
+  final Ref _ref;
+
+  Future<void> restoreSession() async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(
+      () => _ref.read(loadSessionUseCaseProvider)(),
+    );
+  }
+
+  Future<void> sendCode(String email) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      await _ref.read(sendCodeUseCaseProvider)(email);
+      return state.valueOrNull;
+    });
+  }
+
+  Future<void> login(String email, String code) async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async {
+      try {
+        final session = await _ref.read(loginUseCaseProvider)(email, code);
+        await _ref.read(saveSessionUseCaseProvider)(session);
+        return session;
+      } catch (error) {
+        if (!AppFlags.useMockFallbacks) {
+          rethrow;
+        }
+        final session = _ref.read(loginUseCaseProvider).demoSession(email);
+        await _ref.read(saveSessionUseCaseProvider)(session);
+        return session;
+      }
+    });
+  }
+
+  Future<void> signOut() async {
+    await _ref.read(clearSessionUseCaseProvider)();
+    state = const AsyncValue.data(null);
+  }
+
+  void updateSessionUser(AppUser user) {
+    final current = state.valueOrNull;
+    if (current == null) return;
+    final updated = AuthSession(token: current.token, user: user);
+    state = AsyncValue.data(updated);
+    _ref.read(saveSessionUseCaseProvider)(updated);
+  }
+}

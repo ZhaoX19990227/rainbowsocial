@@ -1,0 +1,14 @@
+# 通用
+.DS_Store
+*.log
+ide/
+
+# 前端忽略 (Node)
+rainbow-social-frontend/node_modules/
+rainbow-social-frontend/dist/
+rainbow-social-frontend/.env.local
+
+# 后端忽略 (Go/Java/etc)
+rainbow-social-backend/bin/
+rainbow-social-backend/target/
+rainbow-social-backend/.idea/
