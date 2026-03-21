@@ -69,7 +69,7 @@ func (s *ChatService) SaveMessage(fromUserID, toUserID int64, content, messageTy
 		return nil, err
 	}
 	if blocked {
-		return nil, fmt.Errorf("cannot message a blocked user")
+		return nil, fmt.Errorf("对方当前不可见，暂时无法聊天")
 	}
 
 	message := model.ChatMessage{
@@ -135,7 +135,7 @@ func (s *ChatService) validateConversationAccess(userID, peerUserID int64) error
 		return err
 	}
 	if !matched {
-		return fmt.Errorf("conversation is only available for matched users")
+		return fmt.Errorf("互相关注后才能聊天")
 	}
 
 	blocked, err := s.safetyRepo.AreUsersBlocked(userID, peerUserID)
@@ -143,7 +143,7 @@ func (s *ChatService) validateConversationAccess(userID, peerUserID int64) error
 		return err
 	}
 	if blocked {
-		return fmt.Errorf("cannot access messages for a blocked user")
+		return fmt.Errorf("对方当前不可见，暂时无法查看聊天")
 	}
 
 	return nil

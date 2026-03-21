@@ -47,7 +47,7 @@ func (s *SwipeService) Swipe(userID, targetUserID int64, action string) (bool, e
 		return false, err
 	}
 	if blocked {
-		return false, fmt.Errorf("user relationship is blocked")
+		return false, fmt.Errorf("你们暂时无法建立关系")
 	}
 
 	if err := s.swipeRepo.SaveSwipe(userID, targetUserID, action); err != nil {

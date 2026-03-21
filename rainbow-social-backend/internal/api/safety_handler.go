@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 
@@ -54,4 +55,33 @@ func (h *SafetyHandler) Block(c *gin.Context) {
 		return
 	}
 	success(c, gin.H{"message": "user blocked"})
+}
+
+func (h *SafetyHandler) Unblock(c *gin.Context) {
+	var req blockRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		failure(c, http.StatusBadRequest, "blocked_user_id is required")
+		return
+	}
+
+	if err := h.safetyService.Unblock(middleware.GetUserID(c), req.BlockedUserID); err != nil {
+		failure(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	success(c, gin.H{"message": "user unblocked"})
+}
+
+func (h *SafetyHandler) BlockStatus(c *gin.Context) {
+	targetUserID, err := strconv.ParseInt(c.Param("targetUserID"), 10, 64)
+	if err != nil {
+		failure(c, http.StatusBadRequest, "invalid target user id")
+		return
+	}
+
+	status, err := h.safetyService.BlockStatus(middleware.GetUserID(c), targetUserID)
+	if err != nil {
+		failure(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	success(c, status)
 }

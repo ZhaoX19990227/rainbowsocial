@@ -105,10 +105,19 @@ func (s *UserService) SetOnlineStatus(userID int64, online bool) error {
 
 func sanitizeTags(tags []string) []string {
 	result := make([]string, 0, len(tags))
+	seen := make(map[string]struct{}, len(tags))
 	for _, tag := range tags {
 		tag = strings.TrimSpace(tag)
-		if tag != "" {
-			result = append(result, tag)
+		if tag == "" {
+			continue
+		}
+		if _, ok := seen[tag]; ok {
+			continue
+		}
+		seen[tag] = struct{}{}
+		result = append(result, tag)
+		if len(result) >= 5 {
+			break
 		}
 	}
 	return result

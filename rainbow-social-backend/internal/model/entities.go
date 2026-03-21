@@ -45,6 +45,19 @@ type MatchUser struct {
 	MatchedAt time.Time `json:"matched_at"`
 }
 
+type LikeUser struct {
+	User      User      `json:"user"`
+	LikedAt   time.Time `json:"liked_at"`
+	IsMutual  bool      `json:"is_mutual"`
+	MatchedAt time.Time `json:"matched_at,omitempty"`
+}
+
+type MatchSummary struct {
+	Sent     []LikeUser  `json:"sent"`
+	Received []LikeUser  `json:"received"`
+	Mutual   []MatchUser `json:"mutual"`
+}
+
 type Report struct {
 	ID             int64     `json:"id"`
 	ReporterUserID int64     `json:"reporter_user_id"`
@@ -60,6 +73,13 @@ type Block struct {
 	BlockedUserID int64     `json:"blocked_user_id"`
 	Reason        string    `json:"reason"`
 	CreatedAt     time.Time `json:"created_at"`
+}
+
+type BlockStatus struct {
+	IsBlocked       bool   `json:"is_blocked"`
+	BlockedByMe     bool   `json:"blocked_by_me"`
+	BlockedByTarget bool   `json:"blocked_by_target"`
+	Reason          string `json:"reason,omitempty"`
 }
 
 type ChatMessage struct {

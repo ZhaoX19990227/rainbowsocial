@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"rainbow-social-backend/internal/model"
 	"rainbow-social-backend/internal/repository"
 )
 
@@ -38,4 +39,39 @@ func (s *SafetyService) Block(blockerUserID, blockedUserID int64, reason string)
 		return err
 	}
 	return s.matchRepo.DeleteBetweenUsers(blockerUserID, blockedUserID)
+}
+
+func (s *SafetyService) Unblock(blockerUserID, blockedUserID int64) error {
+	if blockerUserID == blockedUserID {
+		return fmt.Errorf("不能取消屏蔽自己")
+	}
+	return s.safetyRepo.UnblockUser(blockerUserID, blockedUserID)
+}
+
+func (s *SafetyService) BlockStatus(userID, targetUserID int64) (*model.BlockStatus, error) {
+	if userID == targetUserID {
+		return &model.BlockStatus{}, nil
+	}
+
+	blockedByMe, reason, err := s.safetyRepo.GetBlockStatus(userID, targetUserID)
+	if err != nil {
+		return nil, err
+	}
+	if blockedByMe == nil {
+		return &model.BlockStatus{}, nil
+	}
+	if *blockedByMe {
+		return &model.BlockStatus{
+			IsBlocked:       true,
+			BlockedByMe:     true,
+			BlockedByTarget: false,
+			Reason:          reason,
+		}, nil
+	}
+	return &model.BlockStatus{
+		IsBlocked:       true,
+		BlockedByMe:     false,
+		BlockedByTarget: true,
+		Reason:          reason,
+	}, nil
 }

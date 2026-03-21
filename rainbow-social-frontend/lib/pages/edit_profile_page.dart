@@ -7,7 +7,9 @@ import '../controllers/profile_controller.dart';
 import '../models/app_user.dart';
 import '../services/api_config.dart';
 import '../services/app_feedback.dart';
+import '../services/tag_options.dart';
 import '../usecases/upload_usecases.dart';
+import '../widgets/glass_card.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/luminous_background.dart';
 
@@ -19,6 +21,8 @@ class EditProfilePage extends ConsumerStatefulWidget {
 }
 
 class _EditProfilePageState extends ConsumerState<EditProfilePage> {
+  static const _maxTags = 5;
+
   final _nickname = TextEditingController();
   final _avatar = TextEditingController();
   final _age = TextEditingController();
@@ -27,6 +31,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   final _picker = ImagePicker();
 
   List<String> _photos = const [];
+  List<String> _selectedTags = const [];
   bool _uploading = false;
 
   @override
@@ -49,6 +54,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       _age.text = '${user.age}';
       _bio.text = user.bio;
       _tags.text = user.tags.join(', ');
+      _selectedTags = [...user.tags];
       _photos = user.photos;
     }
   }
@@ -109,7 +115,35 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
               const SizedBox(height: 14),
               TextField(
                 controller: _tags,
-                decoration: const InputDecoration(hintText: '标签，使用逗号分隔'),
+                decoration:
+                    const InputDecoration(hintText: '标签，使用逗号分隔，最多 5 个'),
+                onChanged: _syncTagsFromInput,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '已选择 ${_selectedTags.length}/$_maxTags',
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+              const SizedBox(height: 14),
+              GlassCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('可选标签', style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: profileTagOptions.map((tag) {
+                        return FilterChip(
+                          selected: _selectedTags.contains(tag),
+                          label: Text(tag),
+                          onSelected: (_) => _toggleTag(tag),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 22),
               GradientButton(
@@ -126,11 +160,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                           photos: _photos,
                           age: int.tryParse(_age.text.trim()) ?? profile.age,
                           bio: _bio.text.trim(),
-                          tags: _tags.text
-                              .split(',')
-                              .map((item) => item.trim())
-                              .where((item) => item.isNotEmpty)
-                              .toList(),
+                          tags: _parseTags(_tags.text),
                           lat: profile.lat,
                           lng: profile.lng,
                           onlineStatus: profile.onlineStatus,
@@ -210,6 +240,52 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         setState(() => _uploading = false);
       }
     }
+  }
+
+  void _toggleTag(String tag) {
+    setState(() {
+      if (_selectedTags.contains(tag)) {
+        _selectedTags = _selectedTags.where((item) => item != tag).toList();
+      } else if (_selectedTags.length < _maxTags) {
+        _selectedTags = [..._selectedTags, tag];
+      } else {
+        AppFeedback.showToast('最多选择 $_maxTags 个标签');
+      }
+      _tags.text = _selectedTags.join(', ');
+    });
+  }
+
+  void _syncTagsFromInput(String value) {
+    final parsed = _parseTags(value);
+    final trimmed = parsed.take(_maxTags).toList();
+    if (parsed.length > _maxTags) {
+      AppFeedback.showToast('最多选择 $_maxTags 个标签');
+    }
+    setState(() {
+      _selectedTags = trimmed;
+      if (_tags.text != trimmed.join(', ')) {
+        _tags.value = TextEditingValue(
+          text: trimmed.join(', '),
+          selection: TextSelection.collapsed(
+            offset: trimmed.join(', ').length,
+          ),
+        );
+      }
+    });
+  }
+
+  List<String> _parseTags(String value) {
+    final result = <String>[];
+    final seen = <String>{};
+    for (final raw in value.split(',')) {
+      final tag = raw.trim();
+      if (tag.isEmpty || seen.contains(tag)) {
+        continue;
+      }
+      seen.add(tag);
+      result.add(tag);
+    }
+    return result;
   }
 }
 

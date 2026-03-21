@@ -11,7 +11,7 @@ class RainbowSocialApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '彩虹社交',
+      title: '熊猴',
       debugShowCheckedModeBanner: false,
       scaffoldMessengerKey: AppFeedback.messengerKey,
       locale: const Locale('zh', 'CN'),

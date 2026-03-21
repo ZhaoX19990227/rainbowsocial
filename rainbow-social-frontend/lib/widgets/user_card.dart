@@ -121,7 +121,10 @@ class UserCard extends StatelessWidget {
                         spacing: 8,
                         runSpacing: 8,
                         children: user.tags.take(3).map((tag) {
-                          return TagChip(label: tag.toUpperCase());
+                          return TagChip(
+                            label: tag.toUpperCase(),
+                            maxWidth: 110,
+                          );
                         }).toList(),
                       ),
                     ],

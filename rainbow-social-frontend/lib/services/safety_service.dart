@@ -1,4 +1,5 @@
 import 'api_client.dart';
+import '../models/block_status.dart';
 
 class SafetyService {
   SafetyService(this._client);
@@ -35,5 +36,29 @@ class SafetyService {
         'reason': reason,
       },
     );
+  }
+
+  Future<void> unblock({
+    required String token,
+    required int blockedUserId,
+  }) async {
+    await _client.delete(
+      '/block',
+      token: token,
+      body: {
+        'blocked_user_id': blockedUserId,
+      },
+    );
+  }
+
+  Future<BlockStatus> getBlockStatus({
+    required String token,
+    required int targetUserId,
+  }) async {
+    final response = await _client.get(
+      '/block/$targetUserId/status',
+      token: token,
+    );
+    return BlockStatus.fromJson(response['data'] as Map<String, dynamic>);
   }
 }

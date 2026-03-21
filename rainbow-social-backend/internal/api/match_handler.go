@@ -25,3 +25,12 @@ func (h *MatchHandler) ListMatches(c *gin.Context) {
 	}
 	success(c, matches)
 }
+
+func (h *MatchHandler) Summary(c *gin.Context) {
+	summary, err := h.matchService.Summary(middleware.GetUserID(c))
+	if err != nil {
+		failure(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	success(c, summary)
+}

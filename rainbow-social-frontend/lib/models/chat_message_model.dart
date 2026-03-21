@@ -45,7 +45,10 @@ class ChatMessageModel {
   bool get isPending => status == ChatMessageStatus.sending;
   bool get isFailed => status == ChatMessageStatus.failed;
   bool get isAudio => type == 'audio';
+  bool get isImage => type == 'image';
   String get audioSource =>
+      mediaUrl.isNotEmpty ? mediaUrl : (localFilePath ?? '');
+  String get imageSource =>
       mediaUrl.isNotEmpty ? mediaUrl : (localFilePath ?? '');
 
   ChatMessageModel copyWith({

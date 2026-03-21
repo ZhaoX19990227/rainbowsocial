@@ -90,3 +90,94 @@ func (r *MatchRepository) DeleteBetweenUsers(userA, userB int64) error {
 	`, userA, userB, userB, userA)
 	return err
 }
+
+func (r *MatchRepository) ListSentLikes(userID int64) ([]model.LikeUser, error) {
+	return r.listLikes(userID, true)
+}
+
+func (r *MatchRepository) ListReceivedLikes(userID int64) ([]model.LikeUser, error) {
+	return r.listLikes(userID, false)
+}
+
+func (r *MatchRepository) listLikes(userID int64, sent bool) ([]model.LikeUser, error) {
+	joinUserExpr := "s.from_user_id"
+	whereExpr := "s.to_user_id = ?"
+	mutualFromExpr := "s.to_user_id"
+	mutualToExpr := "s.from_user_id"
+	if sent {
+		joinUserExpr = "s.to_user_id"
+		whereExpr = "s.from_user_id = ?"
+		mutualFromExpr = "s.from_user_id"
+		mutualToExpr = "s.to_user_id"
+	}
+
+	rows, err := r.db.Query(`
+		SELECT
+			u.id, u.email, u.nickname, u.avatar, u.age, u.bio, u.tags, u.lat, u.lng,
+			u.online_status, u.created_at, u.last_active_at,
+			s.created_at,
+			EXISTS(
+				SELECT 1
+				FROM swipes reverse_swipe
+				WHERE reverse_swipe.from_user_id = `+mutualToExpr+`
+					AND reverse_swipe.to_user_id = `+mutualFromExpr+`
+					AND reverse_swipe.action = 'like'
+			) AS is_mutual,
+			COALESCE((
+				SELECT m.created_at
+				FROM matches m
+				WHERE
+					(m.user1_id = s.from_user_id AND m.user2_id = s.to_user_id) OR
+					(m.user1_id = s.to_user_id AND m.user2_id = s.from_user_id)
+				LIMIT 1
+			), '') AS matched_at
+		FROM swipes s
+		JOIN users u ON u.id = `+joinUserExpr+`
+		WHERE `+whereExpr+` AND s.action = 'like'
+		ORDER BY s.created_at DESC
+	`, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	result := make([]model.LikeUser, 0)
+	for rows.Next() {
+		var item model.LikeUser
+		var tagsJSON string
+		var online int
+		var mutual int
+		var matchedAtRaw string
+		if err := rows.Scan(
+			&item.User.ID,
+			&item.User.Email,
+			&item.User.Nickname,
+			&item.User.Avatar,
+			&item.User.Age,
+			&item.User.Bio,
+			&tagsJSON,
+			&item.User.Lat,
+			&item.User.Lng,
+			&online,
+			&item.User.CreatedAt,
+			&item.User.LastActiveAt,
+			&item.LikedAt,
+			&mutual,
+			&matchedAtRaw,
+		); err != nil {
+			return nil, err
+		}
+		item.User.Tags = decodeTags(tagsJSON)
+		item.User.OnlineStatus = online == 1
+		item.IsMutual = mutual == 1
+		if matchedAtRaw != "" {
+			parsed, err := parseSQLiteTime(matchedAtRaw)
+			if err != nil {
+				return nil, err
+			}
+			item.MatchedAt = parsed
+		}
+		result = append(result, item)
+	}
+	return result, rows.Err()
+}

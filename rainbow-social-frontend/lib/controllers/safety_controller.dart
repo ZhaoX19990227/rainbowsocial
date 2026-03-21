@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../models/block_status.dart';
 import '../usecases/safety_usecases.dart';
 import 'auth_controller.dart';
 
@@ -46,4 +47,30 @@ class SafetyController extends StateNotifier<AsyncValue<void>> {
       );
     });
   }
+
+  Future<void> unblock({
+    required int userId,
+  }) async {
+    final session = _ref.read(authControllerProvider).valueOrNull;
+    if (session == null) return;
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() {
+      return _ref.read(unblockUserUseCaseProvider)(
+        token: session.token,
+        blockedUserId: userId,
+      );
+    });
+  }
 }
+
+final blockStatusProvider =
+    FutureProvider.autoDispose.family<BlockStatus, int>((ref, userId) async {
+  final session = ref.watch(authControllerProvider).valueOrNull;
+  if (session == null) {
+    return const BlockStatus.none();
+  }
+  return ref.read(getBlockStatusUseCaseProvider)(
+        token: session.token,
+        targetUserId: userId,
+      );
+});

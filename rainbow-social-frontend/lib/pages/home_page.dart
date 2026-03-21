@@ -7,13 +7,19 @@ import '../controllers/home_controller.dart';
 import '../models/app_user.dart';
 import '../routes/app_router.dart';
 import '../services/app_feedback.dart';
+import '../services/relationship_copy.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/app_skeleton.dart';
 import '../widgets/user_card.dart';
 
 class HomePage extends ConsumerStatefulWidget {
-  const HomePage({super.key});
+  const HomePage({
+    super.key,
+    this.onSwitchToNearby,
+  });
+
+  final VoidCallback? onSwitchToNearby;
 
   @override
   ConsumerState<HomePage> createState() => _HomePageState();
@@ -72,24 +78,33 @@ class _HomePageState extends ConsumerState<HomePage> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(999),
-                            gradient: const LinearGradient(
-                              colors: [Color(0x22EA87FF), Color(0x22FF6E85)],
+                        child: GestureDetector(
+                          onTap: () => ref
+                              .read(homeControllerProvider.notifier)
+                              .loadRecommendations(),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(999),
+                              gradient: const LinearGradient(
+                                colors: [Color(0x22EA87FF), Color(0x22FF6E85)],
+                              ),
                             ),
+                            child: const Center(child: Text('推荐')),
                           ),
-                          child: const Center(child: Text('推荐')),
                         ),
                       ),
-                      const Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(vertical: 12),
-                          child: Center(
-                            child: Text(
-                              '附近',
-                              style: TextStyle(color: AppTheme.textSecondary),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: widget.onSwitchToNearby,
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 12),
+                            child: Center(
+                              child: Text(
+                                '附近',
+                                style:
+                                    TextStyle(color: AppTheme.textSecondary),
+                              ),
                             ),
                           ),
                         ),
@@ -220,6 +235,12 @@ class _HomePageState extends ConsumerState<HomePage> {
     if (result.matched) {
       final matchedUser = result.user;
       setState(() => _matchUser = matchedUser);
+      return;
+    }
+    if (decision == _SwipeDecision.superLike) {
+      AppFeedback.showToast(RelationshipCopy.superLikeSent(result.user.nickname));
+    } else if (decision == _SwipeDecision.like) {
+      AppFeedback.showToast(RelationshipCopy.likeSent(result.user.nickname));
     }
   }
 
@@ -703,7 +724,7 @@ class _MatchOverlayState extends State<_MatchOverlay>
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      '匹配成功',
+                      '互相喜欢',
                       style:
                           Theme.of(context).textTheme.headlineLarge?.copyWith(
                                 fontSize: 42,
@@ -711,7 +732,7 @@ class _MatchOverlayState extends State<_MatchOverlay>
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      '你和 ${widget.user.nickname} 互相喜欢，去打个招呼吧。',
+                      RelationshipCopy.mutualLike(widget.user.nickname),
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             color: AppTheme.textSecondary,
@@ -746,7 +767,7 @@ class _MatchOverlayState extends State<_MatchOverlay>
                     FilledButton.icon(
                       onPressed: widget.onChat,
                       icon: const Icon(Icons.chat_bubble_rounded),
-                      label: const Text('立即聊天'),
+                      label: const Text('去聊天'),
                     ),
                     const SizedBox(height: 12),
                     TextButton(

@@ -61,3 +61,44 @@ func (r *SafetyRepository) AreUsersBlocked(userA, userB int64) (bool, error) {
 	`, userA, userB, userB, userA).Scan(&count)
 	return count > 0, err
 }
+
+func (r *SafetyRepository) UnblockUser(blockerUserID, blockedUserID int64) error {
+	_, err := r.db.Exec(`
+		DELETE FROM blocks
+		WHERE blocker_user_id = ? AND blocked_user_id = ?
+	`, blockerUserID, blockedUserID)
+	return err
+}
+
+func (r *SafetyRepository) GetBlockStatus(userID, targetUserID int64) (*bool, string, error) {
+	var reason string
+	err := r.db.QueryRow(`
+		SELECT reason
+		FROM blocks
+		WHERE blocker_user_id = ? AND blocked_user_id = ?
+		LIMIT 1
+	`, userID, targetUserID).Scan(&reason)
+	if err == nil {
+		blockedByMe := true
+		return &blockedByMe, reason, nil
+	}
+	if err != sql.ErrNoRows {
+		return nil, "", err
+	}
+
+	err = r.db.QueryRow(`
+		SELECT reason
+		FROM blocks
+		WHERE blocker_user_id = ? AND blocked_user_id = ?
+		LIMIT 1
+	`, targetUserID, userID).Scan(&reason)
+	if err == nil {
+		blockedByMe := false
+		return &blockedByMe, reason, nil
+	}
+	if err != sql.ErrNoRows {
+		return nil, "", err
+	}
+
+	return nil, "", nil
+}

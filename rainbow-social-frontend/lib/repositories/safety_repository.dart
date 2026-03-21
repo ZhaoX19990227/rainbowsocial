@@ -1,4 +1,5 @@
 import '../services/safety_service.dart';
+import '../models/block_status.dart';
 
 class SafetyRepository {
   const SafetyRepository(this._service);
@@ -27,5 +28,23 @@ class SafetyRepository {
         token: token,
         blockedUserId: blockedUserId,
         reason: reason,
+      );
+
+  Future<void> unblock({
+    required String token,
+    required int blockedUserId,
+  }) =>
+      _service.unblock(
+        token: token,
+        blockedUserId: blockedUserId,
+      );
+
+  Future<BlockStatus> getBlockStatus({
+    required String token,
+    required int targetUserId,
+  }) =>
+      _service.getBlockStatus(
+        token: token,
+        targetUserId: targetUserId,
       );
 }

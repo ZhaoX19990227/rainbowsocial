@@ -5,13 +5,19 @@ import '../controllers/nearby_controller.dart';
 import '../models/app_user.dart';
 import '../models/nearby_filter.dart';
 import '../routes/app_router.dart';
+import '../services/tag_options.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/app_skeleton.dart';
 import '../widgets/user_grid_card.dart';
 
 class NearbyPage extends ConsumerStatefulWidget {
-  const NearbyPage({super.key});
+  const NearbyPage({
+    super.key,
+    this.onSwitchToRecommendations,
+  });
+
+  final VoidCallback? onSwitchToRecommendations;
 
   @override
   ConsumerState<NearbyPage> createState() => _NearbyPageState();
@@ -55,6 +61,44 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 14),
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceHighest.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: widget.onSwitchToRecommendations,
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 12),
+                        child: Center(
+                          child: Text(
+                            '推荐',
+                            style: TextStyle(color: AppTheme.textSecondary),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(999),
+                        gradient: const LinearGradient(
+                          colors: [Color(0x22EA87FF), Color(0x22FF6E85)],
+                        ),
+                      ),
+                      child: const Center(child: Text('附近')),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 14),
             TextField(
@@ -210,6 +254,22 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
                       onChanged: (value) {
                         draft = draft.copyWith(tag: value.trim());
                       },
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: profileTagOptions.take(10).map((tag) {
+                        return ActionChip(
+                          label: Text(tag),
+                          onPressed: () {
+                            tagController.text = tag;
+                            setModalState(() {
+                              draft = draft.copyWith(tag: tag);
+                            });
+                          },
+                        );
+                      }).toList(),
                     ),
                     const SizedBox(height: 20),
                     Row(

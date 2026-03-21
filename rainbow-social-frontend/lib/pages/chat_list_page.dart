@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/chat_controller.dart';
 import '../routes/app_router.dart';
 import '../services/app_feedback.dart';
+import '../services/relationship_copy.dart';
 import '../state/chat_list_state.dart';
 import '../theme/app_theme.dart';
 import '../utils/chat_time_formatter.dart';
@@ -106,7 +107,7 @@ class _ChatListBody extends ConsumerWidget {
     if (state.threads.isEmpty) {
       return const AppEmptyState(
         title: '还没有会话',
-        subtitle: '去推荐页滑卡，匹配到心动的人之后就能开始聊天。',
+        subtitle: RelationshipCopy.chatRequiresMutual,
       );
     }
 

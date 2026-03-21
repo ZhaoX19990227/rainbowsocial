@@ -83,12 +83,15 @@ func NewRouter(cfg *config.Config, deps Dependencies) *gin.Engine {
 		protected.POST("/swipe/undo", swipeHandler.Undo)
 		protected.GET("/recommendations", swipeHandler.Recommendations)
 		protected.GET("/matches", matchHandler.ListMatches)
+		protected.GET("/matches/summary", matchHandler.Summary)
 		protected.GET("/conversations", chatHandler.ListConversations)
 		protected.GET("/conversations/:peerUserID/messages", chatHandler.ListMessages)
 		protected.POST("/conversations/:peerUserID/read", chatHandler.MarkRead)
 		protected.PUT("/conversations/:peerUserID/pin", chatHandler.SetPinned)
 		protected.POST("/report", safetyHandler.Report)
 		protected.POST("/block", safetyHandler.Block)
+		protected.DELETE("/block", safetyHandler.Unblock)
+		protected.GET("/block/:targetUserID/status", safetyHandler.BlockStatus)
 	}
 
 	router.GET("/ws", wsHandler.Connect)

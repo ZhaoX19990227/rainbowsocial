@@ -19,11 +19,11 @@ class _MainTabPageState extends State<MainTabPage> {
 
   @override
   Widget build(BuildContext context) {
-    const pages = [
-      HomePage(),
-      NearbyPage(),
-      ChatListPage(),
-      ProfilePage(),
+    final pages = [
+      HomePage(onSwitchToNearby: () => setState(() => _index = 1)),
+      NearbyPage(onSwitchToRecommendations: () => setState(() => _index = 0)),
+      const ChatListPage(),
+      const ProfilePage(),
     ];
 
     return Scaffold(

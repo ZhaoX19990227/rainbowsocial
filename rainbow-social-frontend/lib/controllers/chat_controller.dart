@@ -451,6 +451,67 @@ class ChatController extends StateNotifier<ChatRoomState> {
     }
   }
 
+  Future<void> sendImageMessage({
+    required XFile file,
+  }) async {
+    final session = _ref.read(authControllerProvider).valueOrNull;
+    if (session == null) return;
+
+    final optimisticMessage = ChatMessageModel(
+      id: DateTime.now().microsecondsSinceEpoch,
+      clientMessageId: _buildClientMessageId(),
+      fromUser: session.user.id,
+      toUser: peer.id,
+      content: '',
+      type: 'image',
+      timestamp: DateTime.now(),
+      mediaUrl: '',
+      localFilePath: file.path,
+      status: ChatMessageStatus.sending,
+    );
+
+    state = state.copyWith(
+      messages: [...state.messages, optimisticMessage]
+        ..sort((left, right) => left.timestamp.compareTo(right.timestamp)),
+      sendingCount: state.sendingCount + 1,
+      clearError: true,
+    );
+    _ref.read(chatThreadsControllerProvider.notifier).upsertThreadPreview(
+          peer,
+          optimisticMessage.copyWith(content: '[图片]'),
+          resetUnread: true,
+        );
+
+    try {
+      final rawUrl = await _ref.read(uploadImageUseCaseProvider).call(
+            token: session.token,
+            file: file,
+          );
+      final uploadedUrl = rawUrl.startsWith('http')
+          ? rawUrl
+          : '${api.ApiConfig.baseUrl}$rawUrl';
+      final uploadedMessage = optimisticMessage.copyWith(
+        mediaUrl: uploadedUrl,
+      );
+      state = state.copyWith(
+        messages: state.messages
+            .map((item) =>
+                item.clientMessageId == optimisticMessage.clientMessageId
+                    ? uploadedMessage
+                    : item)
+            .toList(),
+        clearError: true,
+      );
+      await _dispatchMessage(uploadedMessage);
+    } catch (error) {
+      _handleMessageError(
+        clientMessageId: optimisticMessage.clientMessageId,
+        error: '图片发送失败，请稍后重试',
+      );
+      state = state.copyWith(errorMessage: '$error');
+    }
+  }
+
   Future<void> retryMessage(ChatMessageModel message) async {
     if (message.isAudio && message.mediaUrl.isEmpty) {
       _handleMessageError(

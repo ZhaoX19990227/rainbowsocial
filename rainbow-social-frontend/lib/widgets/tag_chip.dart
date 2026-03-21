@@ -7,14 +7,16 @@ class TagChip extends StatelessWidget {
     super.key,
     required this.label,
     this.icon,
+    this.maxWidth,
   });
 
   final String label;
   final IconData? icon;
+  final double? maxWidth;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    final chip = Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
       decoration: BoxDecoration(
         color: AppTheme.surfaceHighest.withValues(alpha: 0.9),
@@ -28,14 +30,27 @@ class TagChip extends StatelessWidget {
             Icon(icon, size: 16, color: AppTheme.primary),
             const SizedBox(width: 6),
           ],
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppTheme.primaryDark,
-                ),
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: AppTheme.primaryDark,
+                  ),
+            ),
           ),
         ],
       ),
+    );
+
+    if (maxWidth == null) {
+      return chip;
+    }
+
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth!),
+      child: chip,
     );
   }
 }

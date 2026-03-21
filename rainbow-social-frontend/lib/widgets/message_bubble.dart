@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
@@ -91,7 +92,9 @@ class MessageBubble extends StatelessWidget {
                 ),
                 child: message.isAudio
                     ? _AudioMessageContent(message: message, isMine: isMine)
-                    : Text(message.content),
+                    : message.isImage
+                        ? _ImageMessageContent(message: message)
+                        : Text(message.content),
               ),
               if (isMine)
                 Padding(
@@ -134,6 +137,50 @@ class MessageBubble extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ImageMessageContent extends StatelessWidget {
+  const _ImageMessageContent({required this.message});
+
+  final ChatMessageModel message;
+
+  @override
+  Widget build(BuildContext context) {
+    final source = message.imageSource;
+    if (source.isEmpty) {
+      return const Text('图片加载中...');
+    }
+
+    final imageWidget = source.startsWith('http')
+        ? Image.network(
+            source,
+            width: 220,
+            height: 260,
+            fit: BoxFit.cover,
+          )
+        : Image.file(
+            File(source),
+            width: 220,
+            height: 260,
+            fit: BoxFit.cover,
+          );
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          imageWidget,
+          if (message.content.trim().isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Text(message.content),
+            ),
+        ],
       ),
     );
   }

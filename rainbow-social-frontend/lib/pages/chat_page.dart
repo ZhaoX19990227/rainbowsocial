@@ -30,6 +30,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
+  final _picker = ImagePicker();
   Timer? _recordingTicker;
 
   bool _isRecording = false;
@@ -207,7 +208,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                     child: Row(
                       children: [
                         IconButton(
-                          onPressed: () {},
+                          onPressed: _pickFromGallery,
                           icon: const Icon(Icons.add_circle_outline_rounded),
                         ),
                         Expanded(
@@ -317,6 +318,19 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     ref.read(chatControllerProvider(widget.peer).notifier).sendMessage(text);
     _controller.clear();
     setState(() {});
+  }
+
+  Future<void> _pickFromGallery() async {
+    final picked = await _picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 90,
+      maxWidth: 1800,
+    );
+    if (picked == null || !mounted) return;
+
+    await ref
+        .read(chatControllerProvider(widget.peer).notifier)
+        .sendImageMessage(file: picked);
   }
 
   Future<void> _handleRecordStart(LongPressStartDetails _) async {
