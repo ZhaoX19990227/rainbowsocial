@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="description" content="熊猴内测体验页，iPhone 通过 TestFlight 安装，Android 直接下载安装包。" />
+  <meta property="og:title" content="熊猴 - 下载体验" />
+  <meta property="og:description" content="给想认真认识彼此的人，一个更轻松也更有感觉的开始。" />
+  <meta property="og:type" content="website" />
+  <title>熊猴 - 下载体验</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <main class="page">
+    <section class="hero-shell">
+      <div class="wrap">
+        <section class="hero card">
+          <div class="hero-copy">
+            <div class="brand-pill">熊猴 · 邀请体验</div>
+            <h1 id="app-name">熊猴</h1>
+            <p class="subtitle" id="share-subtitle">给想认真认识彼此的人，一个更轻松也更有感觉的开始。</p>
+            <div class="tag" id="platform-tag">当前设备：请按系统选择下载方式</div>
+            <div class="hero-actions">
+              <a class="btn btn-primary" id="hero-ios-btn" href="#">iPhone 下载</a>
+              <a class="btn btn-secondary" id="hero-android-btn" href="#">Android 下载</a>
+            </div>
+            <p class="hero-note">iPhone 通过 TestFlight 安装，Android 可直接下载安装包。</p>
+          </div>
+          <div class="hero-preview">
+            <div class="phone-card">
+              <div class="phone-glow"></div>
+              <div class="phone-screen">
+                <div class="mini-header"></div>
+                <div class="mini-card mini-card-primary"></div>
+                <div class="mini-row">
+                  <div class="mini-pill"></div>
+                  <div class="mini-pill"></div>
+                </div>
+                <div class="mini-profile"></div>
+                <div class="mini-actions">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="grid-two">
+          <section class="card section">
+            <h2>下载方式</h2>
+            <div class="button-group">
+              <a class="btn btn-primary" id="ios-btn" href="#">iPhone 下载</a>
+              <a class="btn btn-secondary" id="android-btn" href="#">Android 下载</a>
+            </div>
+            <p class="tips" id="download-tips">
+              如果按钮还没配置好，先在 <code>config.js</code> 里填上 TestFlight 链接和 APK 链接。
+            </p>
+          </section>
+
+          <section class="card section">
+            <h2>适合谁来体验</h2>
+            <ul class="feature-list">
+              <li>想更轻松认识彼此的人</li>
+              <li>在意头像、资料和气场表达的人</li>
+              <li>喜欢人格档案、星座和聊天氛围设计的人</li>
+            </ul>
+          </section>
+        </section>
+
+        <section class="card section">
+          <h2>安装说明</h2>
+          <div class="steps-grid">
+            <article class="step-card">
+              <div class="step-index">1</div>
+              <h3>iPhone 用户</h3>
+              <p>点击 iPhone 下载后，会跳到 TestFlight。首次安装需要先安装 TestFlight，再接受邀请。</p>
+            </article>
+            <article class="step-card">
+              <div class="step-index">2</div>
+              <h3>Android 用户</h3>
+              <p>点击 Android 下载后，下载 APK 安装包。首次安装可能需要允许“安装未知来源应用”。</p>
+            </article>
+            <article class="step-card">
+              <div class="step-index">3</div>
+              <h3>分享给朋友</h3>
+              <p>把这个页面链接直接发到微信群，朋友按自己的设备点击对应下载按钮就可以。</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="card section">
+          <h2>常见问题</h2>
+          <div class="faq-list">
+            <article class="faq-item">
+              <h3>iPhone 为什么要通过 TestFlight？</h3>
+              <p>因为 iPhone 测试版应用通常需要通过 Apple 的 TestFlight 分发，这是最稳定也最正常的体验方式。</p>
+            </article>
+            <article class="faq-item">
+              <h3>Android 为什么下载后不能直接打开？</h3>
+              <p>有些手机会拦截首次安装，你只需要在系统提示里允许本次安装即可。</p>
+            </article>
+            <article class="faq-item">
+              <h3>链接可以直接发微信群吗？</h3>
+              <p>可以，部署到 Vercel 后就是一个普通网页链接，群里直接发就行。</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="card section">
+          <h2>分享给朋友</h2>
+          <ul class="info-list">
+            <li>直接把当前页面链接发到微信群。</li>
+            <li>如果你后面有品牌海报，也可以把二维码贴在海报上。</li>
+            <li>页面会自动识别大致设备类型，减少朋友选错下载方式。</li>
+          </ul>
+          <div class="button-group inline-buttons">
+            <button class="btn btn-ghost" id="copy-btn" type="button">复制分享链接</button>
+            <a class="btn btn-secondary" href="/download">测试自动分流页</a>
+          </div>
+          <p class="copy-feedback" id="copy-feedback" aria-live="polite"></p>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script src="/config.js"></script>
+  <script src="/main.js"></script>
+</body>
+</html>

@@ -56,8 +56,12 @@ func NewRouter(cfg *config.Config, deps Dependencies) *gin.Engine {
 	chatHandler := NewChatHandler(deps.ChatService, deps.Hub)
 	wsHandler := NewWSHandler(deps.JWTManager, deps.ChatService, deps.Hub)
 	uploadHandler := NewUploadHandler(cfg)
+	shareHandler := NewShareHandler(cfg)
 
 	router.Static("/uploads", cfg.UploadDir)
+	router.Static("/downloads", cfg.DownloadDir)
+	router.GET("/share", shareHandler.Landing)
+	router.GET("/download", shareHandler.Download)
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})

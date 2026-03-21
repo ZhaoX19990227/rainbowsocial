@@ -10,48 +10,58 @@ import (
 )
 
 type Config struct {
-	AppEnv           string
-	ServerPort       string
-	DatabasePath     string
-	UploadDir        string
-	JWTSecret        string
-	JWTExpiryHours   int
-	OTPExpiryMinutes int
-	AllowedOrigins   []string
-	SMTPHost         string
-	SMTPPort         int
-	SMTPUsername     string
-	SMTPPassword     string
-	SMTPFrom         string
-	SMTPEnabled      bool
-	DashScopeAPIKey  string
-	DashScopeBaseURL string
-	DashScopeModel   string
-	AITimeoutSeconds int
+	AppEnv             string
+	ServerPort         string
+	DatabasePath       string
+	UploadDir          string
+	DownloadDir        string
+	AppName            string
+	JWTSecret          string
+	JWTExpiryHours     int
+	OTPExpiryMinutes   int
+	AllowedOrigins     []string
+	SMTPHost           string
+	SMTPPort           int
+	SMTPUsername       string
+	SMTPPassword       string
+	SMTPFrom           string
+	SMTPEnabled        bool
+	DashScopeAPIKey    string
+	DashScopeBaseURL   string
+	DashScopeModel     string
+	AITimeoutSeconds   int
+	IOSDownloadURL     string
+	AndroidDownloadURL string
+	ShareSubtitle      string
 }
 
 func Load() (*Config, error) {
 	_ = godotenv.Load()
 
 	cfg := &Config{
-		AppEnv:           getEnv("APP_ENV", "development"),
-		ServerPort:       getEnv("SERVER_PORT", "8088"),
-		DatabasePath:     getEnv("DATABASE_PATH", "./social_app.db"),
-		UploadDir:        getEnv("UPLOAD_DIR", "./uploads"),
-		JWTSecret:        getEnv("JWT_SECRET", "change-me-in-production"),
-		JWTExpiryHours:   getEnvAsInt("JWT_EXPIRY_HOURS", 72),
-		OTPExpiryMinutes: getEnvAsInt("OTP_EXPIRY_MINUTES", 5),
-		AllowedOrigins:   getEnvAsList("ALLOWED_ORIGINS", []string{"*"}),
-		SMTPHost:         getEnv("SMTP_HOST", "smtp.qq.com"),
-		SMTPPort:         getEnvAsInt("SMTP_PORT", 465),
-		SMTPUsername:     getEnv("SMTP_USERNAME", ""),
-		SMTPPassword:     getEnv("SMTP_PASSWORD", ""),
-		SMTPFrom:         getEnv("SMTP_FROM", ""),
-		SMTPEnabled:      getEnvAsBool("SMTP_ENABLED", false),
-		DashScopeAPIKey:  getEnv("DASHSCOPE_API_KEY", ""),
-		DashScopeBaseURL: getEnv("DASHSCOPE_BASE_URL", ""),
-		DashScopeModel:   getEnv("DASHSCOPE_MODEL", "qwen-plus"),
-		AITimeoutSeconds: getEnvAsInt("AI_TIMEOUT_SECONDS", 25),
+		AppEnv:             getEnv("APP_ENV", "development"),
+		ServerPort:         getEnv("SERVER_PORT", "8088"),
+		DatabasePath:       getEnv("DATABASE_PATH", "./social_app.db"),
+		UploadDir:          getEnv("UPLOAD_DIR", "./uploads"),
+		DownloadDir:        getEnv("DOWNLOAD_DIR", "./downloads"),
+		AppName:            getEnv("APP_NAME", "熊猴"),
+		JWTSecret:          getEnv("JWT_SECRET", "change-me-in-production"),
+		JWTExpiryHours:     getEnvAsInt("JWT_EXPIRY_HOURS", 72),
+		OTPExpiryMinutes:   getEnvAsInt("OTP_EXPIRY_MINUTES", 5),
+		AllowedOrigins:     getEnvAsList("ALLOWED_ORIGINS", []string{"*"}),
+		SMTPHost:           getEnv("SMTP_HOST", "smtp.qq.com"),
+		SMTPPort:           getEnvAsInt("SMTP_PORT", 465),
+		SMTPUsername:       getEnv("SMTP_USERNAME", ""),
+		SMTPPassword:       getEnv("SMTP_PASSWORD", ""),
+		SMTPFrom:           getEnv("SMTP_FROM", ""),
+		SMTPEnabled:        getEnvAsBool("SMTP_ENABLED", false),
+		DashScopeAPIKey:    getEnv("DASHSCOPE_API_KEY", ""),
+		DashScopeBaseURL:   getEnv("DASHSCOPE_BASE_URL", ""),
+		DashScopeModel:     getEnv("DASHSCOPE_MODEL", "qwen-plus"),
+		AITimeoutSeconds:   getEnvAsInt("AI_TIMEOUT_SECONDS", 25),
+		IOSDownloadURL:     getEnv("IOS_DOWNLOAD_URL", ""),
+		AndroidDownloadURL: getEnv("ANDROID_DOWNLOAD_URL", ""),
+		ShareSubtitle:      getEnv("SHARE_SUBTITLE", "给想认真认识彼此的人，一个更轻松也更有感觉的开始。"),
 	}
 
 	if cfg.JWTSecret == "" {
