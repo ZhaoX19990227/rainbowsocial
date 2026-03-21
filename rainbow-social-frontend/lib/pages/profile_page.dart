@@ -553,7 +553,7 @@ class _RelationshipQuickStats extends StatelessWidget {
         label: '我喜欢的',
         count: summary?.sent.length ?? 0,
         type: LikeOverviewType.sent,
-        icon: Icons.outgoing_mail_rounded,
+        icon: Icons.arrow_upward_rounded,
         gradient: const [Color(0xFFD9D6FF), Color(0xFFF1EEFF)],
       ),
       (

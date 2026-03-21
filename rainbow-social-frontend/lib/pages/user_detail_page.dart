@@ -245,12 +245,14 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Transform.translate(
-                    offset: const Offset(0, -36),
+                    offset: Offset.zero,
                     child: Column(
                       children: [
                         GlassCard(
                           borderRadius: BorderRadius.circular(34),
-                          child: Column(
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 24),
+                            child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Center(
@@ -401,6 +403,7 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                                 ),
                               ),
                             ],
+                          ),
                           ),
                         ),
                       ],
@@ -589,6 +592,7 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
     WidgetRef ref,
     BlockStatus status,
   ) async {
+    final user = widget.user;
     if (status.blockedByMe) {
       await ref.read(safetyControllerProvider.notifier).unblock(userId: user.id);
       ref.invalidate(blockStatusProvider(user.id));
@@ -775,10 +779,10 @@ class _RelationshipUpgradeOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMutual = mode == _RelationshipOverlayMode.mutual;
-    final title = isMutual ? '互相喜欢' : '喜欢已送达';
+    final title = isMutual ? '互相喜欢' : '喜欢已送达～';
     final body = isMutual
         ? RelationshipCopy.mutualLike(user.nickname)
-        : '${user.nickname} 会收到你的提醒，回个喜欢就能聊天。';
+        : '${user.nickname} 会收到你的提醒，等他喜欢你吧～。';
 
     return Material(
       color: Colors.transparent,
@@ -841,7 +845,9 @@ class _RelationshipUpgradeOverlay extends StatelessWidget {
                       child: Text(
                         isMutual ? '关系升级' : '轻轻靠近',
                         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              color: const Color(0xFFF4D7C7),
+                              color: isMutual
+                                  ? const Color(0xFF8B4EE8)
+                                  : const Color(0xFFB86B42),
                               letterSpacing: 0.7,
                             ),
                       ),
@@ -858,76 +864,86 @@ class _RelationshipUpgradeOverlay extends StatelessWidget {
                       body,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: const Color(0xFFD8D2E8),
+                            color: const Color(0xFF5F567F),
+                            height: 1.55,
                           ),
                     ),
                     const SizedBox(height: 26),
-                    Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Container(
-                          width: isMutual ? 220 : 180,
-                          height: isMutual ? 220 : 180,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                (isMutual ? AppTheme.tertiary : AppTheme.secondary)
-                                    .withValues(alpha: 0.18),
-                                AppTheme.primary.withValues(alpha: 0.08),
-                                Colors.transparent,
-                              ],
-                            ),
-                          ),
-                        ),
-                        if (isMutual)
-                          Transform.translate(
-                            offset: const Offset(-44, 8),
-                            child: CircleAvatar(
-                              radius: 36,
-                              backgroundColor:
-                                  Colors.white.withValues(alpha: 0.08),
-                              child: Text(
-                                '你',
-                                style: Theme.of(context).textTheme.titleMedium,
-                              ),
-                            ),
-                          ),
-                        Transform.translate(
-                          offset: isMutual
-                              ? const Offset(38, -4)
-                              : const Offset(0, 0),
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
+                    SizedBox(
+                      width: 240,
+                      height: 220,
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          Container(
+                            width: isMutual ? 220 : 180,
+                            height: isMutual ? 220 : 180,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: isMutual
-                                    ? const [
-                                        Color(0x66FFAA7A),
-                                        Color(0x66EA87FF),
-                                      ]
-                                    : const [
-                                        Color(0x66FFB178),
-                                        Color(0x664ED7FF),
-                                      ],
+                              gradient: RadialGradient(
+                                colors: [
+                                  (isMutual ? AppTheme.tertiary : AppTheme.secondary)
+                                      .withValues(alpha: 0.18),
+                                  AppTheme.primary.withValues(alpha: 0.08),
+                                  Colors.transparent,
+                                ],
                               ),
                             ),
-                            child: AvatarWidget(
-                              imageUrl: user.avatar,
-                              radius: isMutual ? 54 : 58,
-                              isOnline: user.onlineStatus,
+                          ),
+                          if (isMutual)
+                            Transform.translate(
+                              offset: const Offset(-44, 8),
+                              child: CircleAvatar(
+                                radius: 36,
+                                backgroundColor:
+                                    Colors.white.withValues(alpha: 0.72),
+                                child: Text(
+                                  '你',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(color: AppTheme.primaryDark),
+                                ),
+                              ),
+                            ),
+                          Transform.translate(
+                            offset: isMutual
+                                ? const Offset(38, -4)
+                                : const Offset(0, 0),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: LinearGradient(
+                                  colors: isMutual
+                                      ? const [
+                                          Color(0x66FFAA7A),
+                                          Color(0x66EA87FF),
+                                        ]
+                                      : const [
+                                          Color(0x66FFB178),
+                                          Color(0x664ED7FF),
+                                        ],
+                                ),
+                              ),
+                              child: AvatarWidget(
+                                imageUrl: user.avatar,
+                                radius: isMutual ? 54 : 58,
+                                isOnline: user.onlineStatus,
+                              ),
                             ),
                           ),
-                        ),
-                        Text(
-                          isMutual ? '❤' : '✦',
-                          style: TextStyle(
-                            fontSize: isMutual ? 28 : 24,
-                            color: const Color(0xFFF6C5B8),
+                          Text(
+                            isMutual ? '❤' : '✦',
+                            style: TextStyle(
+                              fontSize: isMutual ? 28 : 24,
+                              color: isMutual
+                                  ? const Color(0xFFF6C5B8)
+                                  : const Color(0xFF6D6AF8),
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 28),
                     Row(

@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../controllers/auth_controller.dart';
 import '../controllers/home_controller.dart';
 import '../models/app_user.dart';
 import '../routes/app_router.dart';
 import '../services/app_feedback.dart';
+import '../services/mbti_catalog.dart';
 import '../services/relationship_copy.dart';
+import '../services/zodiac_utils.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/app_skeleton.dart';
+import '../widgets/mbti_badge.dart';
 import '../widgets/user_card.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -31,6 +35,12 @@ class _HomePageState extends ConsumerState<HomePage> {
   Widget build(BuildContext context) {
     final state = ref.watch(homeControllerProvider);
     final controller = ref.read(homeControllerProvider.notifier);
+    final sessionUser = ref.watch(authControllerProvider).valueOrNull?.user;
+    final hasMbti = sessionUser?.mbtiType.trim().isNotEmpty == true;
+    final hasBirthday = sessionUser?.birthday.trim().isNotEmpty == true;
+    final zodiacLabel = hasBirthday
+        ? ZodiacUtils.displayName(sessionUser?.zodiacSign.trim() ?? '')
+        : '';
 
     return Stack(
       children: [
@@ -150,6 +160,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                   children: [
                     Expanded(
                       child: _MbtiEntryCard(
+                        hasMbti: hasMbti,
+                        mbtiType: sessionUser?.mbtiType.trim() ?? '',
                         onTap: () =>
                             Navigator.of(context).pushNamed(AppRouter.mbtiTest),
                       ),
@@ -157,6 +169,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: _HoroscopeEntryCard(
+                        hasBirthday: hasBirthday,
+                        zodiacLabel: zodiacLabel,
                         onTap: () => Navigator.of(context)
                             .pushNamed(AppRouter.birthdaySetup),
                       ),
@@ -309,99 +323,145 @@ class _HomePageState extends ConsumerState<HomePage> {
 }
 
 class _MbtiEntryCard extends StatelessWidget {
-  const _MbtiEntryCard({required this.onTap});
+  const _MbtiEntryCard({
+    required this.hasMbti,
+    required this.mbtiType,
+    required this.onTap,
+  });
 
+  final bool hasMbti;
+  final String mbtiType;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    final mbti = hasMbti ? MbtiCatalog.resolve(mbtiType) : null;
+    return _HomeFeatureCard(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(32),
-      child: Ink(
-        width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFFFFFFF),
-              Color(0xFFF8F0FF),
-            ],
-          ),
-          border: Border.all(color: AppTheme.ghostBorder),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primary.withValues(alpha: 0.08),
-              blurRadius: 28,
-              offset: const Offset(0, 16),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              top: -20,
-              right: -14,
-              child: Container(
-                width: 78,
-                height: 78,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const RadialGradient(
-                    colors: [Color(0x22B47BFF), Color(0x00B47BFF)],
-                  ),
-                ),
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [AppTheme.primary, AppTheme.primaryDark],
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.psychology_alt_rounded,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  '发现你的隐藏人格',
-                  maxLines: 2,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppTheme.textPrimary,
-                        height: 1.2,
-                      ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '完善人格档案',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
-                ),
+      accentGradient: hasMbti
+          ? mbti!.palette
+          : const [AppTheme.primary, AppTheme.primaryDark],
+      glowColors: const [Color(0x22B47BFF), Color(0x00B47BFF)],
+      icon: hasMbti ? mbti!.avatarAccent : Icons.psychology_alt_rounded,
+      title: hasMbti ? mbti!.name : '发现你的隐藏人格',
+      subtitle: hasMbti ? null : '完善人格档案',
+      footer: hasMbti ? MbtiBadge(type: mbtiType, compact: true) : null,
+      chevronColor: AppTheme.primary,
+      semanticLabel: 'MBTI 入口',
+    );
+  }
+}
+
+class _HomeFeatureCard extends StatelessWidget {
+  const _HomeFeatureCard({
+    required this.onTap,
+    required this.accentGradient,
+    required this.glowColors,
+    required this.icon,
+    required this.title,
+    required this.chevronColor,
+    required this.semanticLabel,
+    this.subtitle,
+    this.footer,
+  });
+
+  final VoidCallback onTap;
+  final List<Color> accentGradient;
+  final List<Color> glowColors;
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final Widget? footer;
+  final Color chevronColor;
+  final String semanticLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: semanticLabel,
+      button: true,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(32),
+        child: Ink(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0xFFFFFFFF),
+                Color(0xFFF8F4FF),
               ],
             ),
-            Positioned(
-              right: 0,
-              bottom: 0,
-              child: Icon(
-                Icons.chevron_right_rounded,
-                color: AppTheme.primary,
+            border: Border.all(color: AppTheme.ghostBorder),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primary.withValues(alpha: 0.08),
+                blurRadius: 28,
+                offset: const Offset(0, 16),
               ),
-            ),
-          ],
+            ],
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                top: -20,
+                right: -14,
+                child: Container(
+                  width: 78,
+                  height: 78,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(colors: glowColors),
+                  ),
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(colors: accentGradient),
+                    ),
+                    child: Icon(icon, color: Colors.white),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    title,
+                    maxLines: 2,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: AppTheme.textPrimary,
+                          height: 1.2,
+                        ),
+                  ),
+                  const SizedBox(height: 4),
+                  footer ??
+                      Text(
+                        subtitle ?? '',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: AppTheme.textSecondary,
+                            ),
+                      ),
+                ],
+              ),
+              Positioned(
+                right: 0,
+                bottom: 2,
+                child: Icon(
+                  Icons.chevron_right_rounded,
+                  color: chevronColor,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -409,101 +469,28 @@ class _MbtiEntryCard extends StatelessWidget {
 }
 
 class _HoroscopeEntryCard extends StatelessWidget {
-  const _HoroscopeEntryCard({required this.onTap});
+  const _HoroscopeEntryCard({
+    required this.hasBirthday,
+    required this.zodiacLabel,
+    required this.onTap,
+  });
 
+  final bool hasBirthday;
+  final String zodiacLabel;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return _HomeFeatureCard(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(32),
-      child: Ink(
-        width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFFFFFFF),
-              Color(0xFFF3F7FF),
-            ],
-          ),
-          border: Border.all(color: AppTheme.ghostBorder),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.secondary.withValues(alpha: 0.08),
-              blurRadius: 28,
-              offset: const Offset(0, 16),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Positioned(
-              top: -18,
-              left: -12,
-              child: Container(
-                width: 78,
-                height: 78,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const RadialGradient(
-                    colors: [Color(0x227DDCFF), Color(0x007DDCFF)],
-                  ),
-                ),
-              ),
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF4AA5FD), Color(0xFF6E7CFF)],
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.auto_awesome_rounded,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  '查看今日运势',
-                  maxLines: 2,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppTheme.textPrimary,
-                        height: 1.2,
-                      ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '解锁星座档案',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
-                ),
-              ],
-            ),
-            Positioned(
-              right: 0,
-              bottom: 0,
-              child: Icon(
-                Icons.chevron_right_rounded,
-                color: AppTheme.secondary,
-              ),
-            ),
-          ],
-        ),
-      ),
+      accentGradient: const [Color(0xFF4AA5FD), Color(0xFF6E7CFF)],
+      glowColors: const [Color(0x227DDCFF), Color(0x007DDCFF)],
+      icon: Icons.auto_awesome_rounded,
+      title: '查看今日运势',
+      subtitle:
+          hasBirthday && zodiacLabel.isNotEmpty ? zodiacLabel : '解锁星座档案',
+      chevronColor: AppTheme.secondary,
+      semanticLabel: '运势入口',
     );
   }
 }

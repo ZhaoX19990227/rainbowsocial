@@ -45,9 +45,49 @@ class HoroscopeDetailPage extends ConsumerWidget {
             future: ref.read(horoscopeServiceProvider).getToday(token),
             builder: (context, snapshot) {
               if (snapshot.connectionState != ConnectionState.done) {
-                return const Padding(
-                  padding: EdgeInsets.all(20),
-                  child: AppSkeleton(height: 420, radius: 32),
+                return Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.82),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.primary.withValues(alpha: 0.1),
+                                blurRadius: 24,
+                                offset: const Offset(0, 12),
+                              ),
+                            ],
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.all(18),
+                            child: CircularProgressIndicator(strokeWidth: 3),
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        Text(
+                          '正在生成今日运势',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '正在调用 AI 整理今天的情绪、社交和桃花建议…',
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: AppTheme.textSecondary,
+                              ),
+                        ),
+                        const SizedBox(height: 22),
+                        const AppSkeleton(height: 220, radius: 32),
+                      ],
+                    ),
+                  ),
                 );
               }
               if (snapshot.hasError || !snapshot.hasData) {

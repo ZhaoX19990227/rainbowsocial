@@ -16,23 +16,46 @@ class MainTabPage extends StatefulWidget {
 
 class _MainTabPageState extends State<MainTabPage> {
   int _index = 0;
+  final Set<int> _visitedTabs = {0};
+
+  void _switchTab(int value) {
+    if (_index == value) return;
+    setState(() {
+      _index = value;
+      _visitedTabs.add(value);
+    });
+  }
+
+  Widget _buildPage(int index) {
+    if (!_visitedTabs.contains(index)) {
+      return const SizedBox.shrink();
+    }
+    switch (index) {
+      case 0:
+        return HomePage(onSwitchToNearby: () => _switchTab(1));
+      case 1:
+        return NearbyPage(onSwitchToRecommendations: () => _switchTab(0));
+      case 2:
+        return const ChatListPage();
+      case 3:
+        return const ProfilePage();
+      default:
+        return const SizedBox.shrink();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final pages = [
-      HomePage(onSwitchToNearby: () => setState(() => _index = 1)),
-      NearbyPage(onSwitchToRecommendations: () => setState(() => _index = 0)),
-      const ChatListPage(),
-      const ProfilePage(),
-    ];
-
     return Scaffold(
       body: LuminousBackground(
-        child: IndexedStack(index: _index, children: pages),
+        child: IndexedStack(
+          index: _index,
+          children: List.generate(4, _buildPage),
+        ),
       ),
       bottomNavigationBar: AppBottomNav(
         currentIndex: _index,
-        onTap: (value) => setState(() => _index = value),
+        onTap: _switchTab,
       ),
     );
   }

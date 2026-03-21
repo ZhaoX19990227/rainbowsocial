@@ -107,10 +107,10 @@ class LikesOverviewPage extends ConsumerWidget {
               .map(
                 (item) => _LikeListItem(
                   user: item.user,
-                  badge: item.isMutual ? '互相喜欢' : '喜欢了你',
+                  badge: '',
                   subtitle: '',
                   actionLabel: '',
-                  onTapRoute: item.isMutual ? AppRouter.chat : AppRouter.detail,
+                  onTapRoute: AppRouter.detail,
                 ),
               )
               .toList(),
@@ -125,10 +125,10 @@ class LikesOverviewPage extends ConsumerWidget {
               .map(
                 (item) => _LikeListItem(
                   user: item.user,
-                  badge: item.isMutual ? '互相喜欢' : '我喜欢的',
+                  badge: '',
                   subtitle: '',
                   actionLabel: '',
-                  onTapRoute: item.isMutual ? AppRouter.chat : AppRouter.detail,
+                  onTapRoute: AppRouter.detail,
                 ),
               )
               .toList(),
@@ -143,10 +143,10 @@ class LikesOverviewPage extends ConsumerWidget {
               .map(
                 (item) => _LikeListItem(
                   user: item.user,
-                  badge: '互相喜欢',
+                  badge: '',
                   subtitle: '',
                   actionLabel: '',
-                  onTapRoute: AppRouter.chat,
+                  onTapRoute: AppRouter.detail,
                 ),
               )
               .toList(),
@@ -262,22 +262,8 @@ class _LikeUserCard extends StatelessWidget {
                             style: Theme.of(context).textTheme.titleSmall,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(999),
-                            color: highlighted
-                                ? const Color(0x22FFB678)
-                                : const Color(0x22EA87FF),
-                          ),
-                          child: Text(item.badge),
-                        ),
-                      ],
-                    ),
+                  ],
+                ),
                     const SizedBox(height: 4),
                     Text(
                       item.user.basicsLine,

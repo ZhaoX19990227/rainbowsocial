@@ -14,6 +14,7 @@ import '../theme/app_theme.dart';
 import '../usecases/upload_usecases.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/gradient_button.dart';
+import '../widgets/inline_birthday_picker.dart';
 import '../widgets/luminous_background.dart';
 
 class EditProfilePage extends ConsumerStatefulWidget {
@@ -220,22 +221,22 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     const SizedBox(height: 12),
                     _LabeledField(
                       label: '生日',
-                      child: Row(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _birthday,
-                              readOnly: true,
-                              onTap: _pickBirthday,
-                              style: Theme.of(context).textTheme.bodyLarge,
-                              decoration: const InputDecoration(
-                                hintText: '选择生日',
-                                suffixIcon: Icon(Icons.calendar_month_rounded),
-                              ),
-                            ),
+                          InlineBirthdayPicker(
+                            initialDate: ZodiacUtils.tryParseBirthday(
+                                  _birthday.text.trim(),
+                                ) ??
+                                DateTime(1998, 6, 15),
+                            onChanged: (value) {
+                              setState(() {
+                                _birthday.text = ZodiacUtils.formatBirthday(value);
+                              });
+                            },
                           ),
                           if (zodiacSign.isNotEmpty) ...[
-                            const SizedBox(width: 10),
+                            const SizedBox(height: 10),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 12,
@@ -439,21 +440,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         ),
       ),
     );
-  }
-
-  Future<void> _pickBirthday() async {
-    final existing = ZodiacUtils.tryParseBirthday(_birthday.text.trim());
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: existing ?? DateTime(now.year - 24, now.month, now.day),
-      firstDate: DateTime(1960, 1, 1),
-      lastDate: DateTime(now.year - 18, now.month, now.day),
-    );
-    if (picked == null) return;
-    setState(() {
-      _birthday.text = ZodiacUtils.formatBirthday(picked);
-    });
   }
 
   Future<void> _pickAndUploadImage({required bool isAvatar}) async {

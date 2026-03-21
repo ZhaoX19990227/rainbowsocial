@@ -8,6 +8,7 @@ import '../theme/app_theme.dart';
 import '../services/zodiac_utils.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/gradient_button.dart';
+import '../widgets/inline_birthday_picker.dart';
 import '../widgets/luminous_background.dart';
 
 class BirthdaySetupPage extends ConsumerStatefulWidget {
@@ -73,56 +74,9 @@ class _BirthdaySetupPageState extends ConsumerState<BirthdaySetupPage> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    InkWell(
-                      onTap: _pickBirthday,
-                      borderRadius: BorderRadius.circular(28),
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(28),
-                          color: AppTheme.surfaceHighest,
-                        ),
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _DateWheelColumn(
-                                    label: '年份',
-                                    previous:
-                                        '${selectedDate.year - 2}',
-                                    current:
-                                        '${selectedDate.year}',
-                                    next:
-                                        '${selectedDate.year + 1}',
-                                  ),
-                                ),
-                                Expanded(
-                                  child: _DateWheelColumn(
-                                    label: '月份',
-                                    previous:
-                                        '${selectedDate.month == 1 ? 12 : selectedDate.month - 1}月',
-                                    current: '${selectedDate.month}月',
-                                    next:
-                                        '${selectedDate.month == 12 ? 1 : selectedDate.month + 1}月',
-                                  ),
-                                ),
-                                Expanded(
-                                  child: _DateWheelColumn(
-                                    label: '日期',
-                                    previous:
-                                        '${selectedDate.day == 1 ? 31 : selectedDate.day - 1}',
-                                    current: '${selectedDate.day}',
-                                    next:
-                                        '${selectedDate.day == 31 ? 1 : selectedDate.day + 1}',
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
+                    InlineBirthdayPicker(
+                      initialDate: selectedDate,
+                      onChanged: (value) => setState(() => _birthday = value),
                     ),
                     if (sign != null) ...[
                       const SizedBox(height: 18),
@@ -187,18 +141,6 @@ class _BirthdaySetupPageState extends ConsumerState<BirthdaySetupPage> {
     );
   }
 
-  Future<void> _pickBirthday() async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _birthday ?? DateTime(now.year - 24, now.month, now.day),
-      firstDate: DateTime(1960, 1, 1),
-      lastDate: DateTime(now.year - 18, now.month, now.day),
-    );
-    if (picked == null) return;
-    setState(() => _birthday = picked);
-  }
-
   Future<void> _save() async {
     final profile = ref.read(profileControllerProvider).valueOrNull;
     final birthday = _birthday;
@@ -223,68 +165,5 @@ class _BirthdaySetupPageState extends ConsumerState<BirthdaySetupPage> {
         setState(() => _saving = false);
       }
     }
-  }
-}
-
-class _DateWheelColumn extends StatelessWidget {
-  const _DateWheelColumn({
-    required this.label,
-    required this.previous,
-    required this.current,
-    required this.next,
-  });
-
-  final String label;
-  final String previous;
-  final String current;
-  final String next;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          previous,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: AppTheme.textSecondary.withValues(alpha: 0.45),
-              ),
-        ),
-        const SizedBox(height: 10),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: Colors.white,
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.primary.withValues(alpha: 0.06),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Text(
-            current,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: AppTheme.primary,
-                ),
-          ),
-        ),
-        const SizedBox(height: 10),
-        Text(
-          next,
-          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: AppTheme.textSecondary.withValues(alpha: 0.45),
-              ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: AppTheme.textSecondary.withValues(alpha: 0.7),
-              ),
-        ),
-      ],
-    );
   }
 }

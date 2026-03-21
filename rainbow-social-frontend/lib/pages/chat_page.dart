@@ -49,7 +49,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   int _recordingSeconds = 0;
 
   void _scrollToLatest({bool animated = false}) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    void performScroll() {
       if (!_scrollController.hasClients) return;
       final target = _scrollController.position.maxScrollExtent + 120;
       if (animated) {
@@ -58,9 +58,15 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           duration: const Duration(milliseconds: 280),
           curve: Curves.easeOutCubic,
         );
-        return;
+      } else {
+        _scrollController.jumpTo(target);
       }
-      _scrollController.jumpTo(target);
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      performScroll();
+      Future<void>.delayed(const Duration(milliseconds: 80), performScroll);
+      Future<void>.delayed(const Duration(milliseconds: 180), performScroll);
     });
   }
 
@@ -255,7 +261,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                     child: Container(
-                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                      padding: const EdgeInsets.fromLTRB(12, 7, 12, 7),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.82),
                         borderRadius: BorderRadius.circular(32),
@@ -287,9 +293,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Container(
-                              height: 44,
+                              height: 42,
                               padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
+                                  const EdgeInsets.symmetric(horizontal: 14),
                               decoration: BoxDecoration(
                                 color: AppTheme.surfaceHighest,
                                 borderRadius: BorderRadius.circular(999),
@@ -297,7 +303,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                               child: TextField(
                                 controller: _controller,
                                 minLines: 1,
-                                maxLines: 4,
+                                maxLines: 1,
+                                textAlignVertical: TextAlignVertical.center,
                                 onChanged: (_) => setState(() {}),
                                 decoration: InputDecoration(
                                   hintText: _isRecording
@@ -309,8 +316,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                                   disabledBorder: InputBorder.none,
                                   filled: false,
                                   isDense: true,
-                                  contentPadding:
-                                      const EdgeInsets.symmetric(vertical: 12),
+                                  contentPadding: EdgeInsets.zero,
                                 ),
                                 onSubmitted: (_) => _sendCurrentMessage(),
                               ),
@@ -359,8 +365,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                                     child: AnimatedContainer(
                                       duration:
                                           const Duration(milliseconds: 180),
-                                      width: 48,
-                                      height: 48,
+                                      width: 42,
+                                      height: 42,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         gradient: LinearGradient(
