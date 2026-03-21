@@ -35,6 +35,7 @@ func Run() error {
 
 	authRepo := repository.NewAuthRepository(db)
 	userRepo := repository.NewUserRepository(db)
+	horoscopeRepo := repository.NewHoroscopeRepository(db)
 	swipeRepo := repository.NewSwipeRepository(db)
 	matchRepo := repository.NewMatchRepository(db)
 	safetyRepo := repository.NewSafetyRepository(db)
@@ -42,6 +43,7 @@ func Run() error {
 
 	authService := service.NewAuthService(authRepo, userRepo, emailSender, jwtManager, time.Duration(cfg.OTPExpiryMinutes)*time.Minute)
 	userService := service.NewUserService(userRepo)
+	horoscopeService := service.NewHoroscopeService(cfg, horoscopeRepo)
 	swipeService := service.NewSwipeService(userRepo, swipeRepo, matchRepo, safetyRepo)
 	matchService := service.NewMatchService(matchRepo)
 	safetyService := service.NewSafetyService(safetyRepo, matchRepo)
@@ -51,14 +53,15 @@ func Run() error {
 	go hub.Run()
 
 	router := api.NewRouter(cfg, api.Dependencies{
-		JWTManager:    jwtManager,
-		AuthService:   authService,
-		UserService:   userService,
-		SwipeService:  swipeService,
-		MatchService:  matchService,
-		SafetyService: safetyService,
-		ChatService:   chatService,
-		Hub:           hub,
+		JWTManager:       jwtManager,
+		AuthService:      authService,
+		UserService:      userService,
+		HoroscopeService: horoscopeService,
+		SwipeService:     swipeService,
+		MatchService:     matchService,
+		SafetyService:    safetyService,
+		ChatService:      chatService,
+		Hub:              hub,
 	})
 
 	server := &http.Server{

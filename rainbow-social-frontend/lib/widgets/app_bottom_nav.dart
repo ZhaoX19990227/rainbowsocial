@@ -15,19 +15,26 @@ class AppBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const icons = [
-      Icons.style_rounded,
       Icons.explore_rounded,
+      Icons.location_on_rounded,
       Icons.chat_bubble_rounded,
       Icons.person_rounded,
     ];
+    const labels = ['推荐', '附近', '消息', '我的'];
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 18),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      margin: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
-        color: AppTheme.surface.withValues(alpha: 0.72),
+        color: Colors.white.withValues(alpha: 0.72),
         borderRadius: BorderRadius.circular(34),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withValues(alpha: 0.1),
+            blurRadius: 28,
+            offset: const Offset(0, -8),
+          ),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -37,14 +44,17 @@ class AppBottomNav extends StatelessWidget {
             onTap: () => onTap(index),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 220),
-              padding: const EdgeInsets.all(14),
+              padding: EdgeInsets.symmetric(
+                horizontal: selected ? 16 : 10,
+                vertical: 10,
+              ),
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(999),
                 gradient: selected
                     ? const LinearGradient(
                         colors: [
-                          Color(0x33EA87FF),
-                          Color(0x33FF6E85),
+                          AppTheme.primary,
+                          AppTheme.primaryDark,
                         ],
                       )
                     : null,
@@ -57,9 +67,25 @@ class AppBottomNav extends StatelessWidget {
                       ]
                     : null,
               ),
-              child: Icon(
-                icons[index],
-                color: selected ? AppTheme.primary : AppTheme.textSecondary,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    icons[index],
+                    color: selected ? Colors.white : AppTheme.textSecondary,
+                    size: 20,
+                  ),
+                  if (selected) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      labels[index],
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                  ],
+                ],
               ),
             ),
           );

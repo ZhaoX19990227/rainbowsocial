@@ -10,8 +10,8 @@ import '../controllers/profile_controller.dart';
 import '../models/app_user.dart';
 import '../models/match_summary.dart';
 import '../pages/likes_overview_page.dart';
+import '../providers/app_providers.dart';
 import '../routes/app_router.dart';
-import '../services/horoscope_service.dart';
 import '../services/mbti_catalog.dart';
 import '../services/zodiac_utils.dart';
 import '../theme/app_theme.dart';
@@ -144,208 +144,166 @@ class _ProfileHero extends StatelessWidget {
             : '${user.distanceKm!.toStringAsFixed(1)} km';
     final bio = user.bio.trim().isEmpty ? '留一点神秘感，等聊天时再慢慢展开。' : user.bio.trim();
 
-    return GlassCard(
-      padding: EdgeInsets.zero,
-      borderRadius: BorderRadius.circular(34),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(34)),
-              gradient: const LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color(0xFF201A38),
-                  Color(0xFF2A2046),
-                  Color(0xFF1B1733),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Stack(
+          clipBehavior: Clip.none,
+          alignment: Alignment.topCenter,
+          children: [
+            Container(
+              height: 154,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(34),
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF8D37C8),
+                    Color(0xFF6A41D8),
+                    Color(0xFF58C8F8),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primary.withValues(alpha: 0.18),
+                    blurRadius: 32,
+                    offset: const Offset(0, 18),
+                  ),
+                ],
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    left: -18,
+                    top: -10,
+                    child: _AmbientOrb(
+                      size: 150,
+                      colors: const [Color(0x33FFFFFF), Color(0x00FFFFFF)],
+                    ),
+                  ),
+                  Positioned(
+                    right: -8,
+                    bottom: -24,
+                    child: _AmbientOrb(
+                      size: 160,
+                      colors: const [Color(0x44FFFFFF), Color(0x00FFFFFF)],
+                    ),
+                  ),
+                  Positioned(
+                    left: 18,
+                    top: 16,
+                    child: const _HeroTopPill(
+                      icon: Icons.auto_awesome_rounded,
+                      label: '熊猴主场',
+                    ),
+                  ),
+                  Positioned(
+                    right: 18,
+                    top: 16,
+                    child: _HeroTopPill(
+                      icon: user.onlineStatus
+                          ? Icons.circle_rounded
+                          : Icons.schedule_rounded,
+                      label: user.onlineStatus ? '在线' : '稍后回来',
+                      accent: user.onlineStatus
+                          ? AppTheme.secondary
+                          : const Color(0xFFFFBE8D),
+                    ),
+                  ),
                 ],
               ),
             ),
-            child: Stack(
-              children: [
-                Positioned(
-                  left: -18,
-                  top: -20,
-                  child: _AmbientOrb(
-                    size: 140,
-                    colors: const [Color(0x44F7A7FF), Color(0x00F7A7FF)],
-                  ),
+            Positioned(
+              bottom: -42,
+              child: Container(
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primary.withValues(alpha: 0.16),
+                      blurRadius: 24,
+                      offset: const Offset(0, 12),
+                    ),
+                  ],
                 ),
-                Positioned(
-                  right: -16,
-                  top: 20,
-                  child: _AmbientOrb(
-                    size: 124,
-                    colors: const [Color(0x337DDCFF), Color(0x007DDCFF)],
-                  ),
+                child: AvatarWidget(
+                  imageUrl: user.avatar,
+                  radius: 42,
+                  isOnline: false,
                 ),
-                Positioned(
-                  right: 36,
-                  bottom: -10,
-                  child: _AmbientOrb(
-                    size: 130,
-                    colors: const [Color(0x22FFAACF), Color(0x00FFAACF)],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          const _GlowPill(
-                            icon: Icons.auto_awesome_rounded,
-                            label: '熊猴主场',
-                          ),
-                          const Spacer(),
-                          _GlowPill(
-                            icon: user.onlineStatus
-                                ? Icons.circle_rounded
-                                : Icons.schedule_rounded,
-                            label: user.onlineStatus ? '在线' : '稍后回来',
-                            accent: user.onlineStatus
-                                ? AppTheme.secondary
-                                : const Color(0xFFFFBE8D),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 20),
-                      Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Color(0xFFFFD0F9),
-                              Color(0xFFB47BFF),
-                              Color(0xFF7DDCFF),
-                            ],
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.primary.withValues(alpha: 0.28),
-                              blurRadius: 30,
-                              spreadRadius: 2,
-                            ),
-                          ],
-                        ),
-                        child: AvatarWidget(
-                          imageUrl: user.avatar,
-                          radius: 48,
-                          isOnline: user.onlineStatus,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        user.nickname,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineLarge
-                            ?.copyWith(fontSize: 26, height: 1.08),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        alignment: WrapAlignment.center,
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          _InfoPill(label: '${user.age} 岁'),
-                          _InfoPill(label: '${user.heightCm} cm'),
-                          _InfoPill(label: '${user.weightKg} kg'),
-                          _InfoPill(label: locationText),
-                        ],
-                      ),
-                      const SizedBox(height: 18),
-                      _RelationshipQuickStats(summary: summary),
-                    ],
-                  ),
-                ),
-              ],
+              ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(22),
-                    gradient: const LinearGradient(
-                      colors: [Color(0x20FFB6D7), Color(0x1C9E8CFF)],
+          ],
+        ),
+        const SizedBox(height: 56),
+        Center(
+          child: Column(
+            children: [
+              Text(
+                '${user.nickname} Luminous',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context)
+                    .textTheme
+                    .headlineMedium
+                    ?.copyWith(fontSize: 28),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                bio,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.textSecondary,
                     ),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.08),
-                    ),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _HeroMetaPill(
+                    icon: Icons.circle_rounded,
+                    label: user.onlineStatus ? '在线' : '离线',
+                    accent: user.onlineStatus
+                        ? AppTheme.secondary
+                        : const Color(0xFFFFBE8D),
                   ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.place_rounded,
-                        size: 18,
-                        color: Color(0xFFFFC3AA),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          user.locationLabel.trim().isNotEmpty
-                              ? '当前城市 ${user.locationLabel.trim()}'
-                              : '当前位置会在进入附近时自动更新',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: const Color(0xFFF0EAFE),
-                              ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Text(
-                  bio,
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: const Color(0xFFF0EAFE),
-                        height: 1.5,
-                      ),
-                ),
-                if (user.tags.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: user.tags
-                        .take(5)
-                        .map(
-                          (tag) => TagChip(
-                            label: tag,
-                            icon: Icons.bolt_rounded,
-                            maxWidth: 168,
-                          ),
-                        )
-                        .toList(),
-                  ),
+                  _HeroMetaPill(icon: Icons.cake_rounded, label: '${user.age} 岁'),
+                  _HeroMetaPill(icon: Icons.place_rounded, label: locationText),
                 ],
-                const SizedBox(height: 18),
-                _MbtiProfileCard(user: user),
-                const SizedBox(height: 14),
-                _HoroscopeProfileCard(user: user),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 18),
+        _RelationshipQuickStats(summary: summary),
+        const SizedBox(height: 16),
+        if (user.tags.isNotEmpty)
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: user.tags
+                .take(5)
+                .map(
+                  (tag) => TagChip(
+                    label: tag,
+                    icon: Icons.bolt_rounded,
+                    maxWidth: 168,
+                  ),
+                )
+                .toList(),
+          ),
+        const SizedBox(height: 16),
+        _MbtiProfileCard(user: user),
+        const SizedBox(height: 14),
+        _HoroscopeProfileCard(user: user),
+      ],
     );
   }
 }
@@ -433,16 +391,16 @@ class _MbtiProfileCard extends StatelessWidget {
   }
 }
 
-class _HoroscopeProfileCard extends StatelessWidget {
+class _HoroscopeProfileCard extends ConsumerWidget {
   const _HoroscopeProfileCard({required this.user});
 
   final AppUser user;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final sign = user.zodiacSign.trim();
     final hasZodiac = sign.isNotEmpty;
-    final horoscope = hasZodiac ? HoroscopeService().buildDaily(zodiacSign: sign) : null;
+    final token = ref.watch(authControllerProvider).valueOrNull?.token ?? '';
 
     return Container(
       width: double.infinity,
@@ -515,35 +473,57 @@ class _HoroscopeProfileCard extends StatelessWidget {
                 ),
               ],
             ),
-            if (horoscope != null) ...[
+            if (token.trim().isNotEmpty) ...[
               const SizedBox(height: 14),
-              Text(
-                horoscope.title,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                horoscope.summary,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondary,
-                      height: 1.5,
-                    ),
-              ),
-              const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: _MiniScore(label: '桃花', value: horoscope.scores.romance),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _MiniScore(label: '主动', value: horoscope.scores.initiative),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _MiniScore(label: '幸运', value: horoscope.scores.luck),
-                  ),
-                ],
+              FutureBuilder(
+                future: ref.read(horoscopeServiceProvider).getToday(token),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState != ConnectionState.done) {
+                    return const AppSkeleton(height: 120, radius: 24);
+                  }
+                  if (snapshot.hasError || !snapshot.hasData) {
+                    return Text(
+                      '今日运势生成中，稍后再来看看。',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.textSecondary,
+                          ),
+                    );
+                  }
+                  final horoscope = snapshot.data!;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        horoscope.title,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        horoscope.summary,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppTheme.textSecondary,
+                              height: 1.5,
+                            ),
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _MiniScore(label: '桃花', value: horoscope.scores.romance),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _MiniScore(label: '主动', value: horoscope.scores.initiative),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _MiniScore(label: '幸运', value: horoscope.scores.luck),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
               ),
             ],
           ],
@@ -616,37 +596,31 @@ class _RelationshipQuickStats extends StatelessWidget {
       ),
     ];
 
-    return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        color: Colors.white.withValues(alpha: 0.06),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-      ),
-      child: Row(
-        children: items
-            .map(
-              (item) => Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: _QuickStatButton(
-                    label: item.label,
-                    count: item.count,
-                    onTap: summary == null
-                        ? null
-                        : () => Navigator.of(context).pushNamed(
-                              AppRouter.likesOverview,
-                              arguments: LikesOverviewArgs(
-                                type: item.type,
-                                summary: summary!,
-                              ),
+    return Row(
+      children: items
+          .map(
+            (item) => Expanded(
+              child: Padding(
+                padding: EdgeInsets.only(
+                  right: item == items.last ? 0 : 10,
+                ),
+                child: _QuickStatButton(
+                  label: item.label,
+                  count: item.count,
+                  onTap: summary == null
+                      ? null
+                      : () => Navigator.of(context).pushNamed(
+                            AppRouter.likesOverview,
+                            arguments: LikesOverviewArgs(
+                              type: item.type,
+                              summary: summary!,
                             ),
-                  ),
+                          ),
                 ),
               ),
-            )
-            .toList(),
-      ),
+            ),
+          )
+          .toList(),
     );
   }
 }
@@ -670,18 +644,18 @@ class _QuickStatButton extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color(0x26FBC5FF),
-                Color(0x20B47BFF),
-                Color(0x1A7DDCFF),
-              ],
-            ),
+            borderRadius: BorderRadius.circular(24),
+            color: Colors.white.withValues(alpha: 0.9),
+            border: Border.all(color: AppTheme.ghostBorder),
+            boxShadow: [
+              BoxShadow(
+                color: AppTheme.primary.withValues(alpha: 0.05),
+                blurRadius: 18,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -690,7 +664,7 @@ class _QuickStatButton extends StatelessWidget {
                 '$count',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontSize: 24,
-                      color: Colors.white,
+                      color: AppTheme.primary,
                     ),
               ),
               const SizedBox(height: 6),
@@ -700,7 +674,7 @@ class _QuickStatButton extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: const Color(0xFFF2ECFF),
+                      color: AppTheme.textSecondary,
                     ),
               ),
             ],
@@ -735,8 +709,8 @@ class _AmbientOrb extends StatelessWidget {
   }
 }
 
-class _GlowPill extends StatelessWidget {
-  const _GlowPill({
+class _HeroTopPill extends StatelessWidget {
+  const _HeroTopPill({
     required this.icon,
     required this.label,
     this.accent = const Color(0xFFF59B72),
@@ -752,40 +726,59 @@ class _GlowPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
-        color: Colors.black.withValues(alpha: 0.18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        color: Colors.white.withValues(alpha: 0.18),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.24)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 14, color: accent),
           const SizedBox(width: 6),
-          Text(label),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: Colors.white,
+                ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _InfoPill extends StatelessWidget {
-  const _InfoPill({required this.label});
+class _HeroMetaPill extends StatelessWidget {
+  const _HeroMetaPill({
+    required this.icon,
+    required this.label,
+    this.accent = AppTheme.primary,
+  });
 
+  final IconData icon;
   final String label;
+  final Color accent;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
-        color: Colors.white.withValues(alpha: 0.06),
+        color: Colors.white,
+        border: Border.all(color: AppTheme.ghostBorder),
       ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: const Color(0xFFF0EAFE),
-              letterSpacing: 0.2,
-            ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: accent),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppTheme.textSecondary,
+                  letterSpacing: 0.2,
+                ),
+          ),
+        ],
       ),
     );
   }

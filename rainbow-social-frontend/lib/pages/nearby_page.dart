@@ -208,21 +208,48 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
     final result = await showModalBottomSheet<NearbyFilter>(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return SafeArea(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.84),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(36)),
+                ),
+                child: Stack(
                   children: [
+                    SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 120),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                     Text('筛选条件', style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 18),
-                    Text(
-                      '年龄 ${draft.minAge} - ${draft.maxAge}',
-                      style: Theme.of(context).textTheme.labelLarge,
+                    const SizedBox(height: 22),
+                    Row(
+                      children: [
+                        Text(
+                          '年龄范围',
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            '${draft.minAge} - ${draft.maxAge} 岁',
+                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                  color: AppTheme.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                        ),
+                      ],
                     ),
                     RangeSlider(
                       values: RangeValues(
@@ -241,15 +268,30 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
                         });
                       },
                     ),
-                    SwitchListTile(
-                      value: draft.onlineOnly,
-                      title: const Text('仅看在线'),
-                      onChanged: (value) {
-                        setModalState(() {
-                          draft = draft.copyWith(onlineOnly: value);
-                        });
-                      },
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceHighest,
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.sensors_rounded, color: AppTheme.primary),
+                          const SizedBox(width: 10),
+                          const Expanded(child: Text('仅看在线')),
+                          Switch(
+                            value: draft.onlineOnly,
+                            onChanged: (value) {
+                              setModalState(() {
+                                draft = draft.copyWith(onlineOnly: value);
+                              });
+                            },
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(height: 24),
                     TextField(
                       controller: tagController,
                       decoration: const InputDecoration(
@@ -273,6 +315,13 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
                         return FilterChip(
                           selected: selected,
                           label: Text(type),
+                          selectedColor: AppTheme.primary.withValues(alpha: 0.9),
+                          checkmarkColor: Colors.white,
+                          labelStyle: TextStyle(
+                            color: selected ? Colors.white : AppTheme.textSecondary,
+                            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                          backgroundColor: AppTheme.surfaceHighest,
                           onSelected: (_) {
                             setModalState(() {
                               draft = draft.copyWith(
@@ -297,6 +346,12 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
                         return FilterChip(
                           selected: selected,
                           label: Text(ZodiacUtils.displayName(sign)),
+                          selectedColor: const Color(0xFFD2E4FF),
+                          labelStyle: TextStyle(
+                            color: selected ? const Color(0xFF001D37) : AppTheme.textSecondary,
+                            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                          ),
+                          backgroundColor: AppTheme.surfaceHighest,
                           onSelected: (_) {
                             setModalState(() {
                               draft = draft.copyWith(
@@ -323,29 +378,62 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
                         );
                       }).toList(),
                     ),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () => Navigator.of(context).pop(
-                              const NearbyFilter(),
-                            ),
-                            child: const Text('重置'),
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.white.withValues(alpha: 0.0),
+                              Colors.white.withValues(alpha: 0.96),
+                              Colors.white,
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: FilledButton(
-                            onPressed: () => Navigator.of(context).pop(
-                              draft.copyWith(
-                                tag: tagController.text.trim(),
+                        child: Row(
+                          children: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(
+                                const NearbyFilter(),
+                              ),
+                              child: const Text('重置'),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: DecoratedBox(
+                                decoration: const BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [AppTheme.primary, AppTheme.primaryDark],
+                                  ),
+                                  borderRadius: BorderRadius.all(Radius.circular(999)),
+                                ),
+                                child: FilledButton(
+                                  onPressed: () => Navigator.of(context).pop(
+                                    draft.copyWith(
+                                      tag: tagController.text.trim(),
+                                    ),
+                                  ),
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: Colors.transparent,
+                                    shadowColor: Colors.transparent,
+                                    foregroundColor: Colors.white,
+                                    minimumSize: const Size.fromHeight(56),
+                                  ),
+                                  child: const Text('应用筛选'),
+                                ),
                               ),
                             ),
-                            child: const Text('应用'),
-                          ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ],
                 ),

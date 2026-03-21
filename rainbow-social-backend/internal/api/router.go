@@ -15,14 +15,15 @@ import (
 )
 
 type Dependencies struct {
-	JWTManager    *utils.JWTManager
-	AuthService   *service.AuthService
-	UserService   *service.UserService
-	SwipeService  *service.SwipeService
-	MatchService  *service.MatchService
-	SafetyService *service.SafetyService
-	ChatService   *service.ChatService
-	Hub           *ws.Hub
+	JWTManager       *utils.JWTManager
+	AuthService      *service.AuthService
+	UserService      *service.UserService
+	HoroscopeService *service.HoroscopeService
+	SwipeService     *service.SwipeService
+	MatchService     *service.MatchService
+	SafetyService    *service.SafetyService
+	ChatService      *service.ChatService
+	Hub              *ws.Hub
 }
 
 func NewRouter(cfg *config.Config, deps Dependencies) *gin.Engine {
@@ -48,6 +49,7 @@ func NewRouter(cfg *config.Config, deps Dependencies) *gin.Engine {
 
 	authHandler := NewAuthHandler(deps.AuthService)
 	userHandler := NewUserHandler(deps.UserService)
+	horoscopeHandler := NewHoroscopeHandler(deps.HoroscopeService, deps.UserService)
 	swipeHandler := NewSwipeHandler(deps.SwipeService)
 	matchHandler := NewMatchHandler(deps.MatchService)
 	safetyHandler := NewSafetyHandler(deps.SafetyService)
@@ -75,6 +77,7 @@ func NewRouter(cfg *config.Config, deps Dependencies) *gin.Engine {
 		protected.POST("/user/location", userHandler.UpdateLocation)
 		protected.GET("/users/list", userHandler.ListUsers)
 		protected.GET("/users/nearby", userHandler.Nearby)
+		protected.GET("/horoscope/today", horoscopeHandler.Today)
 		protected.POST("/uploads/image", uploadHandler.UploadImage)
 		protected.POST("/uploads/audio", uploadHandler.UploadAudio)
 		protected.POST("/user/device-token", userHandler.SaveDeviceToken)

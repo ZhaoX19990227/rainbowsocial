@@ -24,6 +24,10 @@ type Config struct {
 	SMTPPassword     string
 	SMTPFrom         string
 	SMTPEnabled      bool
+	DashScopeAPIKey  string
+	DashScopeBaseURL string
+	DashScopeModel   string
+	AITimeoutSeconds int
 }
 
 func Load() (*Config, error) {
@@ -44,6 +48,10 @@ func Load() (*Config, error) {
 		SMTPPassword:     getEnv("SMTP_PASSWORD", ""),
 		SMTPFrom:         getEnv("SMTP_FROM", ""),
 		SMTPEnabled:      getEnvAsBool("SMTP_ENABLED", false),
+		DashScopeAPIKey:  getEnv("DASHSCOPE_API_KEY", ""),
+		DashScopeBaseURL: getEnv("DASHSCOPE_BASE_URL", ""),
+		DashScopeModel:   getEnv("DASHSCOPE_MODEL", "qwen-plus"),
+		AITimeoutSeconds: getEnvAsInt("AI_TIMEOUT_SECONDS", 25),
 	}
 
 	if cfg.JWTSecret == "" {

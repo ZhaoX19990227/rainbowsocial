@@ -53,7 +53,7 @@ final locationLabelServiceProvider = Provider<LocationLabelService>((ref) {
 });
 
 final horoscopeServiceProvider = Provider<HoroscopeService>((ref) {
-  return HoroscopeService();
+  return HoroscopeService(ref.read(apiClientProvider));
 });
 
 final flashPhotoStateServiceProvider = Provider<FlashPhotoStateService>((ref) {

@@ -144,6 +144,15 @@ func migrate(db *sql.DB) error {
 			UNIQUE(user_id, token),
 			FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
 		);`,
+		`CREATE TABLE IF NOT EXISTS horoscope_daily_cache (
+			zodiac_sign TEXT NOT NULL,
+			date TEXT NOT NULL,
+			payload_json TEXT NOT NULL,
+			source TEXT NOT NULL DEFAULT 'ai',
+			created_at DATETIME NOT NULL,
+			updated_at DATETIME NOT NULL,
+			PRIMARY KEY(zodiac_sign, date)
+		);`,
 		`CREATE INDEX IF NOT EXISTS idx_swipes_from_user ON swipes(from_user_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_swipes_to_user ON swipes(to_user_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_matches_user1 ON matches(user1_id);`,
@@ -156,6 +165,7 @@ func migrate(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_conversation_states_user_pinned ON conversation_states(user_id, is_pinned, updated_at DESC);`,
 		`CREATE INDEX IF NOT EXISTS idx_users_online_last_active ON users(online_status DESC, last_active_at DESC);`,
 		`CREATE INDEX IF NOT EXISTS idx_device_tokens_user ON device_tokens(user_id, updated_at DESC);`,
+		`CREATE INDEX IF NOT EXISTS idx_horoscope_daily_cache_updated ON horoscope_daily_cache(updated_at DESC);`,
 	}
 
 	for _, statement := range statements {

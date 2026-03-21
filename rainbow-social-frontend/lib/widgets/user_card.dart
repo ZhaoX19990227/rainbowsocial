@@ -58,6 +58,38 @@ class UserCard extends StatelessWidget {
                 ),
               ),
               if (overlayBuilder != null) overlayBuilder!(context),
+              if (user.onlineStatus)
+                Positioned(
+                  top: 22,
+                  left: 22,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.28),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 8,
+                          height: 8,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF4CD787),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          '在线',
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                color: Colors.white,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               Positioned(
                 left: 16,
                 right: 16,
@@ -65,10 +97,15 @@ class UserCard extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: AppTheme.surfaceHighest.withValues(alpha: 0.55),
+                    color: Colors.white.withValues(alpha: 0.74),
                     borderRadius: BorderRadius.circular(24),
-                    border:
-                        Border.all(color: Colors.white.withValues(alpha: 0.08)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primary.withValues(alpha: 0.08),
+                        blurRadius: 18,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -82,31 +119,31 @@ class UserCard extends StatelessWidget {
                               style: Theme.of(context)
                                   .textTheme
                                   .headlineMedium
-                                  ?.copyWith(fontSize: 28),
+                                  ?.copyWith(fontSize: 28, color: AppTheme.textPrimary),
                             ),
                           ),
-                          if (user.onlineStatus)
-                            Container(
-                              width: 12,
-                              height: 12,
-                              decoration: const BoxDecoration(
-                                color: AppTheme.secondary,
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppTheme.secondary,
-                                    blurRadius: 10,
-                                  ),
-                                ],
-                              ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: AppTheme.surfaceHighest,
+                              borderRadius: BorderRadius.circular(999),
                             ),
+                            child: Text(
+                              user.distanceKm == null
+                                  ? '就在附近'
+                                  : '距离 ${user.distanceKm!.toStringAsFixed(1)} 公里',
+                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                    color: AppTheme.primary,
+                                  ),
+                            ),
+                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        user.distanceKm == null
-                            ? user.basicsLine
-                            : '${user.basicsLine} · ${user.distanceKm!.toStringAsFixed(1)} km',
+                        user.bio,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style:
                             Theme.of(context).textTheme.labelMedium?.copyWith(
                                   color: AppTheme.textSecondary,
@@ -126,12 +163,6 @@ class UserCard extends StatelessWidget {
                           ],
                         ),
                       ],
-                      const SizedBox(height: 12),
-                      Text(
-                        user.bio,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                      ),
                       const SizedBox(height: 14),
                       Wrap(
                         spacing: 8,

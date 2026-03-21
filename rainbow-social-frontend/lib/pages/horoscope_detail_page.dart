@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../controllers/profile_controller.dart';
+import '../controllers/auth_controller.dart';
 import '../models/horoscope_data.dart';
 import '../providers/app_providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_empty_state.dart';
+import '../widgets/app_skeleton.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/luminous_background.dart';
 import '../widgets/zodiac_badge.dart';
@@ -26,29 +28,53 @@ class HoroscopeDetailPage extends ConsumerWidget {
       );
     }
 
-    final horoscope = ref.read(horoscopeServiceProvider).buildDaily(
-          zodiacSign: sign,
-        );
+    final token = ref.watch(authControllerProvider).valueOrNull?.token ?? '';
+    if (token.trim().isEmpty) {
+      return const Scaffold(
+        body: AppEmptyState(
+          title: '当前无法加载运势',
+          subtitle: '请重新登录后再试。',
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('今日运势')),
       body: LuminousBackground(
         child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-            children: [
-              _HoroscopeHero(data: horoscope),
-              const SizedBox(height: 16),
-              _HoroscopeSection(title: '感情运势', content: horoscope.love),
-              const SizedBox(height: 12),
-              _HoroscopeSection(title: '社交运势', content: horoscope.social),
-              const SizedBox(height: 12),
-              _HoroscopeSection(title: '情绪状态', content: horoscope.mood),
-              const SizedBox(height: 12),
-              _HoroscopeSection(title: '今日建议', content: horoscope.suggestion),
-              const SizedBox(height: 12),
-              _HoroscopeSection(title: '今日提醒', content: horoscope.avoid),
-            ],
+          child: FutureBuilder<HoroscopeData>(
+            future: ref.read(horoscopeServiceProvider).getToday(token),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: AppSkeleton(height: 420, radius: 32),
+                );
+              }
+              if (snapshot.hasError || !snapshot.hasData) {
+                return AppEmptyState(
+                  title: '今日运势加载失败',
+                  subtitle: '${snapshot.error ?? '稍后再试'}',
+                );
+              }
+              final horoscope = snapshot.data!;
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                children: [
+                  _HoroscopeHero(data: horoscope),
+                  const SizedBox(height: 16),
+                  _HoroscopeSection(title: '感情运势', content: horoscope.love),
+                  const SizedBox(height: 12),
+                  _HoroscopeSection(title: '社交运势', content: horoscope.social),
+                  const SizedBox(height: 12),
+                  _HoroscopeSection(title: '情绪状态', content: horoscope.mood),
+                  const SizedBox(height: 12),
+                  _HoroscopeSection(title: '今日建议', content: horoscope.suggestion),
+                  const SizedBox(height: 12),
+                  _HoroscopeSection(title: '今日提醒', content: horoscope.avoid),
+                ],
+              );
+            },
           ),
         ),
       ),

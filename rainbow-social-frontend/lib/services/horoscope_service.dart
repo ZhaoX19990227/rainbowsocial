@@ -1,8 +1,36 @@
 import '../models/horoscope_data.dart';
+import 'api_client.dart';
+import 'app_flags.dart';
 import 'zodiac_utils.dart';
 
 class HoroscopeService {
-  HoroscopeData buildDaily({
+  HoroscopeService(this._client);
+
+  final ApiClient _client;
+
+  Future<HoroscopeData> getToday(
+    String token, {
+    DateTime? date,
+  }) async {
+    try {
+      final response = await _client.get(
+        '/horoscope/today',
+        token: token,
+        query: {
+          if (date != null) 'date': _formatDate(date),
+        },
+      );
+      return HoroscopeData.fromJson(response['data'] as Map<String, dynamic>);
+    } catch (_) {
+      if (!AppFlags.useMockFallbacks) rethrow;
+      return buildLocal(
+        zodiacSign: 'Pisces',
+        date: date,
+      );
+    }
+  }
+
+  HoroscopeData buildLocal({
     required String zodiacSign,
     DateTime? date,
   }) {
@@ -83,5 +111,11 @@ class HoroscopeService {
       result.add('情绪清晰');
     }
     return result.take(3).toList();
+  }
+
+  String _formatDate(DateTime value) {
+    final month = value.month.toString().padLeft(2, '0');
+    final day = value.day.toString().padLeft(2, '0');
+    return '${value.year}-$month-$day';
   }
 }

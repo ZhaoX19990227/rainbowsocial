@@ -16,9 +16,8 @@ import '../theme/app_theme.dart';
 import '../usecases/swipe_usecases.dart';
 import '../widgets/avatar_widget.dart';
 import '../widgets/glass_card.dart';
-import '../widgets/mbti_badge.dart';
+import '../widgets/gradient_button.dart';
 import '../widgets/tag_chip.dart';
-import '../widgets/zodiac_badge.dart';
 
 class UserDetailPage extends ConsumerWidget {
   const UserDetailPage({super.key, required this.user});
@@ -30,13 +29,21 @@ class UserDetailPage extends ConsumerWidget {
     final summary = ref.watch(matchSummaryControllerProvider).valueOrNull;
     final relation = _UserRelation.fromSummary(summary, user.id);
     final blockStatus = ref.watch(blockStatusProvider(user.id));
+    final locationText = user.locationLabel.trim().isNotEmpty
+        ? user.locationLabel.trim()
+        : user.distanceKm == null
+            ? '就在附近'
+            : '距离 ${user.distanceKm!.toStringAsFixed(1)} km';
+    final headlineBio = user.bio.trim().isEmpty
+        ? '在耐心地把自己的温柔，摊成想靠近的余地。'
+        : user.bio.trim();
 
     return Scaffold(
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
             pinned: true,
-            expandedHeight: 252,
+            expandedHeight: 356,
             actions: [
               PopupMenuButton<String>(
                 onSelected: (value) async {
@@ -77,12 +84,25 @@ class UserDetailPage extends ConsumerWidget {
                   DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        begin: Alignment.topCenter,
+                        begin: Alignment.topLeft,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.black.withValues(alpha: 0.04),
-                          Colors.black.withValues(alpha: 0.16),
-                          const Color(0xFF0D0D18),
+                          Colors.white.withValues(alpha: 0.12),
+                          Colors.white.withValues(alpha: 0.02),
+                          const Color(0x80A793E8),
+                          const Color(0xFFF7F4FF),
+                        ],
+                      ),
+                    ),
+                  ),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: RadialGradient(
+                        center: const Alignment(0, -0.25),
+                        radius: 1.05,
+                        colors: [
+                          AppTheme.secondary.withValues(alpha: 0.14),
+                          Colors.transparent,
                         ],
                       ),
                     ),
@@ -90,52 +110,21 @@ class UserDetailPage extends ConsumerWidget {
                   Positioned(
                     left: 20,
                     right: 20,
-                    bottom: 18,
-                    child: Row(
+                    bottom: 28,
+                    child: Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      alignment: WrapAlignment.center,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(999),
-                            color: Colors.black.withValues(alpha: 0.24),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.08),
-                            ),
-                          ),
-                          child: Text(
-                            user.locationLabel.trim().isNotEmpty
-                                ? user.locationLabel.trim()
-                                : user.distanceKm == null
-                                    ? '就在附近'
-                                    : '距离 ${user.distanceKm!.toStringAsFixed(1)} km',
-                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.92),
-                                ),
-                          ),
+                        _DetailHeroPill(
+                          icon: Icons.place_rounded,
+                          label: locationText,
                         ),
-                        const Spacer(),
                         if (user.onlineStatus)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(999),
-                              color: Colors.black.withValues(alpha: 0.24),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.08),
-                              ),
-                            ),
-                            child: Text(
-                              '当前在线',
-                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.92),
-                                  ),
-                            ),
+                          const _DetailHeroPill(
+                            icon: Icons.circle_rounded,
+                            label: '在线',
+                            accent: AppTheme.secondary,
                           ),
                       ],
                     ),
@@ -151,176 +140,167 @@ class UserDetailPage extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Transform.translate(
-                    offset: const Offset(0, -20),
-                    child: GlassCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                    offset: const Offset(0, -36),
+                    child: Column(
+                      children: [
+                        GlassCard(
+                          borderRadius: BorderRadius.circular(34),
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(3),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: const LinearGradient(
-                                    colors: [
-                                      Color(0x88FFAA7A),
-                                      Color(0x66945CFF),
-                                    ],
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppTheme.primary.withValues(alpha: 0.16),
-                                      blurRadius: 22,
-                                    ),
-                                  ],
-                                ),
-                                child: AvatarWidget(
-                                  imageUrl: user.avatar,
-                                  radius: 34,
-                                  isOnline: user.onlineStatus,
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
+                              Center(
                                 child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
                                       user.title,
+                                      textAlign: TextAlign.center,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                       style: Theme.of(context)
                                           .textTheme
                                           .headlineMedium
-                                          ?.copyWith(fontSize: 30, height: 1.08),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      user.bio.trim().isEmpty
-                                          ? '慢慢靠近，才知道他会怎么回应你。'
-                                          : user.bio.trim(),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(
-                                            color: const Color(0xFFD9D2E8),
-                                            height: 1.45,
-                                          ),
+                                          ?.copyWith(fontSize: 32, height: 1.05),
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
                                       user.basicsLine,
+                                      textAlign: TextAlign.center,
                                       style: Theme.of(context)
                                           .textTheme
-                                          .labelMedium
+                                          .labelLarge
                                           ?.copyWith(
-                                            color: const Color(0xFFE9E0FB),
-                                            letterSpacing: 0.2,
+                                            color: AppTheme.textSecondary,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 18),
+                                    Row(
+                                      children: [
+                                        if (user.mbtiType.trim().isNotEmpty)
+                                          Expanded(
+                                            child: _IdentitySummaryTile(
+                                              title: user.mbtiType,
+                                              subtitle: MbtiCatalog
+                                                  .resolve(user.mbtiType)
+                                                  .name,
+                                              accent: const LinearGradient(
+                                                colors: [
+                                                  Color(0xFFECDFFF),
+                                                  Color(0xFFFFFFFF),
+                                                ],
+                                              ),
+                                              footer: '人格类型',
+                                            ),
+                                          ),
+                                        if (user.mbtiType.trim().isNotEmpty &&
+                                            user.zodiacSign.trim().isNotEmpty)
+                                          const SizedBox(width: 12),
+                                        if (user.zodiacSign.trim().isNotEmpty)
+                                          Expanded(
+                                            child: _IdentitySummaryTile(
+                                              title: ZodiacUtils.displayName(
+                                                  user.zodiacSign),
+                                              subtitle: user.birthday.trim().isEmpty
+                                                  ? '今日气场'
+                                                  : user.birthday,
+                                              accent: const LinearGradient(
+                                                colors: [
+                                                  Color(0xFFF6F1FF),
+                                                  Color(0xFFF2F8FF),
+                                                ],
+                                              ),
+                                              footer: '星座档案',
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              if (user.tags.isNotEmpty) ...[
+                                const SizedBox(height: 18),
+                                Wrap(
+                                  spacing: 10,
+                                  runSpacing: 10,
+                                  children: user.tags
+                                      .take(5)
+                                      .map(
+                                        (tag) => TagChip(
+                                          label: tag,
+                                          icon: Icons.auto_awesome_rounded,
+                                          maxWidth: 140,
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
+                              ],
+                              const SizedBox(height: 18),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(26),
+                                  gradient: const LinearGradient(
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                    colors: [
+                                      Color(0xFFFFFFFF),
+                                      Color(0xFFF5F1FF),
+                                    ],
+                                  ),
+                                  border: Border.all(color: AppTheme.ghostBorder),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      '更多介绍',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge
+                                          ?.copyWith(color: AppTheme.primary),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      '“$headlineBio”',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyLarge
+                                          ?.copyWith(
+                                            height: 1.7,
+                                            fontStyle: FontStyle.italic,
                                           ),
                                     ),
                                     if (user.mbtiType.trim().isNotEmpty) ...[
-                                      const SizedBox(height: 10),
-                                      MbtiBadge(type: user.mbtiType),
+                                      const SizedBox(height: 18),
+                                      _InsightSection(
+                                        title: '人格档案摘要',
+                                        accent: const Color(0xFF8B56E8),
+                                        points: [
+                                          '更贴近 ${MbtiCatalog.resolve(user.mbtiType).name} 的互动方式',
+                                          MbtiCatalog.resolve(user.mbtiType).summary,
+                                        ],
+                                      ),
                                     ],
                                     if (user.zodiacSign.trim().isNotEmpty) ...[
-                                      const SizedBox(height: 10),
-                                      ZodiacBadge(sign: user.zodiacSign),
+                                      const SizedBox(height: 16),
+                                      _InsightSection(
+                                        title: '星座档案摘要',
+                                        accent: const Color(0xFFFF5EA8),
+                                        points: [
+                                          user.birthday.trim().isEmpty
+                                              ? '更愿意先感受氛围，再决定关系推进的速度。'
+                                              : '${user.birthday} 出生，通常更看重情绪节奏与靠近方式。',
+                                          '聊天时如果被认真接住，往往更容易聊出感觉。',
+                                        ],
+                                      ),
                                     ],
                                   ],
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 18),
-                          Wrap(
-                            spacing: 10,
-                            runSpacing: 10,
-                            children: user.tags
-                                .take(5)
-                                .map((tag) => TagChip(
-                                    label: tag,
-                                    icon: Icons.auto_awesome_rounded,
-                                    maxWidth: 140))
-                                .toList(),
-                          ),
-                          const SizedBox(height: 22),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 14,
-                            ),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(22),
-                              color: Colors.white.withValues(alpha: 0.04),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.06),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('更多介绍',
-                                    style:
-                                        Theme.of(context).textTheme.labelMedium),
-                                if (user.mbtiType.trim().isNotEmpty) ...[
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    '人格类型 · ${MbtiCatalog.resolve(user.mbtiType).name}',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleSmall
-                                        ?.copyWith(color: const Color(0xFFF0EAFE)),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    MbtiCatalog.resolve(user.mbtiType).summary,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(color: const Color(0xFFD8D0EA)),
-                                  ),
-                                  const SizedBox(height: 12),
-                                ],
-                                if (user.zodiacSign.trim().isNotEmpty) ...[
-                                  Text(
-                                    '星座档案 · ${ZodiacUtils.displayName(user.zodiacSign)}',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleSmall
-                                        ?.copyWith(color: const Color(0xFFF0EAFE)),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    user.birthday.trim().isEmpty
-                                        ? '这个星座通常更在意聊天氛围、靠近节奏和情绪流动。'
-                                        : '${user.birthday} 出生，互动时往往更有自己的情绪节奏。',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(color: const Color(0xFFD8D0EA)),
-                                  ),
-                                  const SizedBox(height: 12),
-                                ],
-                                const SizedBox(height: 10),
-                                Text(
-                                  user.bio.trim().isEmpty
-                                      ? '他还没有写更多介绍，不如主动打个招呼试试看。'
-                                      : user.bio.trim(),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyLarge
-                                      ?.copyWith(height: 1.55),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                   GlassCard(
@@ -374,85 +354,92 @@ class UserDetailPage extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _CircleFab(
-            icon: Icons.close_rounded,
-            onTap: () => Navigator.of(context).pop(),
-          ),
-          const SizedBox(width: 18),
-          _CircleFab(
-            icon: Icons.favorite_rounded,
-            filled: true,
-            onTap: () async {
-              final status = blockStatus.valueOrNull;
-              if (status?.isBlocked == true) {
-                AppFeedback.showToast(_blockedMessage(status!));
-                return;
-              }
-              final session = ref.read(authControllerProvider).valueOrNull;
-              if (session == null) return;
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+        child: GlassCard(
+          padding: const EdgeInsets.all(10),
+          borderRadius: BorderRadius.circular(999),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    final status = blockStatus.valueOrNull;
+                    if (status?.isBlocked == true) {
+                      AppFeedback.showToast(_blockedMessage(status!));
+                      return;
+                    }
+                    if (!relation.isMutual) {
+                      AppFeedback.showToast(RelationshipCopy.chatRequiresMutual);
+                      return;
+                    }
+                    Navigator.of(context).pushNamed(AppRouter.chat, arguments: user);
+                  },
+                  icon: const Icon(Icons.chat_bubble_rounded),
+                  label: const Text('打招呼'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: GradientButton(
+                  label: '喜欢',
+                  icon: Icons.favorite_rounded,
+                  onPressed: () async {
+                    final status = blockStatus.valueOrNull;
+                    if (status?.isBlocked == true) {
+                      AppFeedback.showToast(_blockedMessage(status!));
+                      return;
+                    }
+                    final session = ref.read(authControllerProvider).valueOrNull;
+                    if (session == null) return;
 
-              try {
-                final result =
-                    await ref.read(likeUserUseCaseProvider)(session.token, user.id);
-                if (!context.mounted) return;
-                if (result.matched) {
-                  await ref.read(matchesControllerProvider.notifier).load();
-                  await ref.read(matchSummaryControllerProvider.notifier).load();
-                  await _showRelationshipOverlay(
-                    context,
-                    child: _RelationshipUpgradeOverlay(
-                      mode: _RelationshipOverlayMode.mutual,
-                      user: user,
-                      onPrimary: () {
-                        Navigator.of(context).pop();
-                        Navigator.of(context)
-                            .pushNamed(AppRouter.chat, arguments: user);
-                      },
-                      onSecondary: () => Navigator.of(context).pop(),
-                    ),
-                  );
-                } else {
-                  await ref.read(matchSummaryControllerProvider.notifier).load();
-                  if (!context.mounted) return;
-                  await _showRelationshipOverlay(
-                    context,
-                    child: _RelationshipUpgradeOverlay(
-                      mode: _RelationshipOverlayMode.likeSent,
-                      user: user,
-                      onPrimary: () {
-                        Navigator.of(context).pop();
-                        ref.read(matchSummaryControllerProvider.notifier).load();
-                      },
-                      onSecondary: () => Navigator.of(context).pop(),
-                    ),
-                  );
-                }
-              } catch (error) {
-                AppFeedback.showError('操作失败：$error');
-              }
-            },
+                    try {
+                      final result = await ref.read(likeUserUseCaseProvider)(
+                        session.token,
+                        user.id,
+                      );
+                      if (!context.mounted) return;
+                      if (result.matched) {
+                        await ref.read(matchesControllerProvider.notifier).load();
+                        await ref.read(matchSummaryControllerProvider.notifier).load();
+                        await _showRelationshipOverlay(
+                          context,
+                          child: _RelationshipUpgradeOverlay(
+                            mode: _RelationshipOverlayMode.mutual,
+                            user: user,
+                            onPrimary: () {
+                              Navigator.of(context).pop();
+                              Navigator.of(context)
+                                  .pushNamed(AppRouter.chat, arguments: user);
+                            },
+                            onSecondary: () => Navigator.of(context).pop(),
+                          ),
+                        );
+                      } else {
+                        await ref.read(matchSummaryControllerProvider.notifier).load();
+                        if (!context.mounted) return;
+                        await _showRelationshipOverlay(
+                          context,
+                          child: _RelationshipUpgradeOverlay(
+                            mode: _RelationshipOverlayMode.likeSent,
+                            user: user,
+                            onPrimary: () {
+                              Navigator.of(context).pop();
+                              ref.read(matchSummaryControllerProvider.notifier).load();
+                            },
+                            onSecondary: () => Navigator.of(context).pop(),
+                          ),
+                        );
+                      }
+                    } catch (error) {
+                      AppFeedback.showError('操作失败：$error');
+                    }
+                  },
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 18),
-          _CircleFab(
-            icon: Icons.chat_bubble_rounded,
-            onTap: () {
-              final status = blockStatus.valueOrNull;
-              if (status?.isBlocked == true) {
-                AppFeedback.showToast(_blockedMessage(status!));
-                return;
-              }
-              if (!relation.isMutual) {
-                AppFeedback.showToast(RelationshipCopy.chatRequiresMutual);
-                return;
-              }
-              Navigator.of(context).pushNamed(AppRouter.chat, arguments: user);
-            },
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -815,6 +802,165 @@ String _blockedMessage(BlockStatus status) {
     return '对方当前不可见，暂时无法建立关系';
   }
   return '你们暂时无法建立关系';
+}
+
+class _DetailHeroPill extends StatelessWidget {
+  const _DetailHeroPill({
+    required this.icon,
+    required this.label,
+    this.accent = AppTheme.primary,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        color: Colors.white.withValues(alpha: 0.84),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: accent),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: AppTheme.textPrimary,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _IdentitySummaryTile extends StatelessWidget {
+  const _IdentitySummaryTile({
+    required this.title,
+    required this.subtitle,
+    required this.accent,
+    required this.footer,
+  });
+
+  final String title;
+  final String subtitle;
+  final Gradient accent;
+  final String footer;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: accent,
+        border: Border.all(color: AppTheme.ghostBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontSize: 26,
+                  color: AppTheme.primary,
+                ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            subtitle,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: AppTheme.textSecondary,
+                ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            footer,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppTheme.textSecondary,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InsightSection extends StatelessWidget {
+  const _InsightSection({
+    required this.title,
+    required this.accent,
+    required this.points,
+  });
+
+  final String title;
+  final Color accent;
+  final List<String> points;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        color: Colors.white.withValues(alpha: 0.78),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 10,
+                height: 10,
+                decoration: BoxDecoration(
+                  color: accent,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ...points.map(
+            (point) => Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                point,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.textSecondary,
+                      height: 1.55,
+                    ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class _CircleFab extends StatelessWidget {
