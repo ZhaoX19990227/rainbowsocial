@@ -477,11 +477,11 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         HapticFeedback.selectionClick();
         Future<void>.delayed(
           const Duration(milliseconds: 190),
-          HapticFeedback.softImpact,
+          HapticFeedback.lightImpact,
         );
         return;
       case 'pat_head':
-        HapticFeedback.softImpact();
+        HapticFeedback.lightImpact();
         Future<void>.delayed(
           const Duration(milliseconds: 210),
           HapticFeedback.selectionClick,
