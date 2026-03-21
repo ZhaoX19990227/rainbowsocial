@@ -46,10 +46,12 @@ class ChatMessageModel {
   bool get isFailed => status == ChatMessageStatus.failed;
   bool get isAudio => type == 'audio';
   bool get isImage => type == 'image';
+  bool get isFlirty => type == 'flirt';
   String get audioSource =>
       mediaUrl.isNotEmpty ? mediaUrl : (localFilePath ?? '');
   String get imageSource =>
       mediaUrl.isNotEmpty ? mediaUrl : (localFilePath ?? '');
+  String get flirtyActionId => mediaUrl;
 
   ChatMessageModel copyWith({
     int? id,

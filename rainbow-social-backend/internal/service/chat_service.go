@@ -62,7 +62,7 @@ func (s *ChatService) SaveMessage(fromUserID, toUserID int64, content, messageTy
 		return nil, err
 	}
 	if !matched {
-		return nil, fmt.Errorf("can only message matched users")
+		return nil, fmt.Errorf("互相关注后才能聊天")
 	}
 	blocked, err := s.safetyRepo.AreUsersBlocked(fromUserID, toUserID)
 	if err != nil {

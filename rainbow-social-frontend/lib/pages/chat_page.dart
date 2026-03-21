@@ -8,8 +8,10 @@ import 'package:image_picker/image_picker.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/chat_controller.dart';
 import '../models/app_user.dart';
+import '../models/flirty_action.dart';
 import '../providers/app_providers.dart';
 import '../services/app_feedback.dart';
+import '../theme/app_theme.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/app_skeleton.dart';
 import '../widgets/avatar_widget.dart';
@@ -208,6 +210,30 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                     child: Row(
                       children: [
                         IconButton(
+                          onPressed: _openFlirtyActions,
+                          icon: Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: const LinearGradient(
+                                colors: [
+                                  Color(0x44FF855F),
+                                  Color(0x44EA87FF),
+                                ],
+                              ),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.08),
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.auto_awesome_rounded,
+                              size: 18,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        IconButton(
                           onPressed: _pickFromGallery,
                           icon: const Icon(Icons.add_circle_outline_rounded),
                         ),
@@ -333,6 +359,19 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         .sendImageMessage(file: picked);
   }
 
+  Future<void> _openFlirtyActions() async {
+    final action = await showModalBottomSheet<FlirtyAction>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => const _FlirtyActionsSheet(),
+    );
+    if (action == null || !mounted) return;
+    await ref
+        .read(chatControllerProvider(widget.peer).notifier)
+        .sendFlirtyAction(action);
+  }
+
   Future<void> _handleRecordStart(LongPressStartDetails _) async {
     if (_isRecording || _isStartingRecording) return;
 
@@ -438,6 +477,188 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       });
       AppFeedback.showError('录音发送失败：$error');
     }
+  }
+}
+
+class _FlirtyActionsSheet extends StatefulWidget {
+  const _FlirtyActionsSheet();
+
+  @override
+  State<_FlirtyActionsSheet> createState() => _FlirtyActionsSheetState();
+}
+
+class _FlirtyActionsSheetState extends State<_FlirtyActionsSheet>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 650),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 14,
+        right: 14,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 14,
+      ),
+      child: GlassCard(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+        borderRadius: BorderRadius.circular(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [Color(0x44FF9B68), Color(0x44945CFF)],
+                    ),
+                  ),
+                  child: const Icon(Icons.local_fire_department_rounded),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('暧昧动作', style: Theme.of(context).textTheme.titleLarge),
+                      const SizedBox(height: 2),
+                      Text(
+                        '轻一点、坏一点、刚刚好。',
+                        style: Theme.of(context).textTheme.labelMedium,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              height: 280,
+              child: GridView.builder(
+                shrinkWrap: true,
+                itemCount: FlirtyAction.all.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 1.18,
+                ),
+                itemBuilder: (context, index) {
+                  final action = FlirtyAction.all[index];
+                  return AnimatedBuilder(
+                    animation: _controller,
+                    builder: (context, child) {
+                      final start = index * 0.07;
+                      final end = (start + 0.45).clamp(0.0, 1.0);
+                      final progress = Curves.easeOutCubic.transform(
+                        ((_controller.value - start) / (end - start))
+                            .clamp(0.0, 1.0),
+                      );
+                      return Transform.translate(
+                        offset: Offset(0, (1 - progress) * 24),
+                        child: Opacity(
+                          opacity: progress,
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(24),
+                      onTap: () => Navigator.of(context).pop(action),
+                      child: Ink(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(24),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              action.gradient.first.withValues(alpha: 0.82),
+                              action.gradient.last.withValues(alpha: 0.66),
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: action.gradient.first.withValues(alpha: 0.18),
+                              blurRadius: 18,
+                            ),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 38,
+                                height: 38,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white.withValues(alpha: 0.16),
+                                ),
+                                child: Icon(action.icon, color: Colors.white),
+                              ),
+                              const Spacer(),
+                              Text(
+                                action.label,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(color: Colors.white),
+                              ),
+                              const SizedBox(height: 6),
+                              Text(
+                                action.hint,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelMedium
+                                    ?.copyWith(
+                                      color: Colors.white.withValues(alpha: 0.76),
+                                      letterSpacing: 0.15,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 8),
+            Center(
+              child: Text(
+                '点一下就发出一个小动作',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

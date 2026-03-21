@@ -8,6 +8,7 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import '../models/app_user.dart';
 import '../models/chat_message_model.dart';
 import '../models/chat_thread.dart';
+import '../models/flirty_action.dart';
 import '../providers/app_providers.dart';
 import '../services/api_config.dart' as api;
 import '../services/api_config.dart';
@@ -510,6 +511,37 @@ class ChatController extends StateNotifier<ChatRoomState> {
       );
       state = state.copyWith(errorMessage: '$error');
     }
+  }
+
+  Future<void> sendFlirtyAction(FlirtyAction action) async {
+    final session = _ref.read(authControllerProvider).valueOrNull;
+    if (session == null) return;
+
+    final optimisticMessage = ChatMessageModel(
+      id: DateTime.now().microsecondsSinceEpoch,
+      clientMessageId: _buildClientMessageId(),
+      fromUser: session.user.id,
+      toUser: peer.id,
+      content: action.preview,
+      type: 'flirt',
+      timestamp: DateTime.now(),
+      mediaUrl: action.id,
+      status: ChatMessageStatus.sending,
+    );
+
+    state = state.copyWith(
+      messages: [...state.messages, optimisticMessage]
+        ..sort((left, right) => left.timestamp.compareTo(right.timestamp)),
+      sendingCount: state.sendingCount + 1,
+      clearError: true,
+    );
+    _ref.read(chatThreadsControllerProvider.notifier).upsertThreadPreview(
+          peer,
+          optimisticMessage.copyWith(content: action.preview),
+          resetUnread: true,
+        );
+
+    await _dispatchMessage(optimisticMessage);
   }
 
   Future<void> retryMessage(ChatMessageModel message) async {

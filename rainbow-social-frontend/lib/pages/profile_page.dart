@@ -53,6 +53,12 @@ class ProfilePage extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 18),
+              if (summary.valueOrNull != null &&
+                  summary.valueOrNull!.received.isNotEmpty &&
+                  summary.valueOrNull!.mutual.isEmpty) ...[
+                _IncomingLikeCard(user: summary.valueOrNull!.received.first.user),
+                const SizedBox(height: 16),
+              ],
               SizedBox(
                 height: 380,
                 child: Stack(
@@ -248,28 +254,181 @@ class _LikeSummarySection extends StatelessWidget {
           badgeBuilder: (item) => item.isMutual ? '可聊天' : '回关即可聊',
         ),
         const SizedBox(height: 12),
-        GlassCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('互相喜欢', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 12),
-              if (summary.mutual.isEmpty)
-                const Text('还没有互相喜欢的人')
-              else
-                ...summary.mutual.map(
-                  (item) => _UserBadgeRow(
-                    user: item.user,
-                    badge: '可聊天',
-                    actionLabel: '去聊天',
-                    onAction: () => Navigator.of(context)
-                        .pushNamed(AppRouter.chat, arguments: item.user),
+        _MutualLikeSpotlight(summary: summary),
+      ],
+    );
+  }
+}
+
+class _IncomingLikeCard extends StatefulWidget {
+  const _IncomingLikeCard({required this.user});
+
+  final AppUser user;
+
+  @override
+  State<_IncomingLikeCard> createState() => _IncomingLikeCardState();
+}
+
+class _IncomingLikeCardState extends State<_IncomingLikeCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final alpha = 0.14 + (_controller.value * 0.08);
+        return Container(
+          padding: const EdgeInsets.all(1.2),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0x55FF976C).withValues(alpha: alpha + 0.12),
+                const Color(0x558667FF).withValues(alpha: alpha),
+              ],
+            ),
+          ),
+          child: child,
+        );
+      },
+      child: GlassCard(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+        borderRadius: BorderRadius.circular(27),
+        child: Row(
+          children: [
+            AvatarWidget(
+              imageUrl: widget.user.avatar,
+              radius: 26,
+              isOnline: widget.user.onlineStatus,
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('收到喜欢', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${widget.user.nickname} 喜欢了你，回个喜欢就能聊天。',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: const Color(0xFFDAD5E8),
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            FilledButton(
+              onPressed: () => Navigator.of(context)
+                  .pushNamed(AppRouter.detail, arguments: widget.user),
+              child: const Text('去看看'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MutualLikeSpotlight extends StatelessWidget {
+  const _MutualLikeSpotlight({required this.summary});
+
+  final MatchSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(1.2),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0x55F29A63),
+            Color(0x55895EFF),
+            Color(0x55EA87FF),
+          ],
+        ),
+      ),
+      child: GlassCard(
+        borderRadius: BorderRadius.circular(29),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '互相喜欢',
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(fontSize: 22),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        '关系已经升温，现在最适合展开聊天。',
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: const Color(0xFFC7C1D7),
+                              letterSpacing: 0.2,
+                            ),
+                      ),
+                    ],
                   ),
                 ),
-            ],
-          ),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                  decoration: BoxDecoration(
+                    color: const Color(0x22FFFFFF),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '${summary.mutual.length}',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            if (summary.mutual.isEmpty)
+              const Text('还没有互相喜欢的人')
+            else
+              ...summary.mutual.map(
+                (item) => _UserBadgeRow(
+                  user: item.user,
+                  badge: '可聊天',
+                  actionLabel: '去聊天',
+                  onAction: () => Navigator.of(context)
+                      .pushNamed(AppRouter.chat, arguments: item.user),
+                ),
+              ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }

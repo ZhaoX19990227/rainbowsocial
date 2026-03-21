@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 
 import '../models/chat_message_model.dart';
+import '../models/flirty_action.dart';
 import '../theme/app_theme.dart';
 
 class MessageBubble extends StatelessWidget {
@@ -92,6 +93,11 @@ class MessageBubble extends StatelessWidget {
                 ),
                 child: message.isAudio
                     ? _AudioMessageContent(message: message, isMine: isMine)
+                    : message.isFlirty
+                        ? _FlirtyActionContent(
+                            message: message,
+                            isMine: isMine,
+                          )
                     : message.isImage
                         ? _ImageMessageContent(message: message)
                         : Text(message.content),
@@ -135,6 +141,134 @@ class MessageBubble extends StatelessWidget {
                   ),
                 ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _FlirtyActionContent extends StatefulWidget {
+  const _FlirtyActionContent({
+    required this.message,
+    required this.isMine,
+  });
+
+  final ChatMessageModel message;
+  final bool isMine;
+
+  @override
+  State<_FlirtyActionContent> createState() => _FlirtyActionContentState();
+}
+
+class _FlirtyActionContentState extends State<_FlirtyActionContent>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final action = FlirtyAction.byId(widget.message.flirtyActionId);
+    final textColor = widget.isMine ? Colors.white : AppTheme.textPrimary;
+
+    return InkWell(
+      borderRadius: BorderRadius.circular(22),
+      onTap: () {
+        _controller
+          ..reset()
+          ..forward();
+      },
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, child) {
+          final pulse = 1 + math.sin(_controller.value * math.pi * 2) * 0.035;
+          return Transform.scale(scale: pulse, child: child);
+        },
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 248),
+          padding: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            gradient: LinearGradient(
+              colors: [
+                action.gradient.first.withValues(alpha: 0.95),
+                action.gradient.last.withValues(alpha: 0.92),
+              ],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: action.gradient.first.withValues(alpha: 0.24),
+                blurRadius: 24,
+              ),
+            ],
+          ),
+          child: Container(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: const Color(0xB3151721),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.12),
+                      ),
+                      child: Icon(action.icon, color: Colors.white, size: 18),
+                    ),
+                    const SizedBox(width: 10),
+                    Flexible(
+                      child: Text(
+                        action.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Colors.white,
+                              fontSize: 16,
+                            ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  widget.message.content,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: textColor.withValues(alpha: 0.92),
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  action.hint,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.68),
+                        letterSpacing: 0.2,
+                      ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

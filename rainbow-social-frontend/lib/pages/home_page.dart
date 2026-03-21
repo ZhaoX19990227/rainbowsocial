@@ -679,7 +679,7 @@ class _MatchOverlayState extends State<_MatchOverlay>
               ),
             ),
           ),
-          ...List.generate(9, (index) {
+          ...List.generate(14, (index) {
             final angle = (math.pi * 2 / 9) * index;
             return Positioned(
               left: 0,
@@ -690,7 +690,7 @@ class _MatchOverlayState extends State<_MatchOverlay>
                 animation: _controller,
                 builder: (context, child) {
                   final distance =
-                      130 + (index * 12.0) + (_controller.value * 18);
+                      120 + (index * 10.0) + (_controller.value * 26);
                   return Transform.translate(
                     offset: Offset(
                       math.cos(angle) * distance,
@@ -705,13 +705,37 @@ class _MatchOverlayState extends State<_MatchOverlay>
                 child: const Center(
                   child: Icon(
                     Icons.favorite_rounded,
-                    color: Color(0x44FFFFFF),
-                    size: 26,
+                    color: Color(0x55FFFFFF),
+                    size: 22,
                   ),
                 ),
               ),
             );
           }),
+          Positioned.fill(
+            child: IgnorePointer(
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, _) {
+                  return Opacity(
+                    opacity: (1 - _controller.value) * 0.4,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: RadialGradient(
+                          center: Alignment.center,
+                          radius: 0.55 + (_controller.value * 0.2),
+                          colors: [
+                            const Color(0x33FFFFFF),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
           Center(
             child: ScaleTransition(
               scale: CurvedAnimation(
@@ -723,6 +747,27 @@ class _MatchOverlayState extends State<_MatchOverlay>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.08),
+                        ),
+                      ),
+                      child: Text(
+                        '关系升级',
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: const Color(0xFFF4D7C7),
+                              letterSpacing: 0.8,
+                            ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     Text(
                       '互相喜欢',
                       style:
@@ -738,32 +783,71 @@ class _MatchOverlayState extends State<_MatchOverlay>
                             color: AppTheme.textSecondary,
                           ),
                     ),
-                    const SizedBox(height: 26),
-                    Hero(
-                      tag: 'match-avatar-${widget.user.id}',
-                      child: Container(
-                        width: 160,
-                        height: 160,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.25),
-                            width: 3,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.primary.withValues(alpha: 0.28),
-                              blurRadius: 36,
+                    const SizedBox(height: 28),
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: 220,
+                          height: 220,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                AppTheme.tertiary.withValues(alpha: 0.18),
+                                AppTheme.primary.withValues(alpha: 0.08),
+                                Colors.transparent,
+                              ],
                             ),
-                          ],
-                          image: DecorationImage(
-                            image: NetworkImage(avatarUrl),
-                            fit: BoxFit.cover,
                           ),
                         ),
-                      ),
+                        Transform.translate(
+                          offset: const Offset(-48, 8),
+                          child: CircleAvatar(
+                            radius: 38,
+                            backgroundColor:
+                                Colors.white.withValues(alpha: 0.08),
+                            child: Text(
+                              '你',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                        ),
+                        Transform.translate(
+                          offset: const Offset(40, -4),
+                          child: Hero(
+                            tag: 'match-avatar-${widget.user.id}',
+                            child: Container(
+                              width: 126,
+                              height: 126,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.26),
+                                  width: 3,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.primary.withValues(alpha: 0.32),
+                                    blurRadius: 42,
+                                  ),
+                                ],
+                                image: DecorationImage(
+                                  image: NetworkImage(avatarUrl),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.favorite_rounded,
+                          color: Color(0xFFF6C5B8),
+                          size: 30,
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 26),
+                    const SizedBox(height: 30),
                     FilledButton.icon(
                       onPressed: widget.onChat,
                       icon: const Icon(Icons.chat_bubble_rounded),
