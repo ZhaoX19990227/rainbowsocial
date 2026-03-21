@@ -37,6 +37,7 @@ func (s *UserService) UpdateProfile(userID int64, input model.User) (*model.User
 	existing.Photos = sanitizePhotos(input.Photos)
 	existing.Lat = input.Lat
 	existing.Lng = input.Lng
+	existing.LocationLabel = strings.TrimSpace(input.LocationLabel)
 
 	if existing.Nickname == "" {
 		return nil, fmt.Errorf("nickname is required")
@@ -97,6 +98,17 @@ func (s *UserService) Nearby(userID int64, lat, lng float64, minAge, maxAge int,
 	})
 
 	return filtered, nil
+}
+
+func (s *UserService) UpdateLocation(userID int64, lat, lng float64, locationLabel string) (*model.User, error) {
+	locationLabel = strings.TrimSpace(locationLabel)
+	if lat == 0 || lng == 0 {
+		return nil, fmt.Errorf("location coordinates are required")
+	}
+	if err := s.userRepo.UpdateLocation(userID, lat, lng, locationLabel); err != nil {
+		return nil, err
+	}
+	return s.userRepo.GetByID(userID)
 }
 
 func (s *UserService) SetOnlineStatus(userID int64, online bool) error {

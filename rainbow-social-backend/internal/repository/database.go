@@ -56,6 +56,7 @@ func migrate(db *sql.DB) error {
 			tags TEXT NOT NULL DEFAULT '[]',
 			lat REAL NOT NULL DEFAULT 0,
 			lng REAL NOT NULL DEFAULT 0,
+			location_label TEXT NOT NULL DEFAULT '',
 			online_status INTEGER NOT NULL DEFAULT 0,
 			created_at DATETIME NOT NULL,
 			last_active_at DATETIME NOT NULL
@@ -171,6 +172,9 @@ func migrate(db *sql.DB) error {
 		return err
 	}
 	if err := addColumnIfNotExists(db, "users", "password_hash", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
+	if err := addColumnIfNotExists(db, "users", "location_label", "TEXT NOT NULL DEFAULT ''"); err != nil {
 		return err
 	}
 	if err := addColumnIfNotExists(db, "users", "photos", "TEXT NOT NULL DEFAULT '[]'"); err != nil {

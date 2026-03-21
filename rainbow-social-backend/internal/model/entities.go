@@ -3,21 +3,22 @@ package model
 import "time"
 
 type User struct {
-	ID           int64     `json:"id"`
-	Account      string    `json:"account,omitempty"`
-	Email        string    `json:"email"`
-	Nickname     string    `json:"nickname"`
-	Avatar       string    `json:"avatar"`
-	Photos       []string  `json:"photos"`
-	Age          int       `json:"age"`
-	Bio          string    `json:"bio"`
-	Tags         []string  `json:"tags"`
-	Lat          float64   `json:"lat"`
-	Lng          float64   `json:"lng"`
-	OnlineStatus bool      `json:"online_status"`
-	DistanceKM   float64   `json:"distance_km,omitempty"`
-	CreatedAt    time.Time `json:"created_at"`
-	LastActiveAt time.Time `json:"last_active_at"`
+	ID            int64     `json:"id"`
+	Account       string    `json:"account,omitempty"`
+	Email         string    `json:"email"`
+	Nickname      string    `json:"nickname"`
+	Avatar        string    `json:"avatar"`
+	Photos        []string  `json:"photos"`
+	Age           int       `json:"age"`
+	Bio           string    `json:"bio"`
+	Tags          []string  `json:"tags"`
+	Lat           float64   `json:"lat"`
+	Lng           float64   `json:"lng"`
+	LocationLabel string    `json:"location_label,omitempty"`
+	OnlineStatus  bool      `json:"online_status"`
+	DistanceKM    float64   `json:"distance_km,omitempty"`
+	CreatedAt     time.Time `json:"created_at"`
+	LastActiveAt  time.Time `json:"last_active_at"`
 }
 
 type OTPCode struct {
