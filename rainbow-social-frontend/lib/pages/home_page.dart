@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../controllers/auth_controller.dart';
 import '../controllers/home_controller.dart';
+import '../controllers/match_controller.dart';
 import '../models/app_user.dart';
 import '../routes/app_router.dart';
 import '../services/app_feedback.dart';
@@ -296,6 +297,12 @@ class _HomePageState extends ConsumerState<HomePage> {
     }
 
     if (!mounted || result == null) return;
+    if (decision != _SwipeDecision.pass) {
+      await ref.read(matchSummaryControllerProvider.notifier).load();
+      if (result.matched) {
+        await ref.read(matchesControllerProvider.notifier).load();
+      }
+    }
     setState(() {});
     if (result.matched) {
       final matchedUser = result.user;
@@ -441,15 +448,22 @@ class _HomeFeatureCard extends StatelessWidget {
                         ),
                   ),
                   const SizedBox(height: 4),
-                  footer ??
-                      Text(
-                        subtitle ?? '',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              color: AppTheme.textSecondary,
-                            ),
-                      ),
+                  SizedBox(
+                    height: 28,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: footer ??
+                          Text(
+                            subtitle ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(color: AppTheme.textSecondary),
+                          ),
+                    ),
+                  ),
                 ],
               ),
               Positioned(
