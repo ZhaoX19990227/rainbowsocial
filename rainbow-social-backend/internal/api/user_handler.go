@@ -20,6 +20,12 @@ type deviceTokenRequest struct {
 	Platform string `json:"platform"`
 }
 
+type updateLocationRequest struct {
+	Lat           float64 `json:"lat" binding:"required"`
+	Lng           float64 `json:"lng" binding:"required"`
+	LocationLabel string  `json:"location_label"`
+}
+
 func NewUserHandler(userService *service.UserService) *UserHandler {
 	return &UserHandler{userService: userService}
 }
@@ -41,6 +47,26 @@ func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	}
 
 	user, err := h.userService.UpdateProfile(middleware.GetUserID(c), req)
+	if err != nil {
+		failure(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	success(c, user)
+}
+
+func (h *UserHandler) UpdateLocation(c *gin.Context) {
+	var req updateLocationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		failure(c, http.StatusBadRequest, "invalid location payload")
+		return
+	}
+
+	user, err := h.userService.UpdateLocation(
+		middleware.GetUserID(c),
+		req.Lat,
+		req.Lng,
+		req.LocationLabel,
+	)
 	if err != nil {
 		failure(c, http.StatusBadRequest, err.Error())
 		return

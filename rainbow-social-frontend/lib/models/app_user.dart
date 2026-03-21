@@ -13,6 +13,7 @@ class AppUser {
     required this.lat,
     required this.lng,
     required this.onlineStatus,
+    this.locationLabel = '',
     this.distanceKm,
   });
 
@@ -27,6 +28,7 @@ class AppUser {
   final double lat;
   final double lng;
   final bool onlineStatus;
+  final String locationLabel;
   final double? distanceKm;
 
   factory AppUser.fromJson(Map<String, dynamic> json) {
@@ -44,6 +46,7 @@ class AppUser {
       tags: rawTags is List ? rawTags.cast<String>() : const [],
       lat: ((json['lat'] ?? 0) as num).toDouble(),
       lng: ((json['lng'] ?? 0) as num).toDouble(),
+      locationLabel: '${json['location_label'] ?? ''}',
       onlineStatus: json['online_status'] == true || json['online_status'] == 1,
       distanceKm: json['distance_km'] == null
           ? null
@@ -63,6 +66,7 @@ class AppUser {
       'tags': tags,
       'lat': lat,
       'lng': lng,
+      'location_label': locationLabel,
       'online_status': onlineStatus,
       'distance_km': distanceKm,
     };
@@ -84,6 +88,7 @@ class AppUser {
     double? lat,
     double? lng,
     bool? onlineStatus,
+    String? locationLabel,
     double? distanceKm,
   }) {
     return AppUser(
@@ -97,6 +102,7 @@ class AppUser {
       tags: tags ?? this.tags,
       lat: lat ?? this.lat,
       lng: lng ?? this.lng,
+      locationLabel: locationLabel ?? this.locationLabel,
       onlineStatus: onlineStatus ?? this.onlineStatus,
       distanceKm: distanceKm ?? this.distanceKm,
     );

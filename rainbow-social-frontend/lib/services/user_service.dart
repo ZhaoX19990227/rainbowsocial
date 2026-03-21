@@ -28,6 +28,24 @@ class UserService {
     return AppUser.fromJson(response['data'] as Map<String, dynamic>);
   }
 
+  Future<AppUser> updateLocation(
+    String token, {
+    required double lat,
+    required double lng,
+    required String locationLabel,
+  }) async {
+    final response = await _client.post(
+      '/user/location',
+      token: token,
+      body: {
+        'lat': lat,
+        'lng': lng,
+        'location_label': locationLabel,
+      },
+    );
+    return AppUser.fromJson(response['data'] as Map<String, dynamic>);
+  }
+
   Future<List<AppUser>> listUsers(String token) async {
     try {
       final response = await _client.get('/users/list', token: token);

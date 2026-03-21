@@ -9,6 +9,7 @@ import '../services/flash_photo_state_service.dart';
 import '../services/match_service.dart';
 import '../services/safety_service.dart';
 import '../services/location_service.dart';
+import '../services/location_label_service.dart';
 import '../services/session_storage_service.dart';
 import '../services/swipe_service.dart';
 import '../services/upload_service.dart';
@@ -44,6 +45,10 @@ final uploadServiceProvider = Provider<UploadService>((ref) {
 
 final locationServiceProvider = Provider<LocationService>((ref) {
   return LocationService();
+});
+
+final locationLabelServiceProvider = Provider<LocationLabelService>((ref) {
+  return LocationLabelService();
 });
 
 final flashPhotoStateServiceProvider = Provider<FlashPhotoStateService>((ref) {
