@@ -29,6 +29,23 @@ func (h *SwipeHandler) Pass(c *gin.Context) {
 	h.handleSwipe(c, "pass")
 }
 
+func (h *SwipeHandler) Undo(c *gin.Context) {
+	var req swipeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		failure(c, http.StatusBadRequest, "target_user_id is required")
+		return
+	}
+
+	if err := h.swipeService.UndoSwipe(middleware.GetUserID(c), req.TargetUserID); err != nil {
+		failure(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	success(c, gin.H{
+		"action": "undo",
+	})
+}
+
 func (h *SwipeHandler) Recommendations(c *gin.Context) {
 	users, err := h.swipeService.Recommendations(middleware.GetUserID(c))
 	if err != nil {

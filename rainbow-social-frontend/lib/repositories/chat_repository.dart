@@ -13,8 +13,15 @@ class ChatRepository {
   Future<List<ChatMessageModel>> fetchMessages({
     required String token,
     required int peerId,
+    int limit = 30,
+    int? beforeId,
   }) =>
-      _service.fetchMessages(token: token, peerId: peerId);
+      _service.fetchMessages(
+        token: token,
+        peerId: peerId,
+        limit: limit,
+        beforeId: beforeId,
+      );
 
   Future<void> markConversationRead({
     required String token,
@@ -38,11 +45,15 @@ class ChatRepository {
     required int toUser,
     required String content,
     String type = 'text',
+    String mediaUrl = '',
+    int durationSeconds = 0,
   }) =>
       _service.encodeOutbound(
         clientMessageId: clientMessageId,
         toUser: toUser,
         content: content,
         type: type,
+        mediaUrl: mediaUrl,
+        durationSeconds: durationSeconds,
       );
 }

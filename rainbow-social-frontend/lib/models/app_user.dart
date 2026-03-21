@@ -6,6 +6,7 @@ class AppUser {
     required this.email,
     required this.nickname,
     required this.avatar,
+    required this.photos,
     required this.age,
     required this.bio,
     required this.tags,
@@ -19,6 +20,7 @@ class AppUser {
   final String email;
   final String nickname;
   final String avatar;
+  final List<String> photos;
   final int age;
   final String bio;
   final List<String> tags;
@@ -34,6 +36,9 @@ class AppUser {
       email: '${json['email'] ?? ''}',
       nickname: '${json['nickname'] ?? ''}',
       avatar: '${json['avatar'] ?? ''}',
+      photos: json['photos'] is List
+          ? (json['photos'] as List).cast<String>()
+          : const [],
       age: ((json['age'] ?? 18) as num).toInt(),
       bio: '${json['bio'] ?? ''}',
       tags: rawTags is List ? rawTags.cast<String>() : const [],
@@ -52,6 +57,7 @@ class AppUser {
       'email': email,
       'nickname': nickname,
       'avatar': avatar,
+      'photos': photos,
       'age': age,
       'bio': bio,
       'tags': tags,
@@ -71,6 +77,7 @@ class AppUser {
     String? email,
     String? nickname,
     String? avatar,
+    List<String>? photos,
     int? age,
     String? bio,
     List<String>? tags,
@@ -84,6 +91,7 @@ class AppUser {
       email: email ?? this.email,
       nickname: nickname ?? this.nickname,
       avatar: avatar ?? this.avatar,
+      photos: photos ?? this.photos,
       age: age ?? this.age,
       bio: bio ?? this.bio,
       tags: tags ?? this.tags,

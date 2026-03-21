@@ -3,9 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../controllers/chat_controller.dart';
 import '../routes/app_router.dart';
+import '../services/app_feedback.dart';
 import '../state/chat_list_state.dart';
 import '../theme/app_theme.dart';
 import '../utils/chat_time_formatter.dart';
+import '../widgets/app_empty_state.dart';
+import '../widgets/app_skeleton.dart';
 import '../widgets/avatar_widget.dart';
 import '../widgets/glass_card.dart';
 
@@ -15,6 +18,11 @@ class ChatListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final threadsState = ref.watch(chatThreadsControllerProvider);
+    if (threadsState.errorMessage != null && threadsState.threads.isEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        AppFeedback.showError(threadsState.errorMessage!);
+      });
+    }
 
     return SafeArea(
       child: Padding(
@@ -65,13 +73,41 @@ class _ChatListBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (state.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return ListView.separated(
+        padding: const EdgeInsets.only(bottom: 110),
+        itemCount: 4,
+        separatorBuilder: (_, __) => const SizedBox(height: 14),
+        itemBuilder: (context, index) => const GlassCard(
+          child: Row(
+            children: [
+              AppSkeleton(height: 56, width: 56, radius: 28),
+              SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AppSkeleton(height: 16, width: 110),
+                    SizedBox(height: 10),
+                    AppSkeleton(height: 13, width: 180),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
     }
     if (state.errorMessage != null && state.threads.isEmpty) {
-      return Center(child: Text(state.errorMessage!));
+      return AppEmptyState(
+        title: '会话列表加载失败',
+        subtitle: state.errorMessage!,
+      );
     }
     if (state.threads.isEmpty) {
-      return const Center(child: Text('还没有会话，去滑卡匹配新朋友吧'));
+      return const AppEmptyState(
+        title: '还没有会话',
+        subtitle: '去推荐页滑卡，匹配到心动的人之后就能开始聊天。',
+      );
     }
 
     return ListView.separated(

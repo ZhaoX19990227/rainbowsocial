@@ -30,13 +30,25 @@ func NewChatService(
 	}
 }
 
-func (s *ChatService) SaveMessage(fromUserID, toUserID int64, content, messageType, clientMessageID string) (*model.ChatMessage, error) {
+func (s *ChatService) SaveMessage(fromUserID, toUserID int64, content, messageType, clientMessageID, mediaURL string, durationSeconds int) (*model.ChatMessage, error) {
 	content = strings.TrimSpace(content)
-	if content == "" {
+	mediaURL = strings.TrimSpace(mediaURL)
+	if content == "" && mediaURL == "" {
 		return nil, fmt.Errorf("content is required")
 	}
 	if messageType == "" {
 		messageType = "text"
+	}
+	if messageType == "audio" {
+		if mediaURL == "" {
+			return nil, fmt.Errorf("audio media_url is required")
+		}
+		if durationSeconds <= 0 {
+			return nil, fmt.Errorf("audio duration is required")
+		}
+		if content == "" {
+			content = "语音消息"
+		}
 	}
 
 	if _, err := s.userRepo.GetByID(fromUserID); err != nil {
@@ -66,6 +78,8 @@ func (s *ChatService) SaveMessage(fromUserID, toUserID int64, content, messageTy
 		ToUser:          toUserID,
 		Content:         content,
 		Type:            messageType,
+		MediaURL:        mediaURL,
+		DurationSeconds: durationSeconds,
 	}
 	return s.chatRepo.SaveMessage(message)
 }
@@ -77,17 +91,19 @@ func (s *ChatService) ListConversationSummaries(userID int64) ([]model.Conversat
 	return s.chatRepo.ListConversationSummaries(userID)
 }
 
-func (s *ChatService) ListMessages(userID, peerUserID int64, limit int) ([]model.ChatMessage, error) {
+func (s *ChatService) ListMessages(userID, peerUserID int64, limit int, beforeID int64) ([]model.ChatMessage, error) {
 	if err := s.validateConversationAccess(userID, peerUserID); err != nil {
 		return nil, err
 	}
 
-	messages, err := s.chatRepo.ListMessagesBetweenUsers(userID, peerUserID, limit)
+	messages, err := s.chatRepo.ListMessagesBetweenUsers(userID, peerUserID, limit, beforeID)
 	if err != nil {
 		return nil, err
 	}
-	if err := s.chatRepo.MarkConversationRead(userID, peerUserID, time.Now().UTC()); err != nil {
-		return nil, err
+	if beforeID == 0 {
+		if err := s.chatRepo.MarkConversationRead(userID, peerUserID, time.Now().UTC()); err != nil {
+			return nil, err
+		}
 	}
 	return messages, nil
 }

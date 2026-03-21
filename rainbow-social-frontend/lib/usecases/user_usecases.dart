@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/app_user.dart';
+import '../models/nearby_filter.dart';
 import '../providers/app_providers.dart';
 import '../repositories/user_repository.dart';
 
@@ -43,6 +44,7 @@ class GetNearbyUsersUseCase {
     String token, {
     required double lat,
     required double lng,
+    NearbyFilter filter = const NearbyFilter(),
   }) =>
-      _repository.nearby(token, lat: lat, lng: lng);
+      _repository.nearby(token, lat: lat, lng: lng, filter: filter);
 }

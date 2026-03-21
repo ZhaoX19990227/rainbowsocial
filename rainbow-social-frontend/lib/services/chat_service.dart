@@ -41,11 +41,17 @@ class ChatService {
   Future<List<ChatMessageModel>> fetchMessages({
     required String token,
     required int peerId,
+    int limit = 30,
+    int? beforeId,
   }) async {
     try {
       final response = await _client.get(
         '/conversations/$peerId/messages',
         token: token,
+        query: {
+          'limit': '$limit',
+          if (beforeId != null && beforeId > 0) 'before_id': '$beforeId',
+        },
       );
       final items = response['data'] as List<dynamic>;
       return items
@@ -54,7 +60,11 @@ class ChatService {
           .toList();
     } catch (_) {
       if (!AppFlags.useMockFallbacks) rethrow;
-      return MockSocialData.initialMessages(99, peerId);
+      final items = MockSocialData.initialMessages(99, peerId);
+      if (beforeId != null && beforeId > 0) {
+        return const [];
+      }
+      return items.take(limit).toList();
     }
   }
 
@@ -90,12 +100,16 @@ class ChatService {
     required int toUser,
     required String content,
     String type = 'text',
+    String mediaUrl = '',
+    int durationSeconds = 0,
   }) {
     return jsonEncode({
       'client_message_id': clientMessageId,
       'to_user': toUser,
       'content': content,
       'type': type,
+      'media_url': mediaUrl,
+      'duration_seconds': durationSeconds,
     });
   }
 }

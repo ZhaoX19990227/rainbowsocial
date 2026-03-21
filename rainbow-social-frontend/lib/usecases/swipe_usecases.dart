@@ -22,6 +22,10 @@ final passUserUseCaseProvider = Provider<PassUserUseCase>((ref) {
   return PassUserUseCase(ref.read(swipeRepositoryProvider));
 });
 
+final undoSwipeUseCaseProvider = Provider<UndoSwipeUseCase>((ref) {
+  return UndoSwipeUseCase(ref.read(swipeRepositoryProvider));
+});
+
 class GetRecommendationsUseCase {
   const GetRecommendationsUseCase(this._repository);
   final SwipeRepository _repository;
@@ -44,4 +48,12 @@ class PassUserUseCase {
 
   Future<SwipeResult> call(String token, int targetUserId) =>
       _repository.pass(token, targetUserId);
+}
+
+class UndoSwipeUseCase {
+  const UndoSwipeUseCase(this._repository);
+  final SwipeRepository _repository;
+
+  Future<void> call(String token, int targetUserId) =>
+      _repository.undo(token, targetUserId);
 }

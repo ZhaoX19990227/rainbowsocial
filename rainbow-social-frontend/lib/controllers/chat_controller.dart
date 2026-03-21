@@ -2,16 +2,19 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 import '../models/app_user.dart';
 import '../models/chat_message_model.dart';
 import '../models/chat_thread.dart';
 import '../providers/app_providers.dart';
+import '../services/api_config.dart' as api;
 import '../services/api_config.dart';
 import '../state/chat_list_state.dart';
 import '../state/chat_room_state.dart';
 import '../usecases/chat_usecases.dart';
+import '../usecases/upload_usecases.dart';
 import 'auth_controller.dart';
 
 final chatThreadsControllerProvider =
@@ -136,6 +139,8 @@ class ChatThreadsController extends StateNotifier<ChatListState> {
 }
 
 class ChatController extends StateNotifier<ChatRoomState> {
+  static const _pageSize = 30;
+
   ChatController(this._ref, this.peer)
       : super(const ChatRoomState(isLoading: true)) {
     _initialize();
@@ -151,30 +156,51 @@ class ChatController extends StateNotifier<ChatRoomState> {
     _connectSocket();
   }
 
-  Future<void> _loadHistory() async {
+  Future<void> _loadHistory({bool loadMore = false}) async {
     final session = _ref.read(authControllerProvider).valueOrNull;
     if (session == null) {
       state = const ChatRoomState(messages: []);
       return;
     }
 
-    state = state.copyWith(isLoading: true, clearError: true);
+    if (loadMore) {
+      if (state.isLoadingMore || !state.hasMore || state.messages.isEmpty) {
+        return;
+      }
+      state = state.copyWith(isLoadingMore: true, clearError: true);
+    } else {
+      state = state.copyWith(isLoading: true, clearError: true);
+    }
+
     try {
       final items =
           await _ref.read(getConversationMessagesUseCaseProvider).call(
                 token: session.token,
                 peerId: peer.id,
+                limit: _pageSize,
+                beforeId: loadMore ? state.messages.first.id : null,
               );
-      state =
-          state.copyWith(messages: items, isLoading: false, clearError: true);
-      await _markConversationRead();
+      final merged = loadMore ? [...items, ...state.messages] : items;
+      state = state.copyWith(
+        messages: _dedupeMessages(merged),
+        isLoading: false,
+        isLoadingMore: false,
+        hasMore: items.length >= _pageSize,
+        clearError: true,
+      );
+      if (!loadMore) {
+        await _markConversationRead();
+      }
     } catch (error) {
       state = state.copyWith(
         isLoading: false,
+        isLoadingMore: false,
         errorMessage: '消息加载失败：$error',
       );
     }
   }
+
+  Future<void> loadMoreHistory() => _loadHistory(loadMore: true);
 
   Future<void> _markConversationRead() async {
     final session = _ref.read(authControllerProvider).valueOrNull;
@@ -252,7 +278,8 @@ class ChatController extends StateNotifier<ChatRoomState> {
             .map((item) => item.clientMessageId == message.clientMessageId
                 ? message.copyWith(status: ChatMessageStatus.sent)
                 : item)
-            .toList(),
+            .toList()
+          ..sort((left, right) => left.timestamp.compareTo(right.timestamp)),
         sendingCount: _pendingCountAfterResolve(message.clientMessageId),
         clearError: true,
       );
@@ -265,7 +292,8 @@ class ChatController extends StateNotifier<ChatRoomState> {
       );
       if (!exists) {
         state = state.copyWith(
-          messages: [...state.messages, message],
+          messages: [...state.messages, message]
+            ..sort((left, right) => left.timestamp.compareTo(right.timestamp)),
           clearError: true,
         );
       }
@@ -345,7 +373,8 @@ class ChatController extends StateNotifier<ChatRoomState> {
     );
 
     state = state.copyWith(
-      messages: [...state.messages, optimisticMessage],
+      messages: [...state.messages, optimisticMessage]
+        ..sort((left, right) => left.timestamp.compareTo(right.timestamp)),
       sendingCount: state.sendingCount + 1,
       clearError: true,
     );
@@ -358,7 +387,78 @@ class ChatController extends StateNotifier<ChatRoomState> {
     await _dispatchMessage(optimisticMessage);
   }
 
+  Future<void> sendAudioMessage({
+    required XFile file,
+    required int durationSeconds,
+  }) async {
+    final session = _ref.read(authControllerProvider).valueOrNull;
+    if (session == null || durationSeconds <= 0) return;
+
+    final optimisticMessage = ChatMessageModel(
+      id: DateTime.now().microsecondsSinceEpoch,
+      clientMessageId: _buildClientMessageId(),
+      fromUser: session.user.id,
+      toUser: peer.id,
+      content: '语音消息',
+      type: 'audio',
+      timestamp: DateTime.now(),
+      mediaUrl: '',
+      localFilePath: file.path,
+      durationSeconds: durationSeconds,
+      status: ChatMessageStatus.sending,
+    );
+
+    state = state.copyWith(
+      messages: [...state.messages, optimisticMessage]
+        ..sort((left, right) => left.timestamp.compareTo(right.timestamp)),
+      sendingCount: state.sendingCount + 1,
+      clearError: true,
+    );
+    _ref.read(chatThreadsControllerProvider.notifier).upsertThreadPreview(
+          peer,
+          optimisticMessage,
+          resetUnread: true,
+        );
+
+    try {
+      final rawUrl = await _ref.read(uploadAudioUseCaseProvider).call(
+            token: session.token,
+            file: file,
+          );
+      final uploadedUrl = rawUrl.startsWith('http')
+          ? rawUrl
+          : '${api.ApiConfig.baseUrl}$rawUrl';
+      final uploadedMessage = optimisticMessage.copyWith(
+        mediaUrl: uploadedUrl,
+        durationSeconds: durationSeconds,
+      );
+      state = state.copyWith(
+        messages: state.messages
+            .map((item) =>
+                item.clientMessageId == optimisticMessage.clientMessageId
+                    ? uploadedMessage
+                    : item)
+            .toList(),
+        clearError: true,
+      );
+      await _dispatchMessage(uploadedMessage);
+    } catch (error) {
+      _handleMessageError(
+        clientMessageId: optimisticMessage.clientMessageId,
+        error: '语音发送失败，请稍后重试',
+      );
+      state = state.copyWith(errorMessage: '$error');
+    }
+  }
+
   Future<void> retryMessage(ChatMessageModel message) async {
+    if (message.isAudio && message.mediaUrl.isEmpty) {
+      _handleMessageError(
+        clientMessageId: message.clientMessageId,
+        error: '本地语音未上传成功，请重新录制',
+      );
+      return;
+    }
     state = state.copyWith(
       messages: state.messages
           .map((item) => item.clientMessageId == message.clientMessageId
@@ -391,6 +491,9 @@ class ChatController extends StateNotifier<ChatRoomState> {
               clientMessageId: message.clientMessageId,
               toUser: peer.id,
               content: message.content,
+              type: message.type,
+              mediaUrl: message.mediaUrl,
+              durationSeconds: message.durationSeconds,
             ),
       );
     } catch (error) {
@@ -413,6 +516,25 @@ class ChatController extends StateNotifier<ChatRoomState> {
   String _buildClientMessageId() {
     final userId = _ref.read(authControllerProvider).valueOrNull?.user.id ?? 0;
     return '${userId}_${peer.id}_${DateTime.now().microsecondsSinceEpoch}';
+  }
+
+  List<ChatMessageModel> _dedupeMessages(List<ChatMessageModel> items) {
+    final result = <ChatMessageModel>[];
+    for (final item in items) {
+      final index = result.indexWhere(
+        (existing) =>
+            (item.id != 0 && existing.id == item.id) ||
+            (item.clientMessageId.isNotEmpty &&
+                existing.clientMessageId == item.clientMessageId),
+      );
+      if (index >= 0) {
+        result[index] = item;
+      } else {
+        result.add(item);
+      }
+    }
+    result.sort((left, right) => left.timestamp.compareTo(right.timestamp));
+    return result;
   }
 
   @override

@@ -15,6 +15,11 @@ type UserHandler struct {
 	userService *service.UserService
 }
 
+type deviceTokenRequest struct {
+	Token    string `json:"token" binding:"required"`
+	Platform string `json:"platform"`
+}
+
 func NewUserHandler(userService *service.UserService) *UserHandler {
 	return &UserHandler{userService: userService}
 }
@@ -64,11 +69,43 @@ func (h *UserHandler) Nearby(c *gin.Context) {
 		failure(c, http.StatusBadRequest, "lng must be a valid number")
 		return
 	}
+	minAge, _ := strconv.Atoi(c.DefaultQuery("min_age", "0"))
+	maxAge, _ := strconv.Atoi(c.DefaultQuery("max_age", "0"))
+	onlineOnly := c.DefaultQuery("online_only", "false") == "true"
+	tag := c.Query("tag")
 
-	users, err := h.userService.Nearby(middleware.GetUserID(c), lat, lng)
+	users, err := h.userService.Nearby(middleware.GetUserID(c), lat, lng, minAge, maxAge, onlineOnly, tag)
 	if err != nil {
 		failure(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 	success(c, users)
+}
+
+func (h *UserHandler) SaveDeviceToken(c *gin.Context) {
+	var req deviceTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		failure(c, http.StatusBadRequest, "token is required")
+		return
+	}
+
+	if err := h.userService.SaveDeviceToken(middleware.GetUserID(c), req.Token, req.Platform); err != nil {
+		failure(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	success(c, gin.H{"message": "device token saved"})
+}
+
+func (h *UserHandler) DeleteDeviceToken(c *gin.Context) {
+	var req deviceTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		failure(c, http.StatusBadRequest, "token is required")
+		return
+	}
+
+	if err := h.userService.DeleteDeviceToken(middleware.GetUserID(c), req.Token); err != nil {
+		failure(c, http.StatusBadRequest, err.Error())
+		return
+	}
+	success(c, gin.H{"message": "device token deleted"})
 }

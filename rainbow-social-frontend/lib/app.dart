@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'routes/app_router.dart';
+import 'services/app_feedback.dart';
 import 'theme/app_theme.dart';
 
 class RainbowSocialApp extends StatelessWidget {
@@ -12,6 +13,7 @@ class RainbowSocialApp extends StatelessWidget {
     return MaterialApp(
       title: '彩虹社交',
       debugShowCheckedModeBanner: false,
+      scaffoldMessengerKey: AppFeedback.messengerKey,
       locale: const Locale('zh', 'CN'),
       supportedLocales: const [
         Locale('zh', 'CN'),

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../controllers/safety_controller.dart';
 import '../models/app_user.dart';
 import '../routes/app_router.dart';
+import '../services/app_feedback.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/tag_chip.dart';
 
@@ -29,9 +30,7 @@ class UserDetailPage extends ConsumerWidget {
                           reason: 'inappropriate',
                         );
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('举报已提交')),
-                      );
+                      AppFeedback.showToast('举报已提交');
                     }
                   } else if (value == 'block') {
                     await ref.read(safetyControllerProvider.notifier).block(
@@ -39,9 +38,7 @@ class UserDetailPage extends ConsumerWidget {
                           reason: 'user_blocked_from_profile',
                         );
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('已屏蔽该用户')),
-                      );
+                      AppFeedback.showToast('已屏蔽该用户');
                     }
                   }
                 },
@@ -133,6 +130,31 @@ class UserDetailPage extends ConsumerWidget {
                       trailing: Icon(Icons.bolt_rounded),
                     ),
                   ),
+                  if (user.photos.isNotEmpty) ...[
+                    const SizedBox(height: 18),
+                    Text('更多照片', style: Theme.of(context).textTheme.titleLarge),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 180,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: user.photos.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 12),
+                        itemBuilder: (context, index) {
+                          final photo = user.photos[index];
+                          return ClipRRect(
+                            borderRadius: BorderRadius.circular(24),
+                            child: Image.network(
+                              photo,
+                              width: 150,
+                              height: 180,
+                              fit: BoxFit.cover,
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -21,6 +21,8 @@ type inboundMessage struct {
 	ToUser          int64  `json:"to_user"`
 	Content         string `json:"content"`
 	Type            string `json:"type"`
+	MediaURL        string `json:"media_url"`
+	DurationSeconds int    `json:"duration_seconds"`
 }
 
 type messageErrorEnvelope struct {
@@ -73,6 +75,8 @@ func (c *Client) ReadPump() {
 			inbound.Content,
 			inbound.Type,
 			inbound.ClientMessageID,
+			inbound.MediaURL,
+			inbound.DurationSeconds,
 		)
 		if err != nil {
 			log.Printf("save message: %v", err)

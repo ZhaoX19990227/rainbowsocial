@@ -7,6 +7,7 @@ type User struct {
 	Email        string    `json:"email"`
 	Nickname     string    `json:"nickname"`
 	Avatar       string    `json:"avatar"`
+	Photos       []string  `json:"photos"`
 	Age          int       `json:"age"`
 	Bio          string    `json:"bio"`
 	Tags         []string  `json:"tags"`
@@ -68,6 +69,9 @@ type ChatMessage struct {
 	ToUser          int64     `json:"to_user"`
 	Content         string    `json:"content"`
 	Type            string    `json:"type"`
+	MediaURL        string    `json:"media_url,omitempty"`
+	DurationSeconds int       `json:"duration_seconds,omitempty"`
+	DeliveryStatus  string    `json:"delivery_status,omitempty"`
 	Timestamp       time.Time `json:"timestamp"`
 }
 
@@ -89,4 +93,13 @@ type ConversationSummary struct {
 	UnreadCount   int       `json:"unread_count"`
 	IsPinned      bool      `json:"is_pinned"`
 	MatchedAt     time.Time `json:"matched_at,omitempty"`
+}
+
+type DeviceToken struct {
+	ID        int64     `json:"id"`
+	UserID    int64     `json:"user_id"`
+	Token     string    `json:"token"`
+	Platform  string    `json:"platform"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }

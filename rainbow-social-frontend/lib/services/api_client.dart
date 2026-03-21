@@ -1,6 +1,19 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
+
+class MultipartUploadFile {
+  const MultipartUploadFile({
+    required this.field,
+    required this.filename,
+    required this.bytes,
+  });
+
+  final String field;
+  final String filename;
+  final Uint8List bytes;
+}
 
 class ApiClient {
   ApiClient({required this.baseUrl});
@@ -43,9 +56,51 @@ class ApiClient {
     return _decode(response);
   }
 
-  Map<String, String> _headers(String? token) {
+  Future<Map<String, dynamic>> delete(
+    String path, {
+    String? token,
+    Map<String, dynamic>? body,
+  }) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl$path'),
+      headers: _headers(token),
+      body: jsonEncode(body ?? const {}),
+    );
+    return _decode(response);
+  }
+
+  Future<Map<String, dynamic>> multipart(
+    String path, {
+    String? token,
+    required List<MultipartUploadFile> files,
+    Map<String, String>? fields,
+  }) async {
+    final request = http.MultipartRequest('POST', Uri.parse('$baseUrl$path'));
+    request.headers.addAll(_headers(token, includeContentType: false));
+    if (fields != null) {
+      request.fields.addAll(fields);
+    }
+    for (final entry in files) {
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          entry.field,
+          entry.bytes,
+          filename: entry.filename,
+        ),
+      );
+    }
+
+    final streamed = await request.send();
+    final response = await http.Response.fromStream(streamed);
+    return _decode(response);
+  }
+
+  Map<String, String> _headers(
+    String? token, {
+    bool includeContentType = true,
+  }) {
     return {
-      'Content-Type': 'application/json',
+      if (includeContentType) 'Content-Type': 'application/json',
       if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
   }

@@ -10,6 +10,7 @@ class MockSocialData {
       nickname: 'Julian',
       avatar:
           'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=900&q=80',
+      photos: [],
       age: 28,
       bio:
           'Architect by day, salsa dancer by night. Looking for someone who appreciates a good espresso and better conversation.',
@@ -25,6 +26,7 @@ class MockSocialData {
       nickname: 'Alex',
       avatar:
           'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=900&q=80',
+      photos: [],
       age: 24,
       bio: 'Soft-spoken design nerd, gallery lover, and late-night walker.',
       tags: ['Design', 'Museums', 'Brunch'],
@@ -39,6 +41,7 @@ class MockSocialData {
       nickname: 'Leo',
       avatar:
           'https://images.unsplash.com/photo-1504593811423-6dd665756598?auto=format&fit=crop&w=900&q=80',
+      photos: [],
       age: 26,
       bio: 'Jazz clubs, digital art, and a weakness for dramatic skylines.',
       tags: ['Jazz', 'Architecture', 'Yoga'],
@@ -53,6 +56,7 @@ class MockSocialData {
       nickname: 'Marcus',
       avatar:
           'https://images.unsplash.com/photo-1463453091185-61582044d556?auto=format&fit=crop&w=900&q=80',
+      photos: [],
       age: 30,
       bio:
           'Runner, cookbook collector, and always planning the next city escape.',

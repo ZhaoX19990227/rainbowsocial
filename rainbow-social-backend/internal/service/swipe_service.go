@@ -1,6 +1,7 @@
 package service
 
 import (
+	"database/sql"
 	"fmt"
 	"sort"
 
@@ -113,4 +114,30 @@ func (s *SwipeService) Recommendations(userID int64) ([]model.User, error) {
 		filtered = filtered[:20]
 	}
 	return filtered, nil
+}
+
+func (s *SwipeService) UndoSwipe(userID, targetUserID int64) error {
+	if userID == targetUserID {
+		return fmt.Errorf("cannot undo swipe yourself")
+	}
+	if _, err := s.userRepo.GetByID(targetUserID); err != nil {
+		return fmt.Errorf("target user not found")
+	}
+
+	action, err := s.swipeRepo.GetSwipeAction(userID, targetUserID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return fmt.Errorf("no swipe found")
+		}
+		return err
+	}
+	if err := s.swipeRepo.DeleteSwipe(userID, targetUserID); err != nil {
+		return err
+	}
+	if action == "like" {
+		if err := s.matchRepo.DeleteBetweenUsers(userID, targetUserID); err != nil {
+			return err
+		}
+	}
+	return nil
 }

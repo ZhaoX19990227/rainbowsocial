@@ -1,4 +1,5 @@
 import '../models/app_user.dart';
+import '../models/nearby_filter.dart';
 import '../services/user_service.dart';
 
 class UserRepository {
@@ -17,6 +18,7 @@ class UserRepository {
     String token, {
     required double lat,
     required double lng,
+    NearbyFilter filter = const NearbyFilter(),
   }) =>
-      _service.nearby(token, lat: lat, lng: lng);
+      _service.nearby(token, lat: lat, lng: lng, filter: filter);
 }

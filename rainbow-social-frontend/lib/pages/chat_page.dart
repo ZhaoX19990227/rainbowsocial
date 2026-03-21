@@ -1,9 +1,17 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../controllers/auth_controller.dart';
 import '../controllers/chat_controller.dart';
 import '../models/app_user.dart';
+import '../providers/app_providers.dart';
+import '../services/app_feedback.dart';
+import '../widgets/app_empty_state.dart';
+import '../widgets/app_skeleton.dart';
 import '../widgets/avatar_widget.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/message_bubble.dart';
@@ -18,11 +26,20 @@ class ChatPage extends ConsumerStatefulWidget {
 }
 
 class _ChatPageState extends ConsumerState<ChatPage> {
+  static const _cancelThreshold = -72.0;
+
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
+  Timer? _recordingTicker;
+
+  bool _isRecording = false;
+  bool _willCancelRecording = false;
+  bool _isStartingRecording = false;
+  int _recordingSeconds = 0;
 
   @override
   void dispose() {
+    _recordingTicker?.cancel();
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -42,6 +59,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             curve: Curves.easeOutCubic,
           );
         });
+      }
+      if (previous?.errorMessage != next.errorMessage &&
+          next.errorMessage != null) {
+        AppFeedback.showError(next.errorMessage!);
       }
     });
 
@@ -68,113 +89,224 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           ],
         ),
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            if (roomState.errorMessage != null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                child: Text(
-                  roomState.errorMessage!,
-                  style: Theme.of(context).textTheme.labelMedium,
-                ),
-              ),
-            Expanded(
-              child: roomState.isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                      itemCount: roomState.messages.length + 1,
-                      itemBuilder: (context, index) {
-                        if (index == 0) {
-                          return Center(
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 16),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 7),
-                              decoration: BoxDecoration(
-                                color: const Color(0x22181826),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                '今天',
-                                style: Theme.of(context).textTheme.labelMedium,
+      body: Stack(
+        children: [
+          SafeArea(
+            child: Column(
+              children: [
+                if (roomState.errorMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                    child: Text(
+                      roomState.errorMessage!,
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                  ),
+                Expanded(
+                  child: roomState.isLoading
+                      ? const _ChatSkeleton()
+                      : roomState.messages.isEmpty
+                          ? const AppEmptyState(
+                              title: '还没有聊天记录',
+                              subtitle: '发出第一句问候，让这段连接开始吧。',
+                            )
+                          : NotificationListener<ScrollNotification>(
+                              onNotification: (notification) {
+                                if (notification.metrics.pixels <= 60 &&
+                                    roomState.hasMore &&
+                                    !roomState.isLoadingMore) {
+                                  ref
+                                      .read(chatControllerProvider(widget.peer)
+                                          .notifier)
+                                      .loadMoreHistory();
+                                }
+                                return false;
+                              },
+                              child: ListView.builder(
+                                controller: _scrollController,
+                                padding:
+                                    const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                                itemCount: roomState.messages.length + 2,
+                                itemBuilder: (context, index) {
+                                  if (index == 0) {
+                                    return AnimatedSwitcher(
+                                      duration:
+                                          const Duration(milliseconds: 220),
+                                      child: roomState.isLoadingMore
+                                          ? const Padding(
+                                              key: ValueKey('loading-more'),
+                                              padding:
+                                                  EdgeInsets.only(bottom: 12),
+                                              child: Center(
+                                                child: SizedBox(
+                                                  width: 18,
+                                                  height: 18,
+                                                  child:
+                                                      CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                          : const SizedBox.shrink(
+                                              key: ValueKey('loading-idle'),
+                                            ),
+                                    );
+                                  }
+                                  if (index == 1) {
+                                    return Center(
+                                      child: Container(
+                                        margin:
+                                            const EdgeInsets.only(bottom: 16),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 7,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0x22181826),
+                                          borderRadius:
+                                              BorderRadius.circular(999),
+                                        ),
+                                        child: Text(
+                                          '今天',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelMedium,
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  final message = roomState.messages[index - 2];
+                                  return MessageBubble(
+                                    message: message,
+                                    isMine: message.isMine(
+                                      session?.user.id ?? -1,
+                                    ),
+                                    onRetry: message.isFailed
+                                        ? () => ref
+                                            .read(
+                                              chatControllerProvider(
+                                                      widget.peer)
+                                                  .notifier,
+                                            )
+                                            .retryMessage(message)
+                                        : null,
+                                  );
+                                },
                               ),
                             ),
-                          );
-                        }
-                        final message = roomState.messages[index - 1];
-                        return MessageBubble(
-                          message: message,
-                          isMine: message.isMine(session?.user.id ?? -1),
-                          onRetry: message.isFailed
-                              ? () => ref
-                                  .read(
-                                    chatControllerProvider(widget.peer)
-                                        .notifier,
-                                  )
-                                  .retryMessage(message)
-                              : null,
-                        );
-                      },
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                  child: GlassCard(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 8,
                     ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-              child: GlassCard(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                borderRadius: BorderRadius.circular(999),
-                child: Row(
-                  children: [
-                    IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.add_circle_outline_rounded),
-                    ),
-                    Expanded(
-                      child: TextField(
-                        controller: _controller,
-                        minLines: 1,
-                        maxLines: 4,
-                        onChanged: (_) => setState(() {}),
-                        decoration: const InputDecoration(
-                          hintText: '输入消息...',
-                          border: InputBorder.none,
-                          filled: false,
+                    borderRadius: BorderRadius.circular(999),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          onPressed: () {},
+                          icon: const Icon(Icons.add_circle_outline_rounded),
                         ),
-                        onSubmitted: (_) => _sendCurrentMessage(),
-                      ),
-                    ),
-                    AnimatedScale(
-                      scale: _controller.text.trim().isEmpty ? 0.94 : 1,
-                      duration: const Duration(milliseconds: 180),
-                      child: IconButton(
-                        onPressed: _sendCurrentMessage,
-                        icon: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 180),
-                          child: roomState.isSending
-                              ? const SizedBox(
-                                  key: ValueKey('sending'),
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
+                        Expanded(
+                          child: TextField(
+                            controller: _controller,
+                            minLines: 1,
+                            maxLines: 4,
+                            onChanged: (_) => setState(() {}),
+                            decoration: InputDecoration(
+                              hintText: _isRecording ? '松开发送，向上取消' : '输入消息...',
+                              border: InputBorder.none,
+                              filled: false,
+                            ),
+                            onSubmitted: (_) => _sendCurrentMessage(),
+                          ),
+                        ),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 220),
+                          transitionBuilder: (child, animation) {
+                            return ScaleTransition(
+                              scale: animation,
+                              child: FadeTransition(
+                                opacity: animation,
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: _controller.text.trim().isNotEmpty
+                              ? IconButton(
+                                  key: const ValueKey('send-button'),
+                                  onPressed: _sendCurrentMessage,
+                                  icon: roomState.isSending
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(Icons.send_rounded),
                                 )
-                              : const Icon(
-                                  Icons.send_rounded,
-                                  key: ValueKey('send'),
+                              : GestureDetector(
+                                  key: const ValueKey('record-button'),
+                                  onLongPressStart: _handleRecordStart,
+                                  onLongPressMoveUpdate:
+                                      _handleRecordMoveUpdate,
+                                  onLongPressEnd: _handleRecordEnd,
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 180),
+                                    width: 46,
+                                    height: 46,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: LinearGradient(
+                                        colors: _isRecording
+                                            ? _willCancelRecording
+                                                ? const [
+                                                    Color(0xFFFF9387),
+                                                    Color(0xFFFF6E85),
+                                                  ]
+                                                : const [
+                                                    Color(0xFF7CE8FF),
+                                                    Color(0xFFEA87FF),
+                                                  ]
+                                            : const [
+                                                Color(0x26FFFFFF),
+                                                Color(0x18FFFFFF),
+                                              ],
+                                      ),
+                                    ),
+                                    child: Icon(
+                                      _isRecording
+                                          ? Icons.mic_rounded
+                                          : Icons.mic_none_rounded,
+                                      color: Colors.white,
+                                    ),
+                                  ),
                                 ),
                         ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
+              ],
+            ),
+          ),
+          IgnorePointer(
+            ignoring: !_isRecording && !_isStartingRecording,
+            child: AnimatedOpacity(
+              opacity: (_isRecording || _isStartingRecording) ? 1 : 0,
+              duration: const Duration(milliseconds: 180),
+              child: _VoiceRecordingOverlay(
+                seconds: _recordingSeconds,
+                willCancel: _willCancelRecording,
+                isStarting: _isStartingRecording,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -185,5 +317,222 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     ref.read(chatControllerProvider(widget.peer).notifier).sendMessage(text);
     _controller.clear();
     setState(() {});
+  }
+
+  Future<void> _handleRecordStart(LongPressStartDetails _) async {
+    if (_isRecording || _isStartingRecording) return;
+
+    setState(() {
+      _isStartingRecording = true;
+      _willCancelRecording = false;
+      _recordingSeconds = 0;
+    });
+
+    try {
+      final recorder = ref.read(audioRecorderServiceProvider);
+      final granted = await recorder.hasPermission();
+      if (!granted) {
+        AppFeedback.showError('请先授予麦克风权限');
+        setState(() => _isStartingRecording = false);
+        return;
+      }
+
+      await recorder.startRecording();
+      _recordingTicker?.cancel();
+      _recordingTicker = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (!mounted) return;
+        setState(() => _recordingSeconds += 1);
+      });
+
+      setState(() {
+        _isStartingRecording = false;
+        _isRecording = true;
+      });
+    } catch (error) {
+      setState(() {
+        _isStartingRecording = false;
+        _isRecording = false;
+      });
+      AppFeedback.showError('无法开始录音：$error');
+    }
+  }
+
+  void _handleRecordMoveUpdate(LongPressMoveUpdateDetails details) {
+    if (!_isRecording) return;
+    final shouldCancel = details.offsetFromOrigin.dy <= _cancelThreshold;
+    if (shouldCancel != _willCancelRecording) {
+      setState(() => _willCancelRecording = shouldCancel);
+    }
+  }
+
+  Future<void> _handleRecordEnd(LongPressEndDetails _) async {
+    if (!_isRecording) {
+      setState(() => _isStartingRecording = false);
+      return;
+    }
+
+    final recorder = ref.read(audioRecorderServiceProvider);
+    _recordingTicker?.cancel();
+
+    final shouldCancel = _willCancelRecording || _recordingSeconds < 1;
+    final recordedSeconds = math.max(_recordingSeconds, 1);
+
+    try {
+      String? path;
+      if (shouldCancel) {
+        await recorder.cancelRecording();
+      } else {
+        path = await recorder.stopRecording();
+      }
+
+      if (!mounted) return;
+      final message = _willCancelRecording
+          ? '已取消录音'
+          : _recordingSeconds < 1
+              ? '录音时间太短'
+              : null;
+
+      setState(() {
+        _isRecording = false;
+        _isStartingRecording = false;
+        _willCancelRecording = false;
+        _recordingSeconds = 0;
+      });
+
+      if (message != null) {
+        AppFeedback.showToast(message);
+        return;
+      }
+
+      if (path == null || path.isEmpty) {
+        AppFeedback.showError('录音文件生成失败');
+        return;
+      }
+
+      await ref
+          .read(chatControllerProvider(widget.peer).notifier)
+          .sendAudioMessage(
+            file: XFile(path),
+            durationSeconds: recordedSeconds,
+          );
+    } catch (error) {
+      setState(() {
+        _isRecording = false;
+        _isStartingRecording = false;
+        _willCancelRecording = false;
+        _recordingSeconds = 0;
+      });
+      AppFeedback.showError('录音发送失败：$error');
+    }
+  }
+}
+
+class _VoiceRecordingOverlay extends StatelessWidget {
+  const _VoiceRecordingOverlay({
+    required this.seconds,
+    required this.willCancel,
+    required this.isStarting,
+  });
+
+  final int seconds;
+  final bool willCancel;
+  final bool isStarting;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.black.withValues(alpha: 0.24),
+      child: Center(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          width: 220,
+          padding: const EdgeInsets.fromLTRB(20, 22, 20, 18),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            color: willCancel
+                ? const Color(0xFFF15D72).withValues(alpha: 0.92)
+                : const Color(0xFF161625).withValues(alpha: 0.92),
+            boxShadow: [
+              BoxShadow(
+                color: (willCancel ? const Color(0xFFF15D72) : Colors.black)
+                    .withValues(alpha: 0.28),
+                blurRadius: 34,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedScale(
+                scale: willCancel ? 1.12 : 1,
+                duration: const Duration(milliseconds: 180),
+                child: Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.1),
+                  ),
+                  child: Icon(
+                    willCancel
+                        ? Icons.delete_outline_rounded
+                        : Icons.mic_rounded,
+                    size: 36,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                isStarting ? '准备录音...' : _formatDuration(seconds),
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                willCancel ? '松手取消发送' : '按住说话，向上滑动取消',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.75),
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _formatDuration(int seconds) {
+    final safe = math.max(seconds, 0);
+    final minute = safe ~/ 60;
+    final second = safe % 60;
+    return '$minute:${second.toString().padLeft(2, '0')}';
+  }
+}
+
+class _ChatSkeleton extends StatelessWidget {
+  const _ChatSkeleton();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+      children: const [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: AppSkeleton(height: 62, width: 210, radius: 24),
+        ),
+        SizedBox(height: 12),
+        Align(
+          alignment: Alignment.centerRight,
+          child: AppSkeleton(height: 78, width: 180, radius: 24),
+        ),
+        SizedBox(height: 12),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: AppSkeleton(height: 56, width: 240, radius: 24),
+        ),
+      ],
+    );
   }
 }

@@ -40,7 +40,9 @@ class ChatThread {
         toUser: 0,
         content: '${json['last_message'] ?? ''}'.isEmpty
             ? '已匹配，打个招呼吧'
-            : '${json['last_message'] ?? ''}',
+            : ('${json['last_type'] ?? 'text'}' == 'audio'
+                ? '语音消息'
+                : '${json['last_message'] ?? ''}'),
         type: '${json['last_type'] ?? 'text'}',
         timestamp: DateTime.tryParse('${json['last_message_at'] ?? ''}') ??
             DateTime.now(),

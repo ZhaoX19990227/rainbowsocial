@@ -5,6 +5,8 @@ import '../controllers/auth_controller.dart';
 import '../controllers/match_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../routes/app_router.dart';
+import '../widgets/app_empty_state.dart';
+import '../widgets/app_skeleton.dart';
 import '../widgets/avatar_widget.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/tag_chip.dart';
@@ -24,7 +26,7 @@ class ProfilePage extends ConsumerWidget {
         data: (user) {
           final displayUser = user ?? session?.user;
           if (displayUser == null) {
-            return const Center(child: Text('暂未加载到个人资料'));
+            return const AppEmptyState(title: '暂未加载到个人资料');
           }
 
           return ListView(
@@ -102,6 +104,31 @@ class ProfilePage extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 20),
+              if (displayUser.photos.isNotEmpty) ...[
+                Text('我的相册', style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 108,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: displayUser.photos.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemBuilder: (context, index) {
+                      final photo = displayUser.photos[index];
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(22),
+                        child: Image.network(
+                          photo,
+                          width: 108,
+                          height: 108,
+                          fit: BoxFit.cover,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 18),
+              ],
               GlassCard(
                 child: ListTile(
                   contentPadding: EdgeInsets.zero,
@@ -138,8 +165,16 @@ class ProfilePage extends ConsumerWidget {
             ],
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text(error.toString())),
+        loading: () => const Center(
+          child: Padding(
+            padding: EdgeInsets.all(20),
+            child: AppSkeleton(height: 420, radius: 32),
+          ),
+        ),
+        error: (error, _) => AppEmptyState(
+          title: '个人资料加载失败',
+          subtitle: '$error',
+        ),
       ),
     );
   }

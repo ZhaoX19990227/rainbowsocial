@@ -4,6 +4,12 @@ enum ChatMessageStatus {
   failed,
 }
 
+enum ChatDeliveryStatus {
+  none,
+  delivered,
+  read,
+}
+
 class ChatMessageModel {
   const ChatMessageModel({
     required this.id,
@@ -13,7 +19,11 @@ class ChatMessageModel {
     required this.content,
     required this.type,
     required this.timestamp,
+    this.mediaUrl = '',
+    this.durationSeconds = 0,
+    this.localFilePath,
     this.status = ChatMessageStatus.sent,
+    this.deliveryStatus = ChatDeliveryStatus.none,
     this.errorMessage,
   });
 
@@ -24,12 +34,19 @@ class ChatMessageModel {
   final String content;
   final String type;
   final DateTime timestamp;
+  final String mediaUrl;
+  final int durationSeconds;
+  final String? localFilePath;
   final ChatMessageStatus status;
+  final ChatDeliveryStatus deliveryStatus;
   final String? errorMessage;
 
   bool isMine(int currentUserId) => fromUser == currentUserId;
   bool get isPending => status == ChatMessageStatus.sending;
   bool get isFailed => status == ChatMessageStatus.failed;
+  bool get isAudio => type == 'audio';
+  String get audioSource =>
+      mediaUrl.isNotEmpty ? mediaUrl : (localFilePath ?? '');
 
   ChatMessageModel copyWith({
     int? id,
@@ -39,7 +56,11 @@ class ChatMessageModel {
     String? content,
     String? type,
     DateTime? timestamp,
+    String? mediaUrl,
+    int? durationSeconds,
+    String? localFilePath,
     ChatMessageStatus? status,
+    ChatDeliveryStatus? deliveryStatus,
     String? errorMessage,
     bool clearError = false,
   }) {
@@ -51,7 +72,11 @@ class ChatMessageModel {
       content: content ?? this.content,
       type: type ?? this.type,
       timestamp: timestamp ?? this.timestamp,
+      mediaUrl: mediaUrl ?? this.mediaUrl,
+      durationSeconds: durationSeconds ?? this.durationSeconds,
+      localFilePath: localFilePath ?? this.localFilePath,
       status: status ?? this.status,
+      deliveryStatus: deliveryStatus ?? this.deliveryStatus,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }
@@ -66,7 +91,11 @@ class ChatMessageModel {
       type: '${json['type'] ?? 'text'}',
       timestamp:
           DateTime.tryParse('${json['timestamp'] ?? ''}') ?? DateTime.now(),
+      mediaUrl: '${json['media_url'] ?? ''}',
+      durationSeconds: ((json['duration_seconds'] ?? 0) as num).toInt(),
       status: ChatMessageStatus.sent,
+      deliveryStatus:
+          _deliveryStatusFromJson('${json['delivery_status'] ?? ''}'),
     );
   }
 
@@ -78,7 +107,25 @@ class ChatMessageModel {
       'to_user': toUser,
       'content': content,
       'type': type,
+      'media_url': mediaUrl,
+      'duration_seconds': durationSeconds,
+      'delivery_status': switch (deliveryStatus) {
+        ChatDeliveryStatus.read => 'read',
+        ChatDeliveryStatus.delivered => 'delivered',
+        ChatDeliveryStatus.none => '',
+      },
       'timestamp': timestamp.toIso8601String(),
     };
+  }
+
+  static ChatDeliveryStatus _deliveryStatusFromJson(String value) {
+    switch (value) {
+      case 'read':
+        return ChatDeliveryStatus.read;
+      case 'delivered':
+        return ChatDeliveryStatus.delivered;
+      default:
+        return ChatDeliveryStatus.none;
+    }
   }
 }

@@ -44,8 +44,15 @@ class GetConversationMessagesUseCase {
   Future<List<ChatMessageModel>> call({
     required String token,
     required int peerId,
+    int limit = 30,
+    int? beforeId,
   }) =>
-      _repository.fetchMessages(token: token, peerId: peerId);
+      _repository.fetchMessages(
+        token: token,
+        peerId: peerId,
+        limit: limit,
+        beforeId: beforeId,
+      );
 }
 
 class MarkConversationReadUseCase {

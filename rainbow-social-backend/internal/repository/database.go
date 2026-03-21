@@ -48,6 +48,7 @@ func migrate(db *sql.DB) error {
 			email TEXT NOT NULL UNIQUE,
 			nickname TEXT NOT NULL,
 			avatar TEXT NOT NULL DEFAULT '',
+			photos TEXT NOT NULL DEFAULT '[]',
 			age INTEGER NOT NULL DEFAULT 18,
 			bio TEXT NOT NULL DEFAULT '',
 			tags TEXT NOT NULL DEFAULT '[]',
@@ -107,6 +108,8 @@ func migrate(db *sql.DB) error {
 			to_user_id INTEGER NOT NULL,
 			content TEXT NOT NULL,
 			type TEXT NOT NULL DEFAULT 'text',
+			media_url TEXT NOT NULL DEFAULT '',
+			duration_seconds INTEGER NOT NULL DEFAULT 0,
 			timestamp DATETIME NOT NULL,
 			FOREIGN KEY(from_user_id) REFERENCES users(id) ON DELETE CASCADE,
 			FOREIGN KEY(to_user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -123,6 +126,16 @@ func migrate(db *sql.DB) error {
 			FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
 			FOREIGN KEY(peer_user_id) REFERENCES users(id) ON DELETE CASCADE
 		);`,
+		`CREATE TABLE IF NOT EXISTS device_tokens (
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			user_id INTEGER NOT NULL,
+			token TEXT NOT NULL,
+			platform TEXT NOT NULL DEFAULT '',
+			created_at DATETIME NOT NULL,
+			updated_at DATETIME NOT NULL,
+			UNIQUE(user_id, token),
+			FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+		);`,
 		`CREATE INDEX IF NOT EXISTS idx_swipes_from_user ON swipes(from_user_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_swipes_to_user ON swipes(to_user_id);`,
 		`CREATE INDEX IF NOT EXISTS idx_matches_user1 ON matches(user1_id);`,
@@ -134,6 +147,7 @@ func migrate(db *sql.DB) error {
 		`CREATE INDEX IF NOT EXISTS idx_messages_conversation_to_from ON messages(to_user_id, from_user_id, timestamp DESC);`,
 		`CREATE INDEX IF NOT EXISTS idx_conversation_states_user_pinned ON conversation_states(user_id, is_pinned, updated_at DESC);`,
 		`CREATE INDEX IF NOT EXISTS idx_users_online_last_active ON users(online_status DESC, last_active_at DESC);`,
+		`CREATE INDEX IF NOT EXISTS idx_device_tokens_user ON device_tokens(user_id, updated_at DESC);`,
 	}
 
 	for _, statement := range statements {
@@ -143,6 +157,15 @@ func migrate(db *sql.DB) error {
 	}
 
 	if err := addColumnIfNotExists(db, "messages", "client_message_id", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
+	if err := addColumnIfNotExists(db, "messages", "media_url", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
+	if err := addColumnIfNotExists(db, "messages", "duration_seconds", "INTEGER NOT NULL DEFAULT 0"); err != nil {
+		return err
+	}
+	if err := addColumnIfNotExists(db, "users", "photos", "TEXT NOT NULL DEFAULT '[]'"); err != nil {
 		return err
 	}
 	return nil
@@ -209,8 +232,8 @@ func seedUsers(db *sql.DB) error {
 	}
 
 	stmt, err := db.Prepare(`
-		INSERT INTO users (email, nickname, avatar, age, bio, tags, lat, lng, online_status, created_at, last_active_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO users (email, nickname, avatar, photos, age, bio, tags, lat, lng, online_status, created_at, last_active_at)
+		VALUES (?, ?, ?, '[]', ?, ?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		return err

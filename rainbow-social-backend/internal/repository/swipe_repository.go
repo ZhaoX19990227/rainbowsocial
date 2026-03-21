@@ -34,6 +34,24 @@ func (r *SwipeRepository) HasMutualLike(userA, userB int64) (bool, error) {
 	return count == 2, err
 }
 
+func (r *SwipeRepository) GetSwipeAction(fromUserID, toUserID int64) (string, error) {
+	var action string
+	err := r.db.QueryRow(`
+		SELECT action
+		FROM swipes
+		WHERE from_user_id = ? AND to_user_id = ?
+	`, fromUserID, toUserID).Scan(&action)
+	return action, err
+}
+
+func (r *SwipeRepository) DeleteSwipe(fromUserID, toUserID int64) error {
+	_, err := r.db.Exec(`
+		DELETE FROM swipes
+		WHERE from_user_id = ? AND to_user_id = ?
+	`, fromUserID, toUserID)
+	return err
+}
+
 func (r *SwipeRepository) GetSwipedTargetIDs(userID int64) (map[int64]struct{}, error) {
 	rows, err := r.db.Query(`SELECT to_user_id FROM swipes WHERE from_user_id = ?`, userID)
 	if err != nil {

@@ -32,7 +32,7 @@ func NewRouter(cfg *config.Config, deps Dependencies) *gin.Engine {
 
 	corsConfig := cors.Config{
 		AllowOrigins:     cfg.AllowedOrigins,
-		AllowMethods:     []string{"GET", "POST", "PUT", "OPTIONS"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
@@ -53,6 +53,9 @@ func NewRouter(cfg *config.Config, deps Dependencies) *gin.Engine {
 	safetyHandler := NewSafetyHandler(deps.SafetyService)
 	chatHandler := NewChatHandler(deps.ChatService)
 	wsHandler := NewWSHandler(deps.JWTManager, deps.ChatService, deps.Hub)
+	uploadHandler := NewUploadHandler(cfg)
+
+	router.Static("/uploads", cfg.UploadDir)
 
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "ok"})
@@ -71,8 +74,13 @@ func NewRouter(cfg *config.Config, deps Dependencies) *gin.Engine {
 		protected.PUT("/user/profile", userHandler.UpdateProfile)
 		protected.GET("/users/list", userHandler.ListUsers)
 		protected.GET("/users/nearby", userHandler.Nearby)
+		protected.POST("/uploads/image", uploadHandler.UploadImage)
+		protected.POST("/uploads/audio", uploadHandler.UploadAudio)
+		protected.POST("/user/device-token", userHandler.SaveDeviceToken)
+		protected.DELETE("/user/device-token", userHandler.DeleteDeviceToken)
 		protected.POST("/swipe/like", swipeHandler.Like)
 		protected.POST("/swipe/pass", swipeHandler.Pass)
+		protected.POST("/swipe/undo", swipeHandler.Undo)
 		protected.GET("/recommendations", swipeHandler.Recommendations)
 		protected.GET("/matches", matchHandler.ListMatches)
 		protected.GET("/conversations", chatHandler.ListConversations)

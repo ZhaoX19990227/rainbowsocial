@@ -72,8 +72,9 @@ func (h *ChatHandler) ListMessages(c *gin.Context) {
 		return
 	}
 
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "100"))
-	items, err := h.chatService.ListMessages(middleware.GetUserID(c), peerUserID, limit)
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "30"))
+	beforeID, _ := strconv.ParseInt(c.DefaultQuery("before_id", "0"), 10, 64)
+	items, err := h.chatService.ListMessages(middleware.GetUserID(c), peerUserID, limit, beforeID)
 	if err != nil {
 		failure(c, http.StatusBadRequest, err.Error())
 		return

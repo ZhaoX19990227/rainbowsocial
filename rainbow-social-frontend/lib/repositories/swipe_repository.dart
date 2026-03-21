@@ -14,4 +14,7 @@ class SwipeRepository {
 
   Future<SwipeResult> pass(String token, int targetUserId) =>
       _service.pass(token, targetUserId);
+
+  Future<void> undo(String token, int targetUserId) =>
+      _service.undo(token, targetUserId);
 }

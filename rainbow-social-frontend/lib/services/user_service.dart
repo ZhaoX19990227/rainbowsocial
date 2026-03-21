@@ -1,4 +1,5 @@
 import '../models/app_user.dart';
+import '../models/nearby_filter.dart';
 import 'api_client.dart';
 import 'app_flags.dart';
 import 'mock_social_data.dart';
@@ -44,6 +45,7 @@ class UserService {
     String token, {
     required double lat,
     required double lng,
+    NearbyFilter filter = const NearbyFilter(),
   }) async {
     try {
       final response = await _client.get(
@@ -52,6 +54,10 @@ class UserService {
         query: {
           'lat': '$lat',
           'lng': '$lng',
+          'min_age': '${filter.minAge}',
+          'max_age': '${filter.maxAge}',
+          'online_only': '${filter.onlineOnly}',
+          if (filter.tag.trim().isNotEmpty) 'tag': filter.tag.trim(),
         },
       );
       final items = response['data'] as List<dynamic>;

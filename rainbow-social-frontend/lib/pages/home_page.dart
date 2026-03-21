@@ -1,10 +1,15 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../controllers/home_controller.dart';
 import '../models/app_user.dart';
 import '../routes/app_router.dart';
+import '../services/app_feedback.dart';
 import '../theme/app_theme.dart';
+import '../widgets/app_empty_state.dart';
+import '../widgets/app_skeleton.dart';
 import '../widgets/user_card.dart';
 
 class HomePage extends ConsumerStatefulWidget {
@@ -16,151 +21,225 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   final _deckKey = GlobalKey<_SwipeDeckState>();
+  AppUser? _matchUser;
 
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(homeControllerProvider);
+    final controller = ref.read(homeControllerProvider.notifier);
 
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-        child: Column(
-          children: [
-            Row(
+    return Stack(
+      children: [
+        SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+            child: Column(
               children: [
-                Text('推荐', style: Theme.of(context).textTheme.headlineMedium),
-                const Spacer(),
-                IconButton(
-                  onPressed: () => ref
-                      .read(homeControllerProvider.notifier)
-                      .loadRecommendations(),
-                  icon: const Icon(
-                    Icons.refresh_rounded,
-                    color: AppTheme.primary,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceHighest.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(999),
-                        gradient: const LinearGradient(
-                          colors: [Color(0x22EA87FF), Color(0x22FF6E85)],
-                        ),
-                      ),
-                      child: const Center(child: Text('推荐')),
-                    ),
-                  ),
-                  const Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      child: Center(
-                        child: Text(
-                          '附近',
-                          style: TextStyle(color: AppTheme.textSecondary),
+                Row(
+                  children: [
+                    Text('推荐',
+                        style: Theme.of(context).textTheme.headlineMedium),
+                    const Spacer(),
+                    AnimatedOpacity(
+                      opacity: controller.canUndo ? 1 : 0.45,
+                      duration: const Duration(milliseconds: 180),
+                      child: IconButton(
+                        onPressed: controller.canUndo ? _undoLastSwipe : null,
+                        icon: const Icon(
+                          Icons.undo_rounded,
+                          color: AppTheme.secondary,
                         ),
                       ),
                     ),
+                    IconButton(
+                      onPressed: () => ref
+                          .read(homeControllerProvider.notifier)
+                          .loadRecommendations(),
+                      icon: const Icon(
+                        Icons.refresh_rounded,
+                        color: AppTheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surfaceHighest.withValues(alpha: 0.6),
+                    borderRadius: BorderRadius.circular(999),
                   ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 18),
-            Expanded(
-              child: state.when(
-                data: (users) {
-                  if (users.isEmpty) {
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text('暂时没有更多推荐了'),
-                        const SizedBox(height: 12),
-                        TextButton(
-                          onPressed: () => ref
-                              .read(homeControllerProvider.notifier)
-                              .loadRecommendations(),
-                          child: const Text('重新加载'),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(999),
+                            gradient: const LinearGradient(
+                              colors: [Color(0x22EA87FF), Color(0x22FF6E85)],
+                            ),
+                          ),
+                          child: const Center(child: Text('推荐')),
                         ),
-                      ],
-                    );
-                  }
-                  return _SwipeDeck(
-                    key: _deckKey,
-                    users: users,
-                    onSwipe: _handleSwipe,
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, _) => Center(child: Text(error.toString())),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _ActionCircle(
-                  icon: Icons.close_rounded,
-                  color: AppTheme.error,
-                  size: 58,
-                  onTap: () => _deckKey.currentState?.triggerSwipe(
-                    _SwipeDecision.pass,
+                      ),
+                      const Expanded(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(vertical: 12),
+                          child: Center(
+                            child: Text(
+                              '附近',
+                              style: TextStyle(color: AppTheme.textSecondary),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 18),
-                _ActionCircle(
-                  icon: Icons.star_rounded,
-                  color: AppTheme.secondary,
-                  size: 52,
-                  onTap: () {},
-                ),
-                const SizedBox(width: 18),
-                _ActionCircle(
-                  icon: Icons.favorite_rounded,
-                  color: AppTheme.primary,
-                  size: 60,
-                  filled: true,
-                  onTap: () => _deckKey.currentState?.triggerSwipe(
-                    _SwipeDecision.like,
+                const SizedBox(height: 18),
+                Expanded(
+                  child: state.when(
+                    data: (users) {
+                      if (users.isEmpty) {
+                        return AppEmptyState(
+                          title: '暂时没有更多推荐了',
+                          subtitle: '可以稍后再来，或者刷新看看有没有新的心动对象。',
+                          action: TextButton(
+                            onPressed: () => ref
+                                .read(homeControllerProvider.notifier)
+                                .loadRecommendations(),
+                            child: const Text('重新加载'),
+                          ),
+                        );
+                      }
+                      return _SwipeDeck(
+                        key: _deckKey,
+                        users: users,
+                        onSwipe: _handleSwipe,
+                        onCardTap: (user) => Navigator.of(context)
+                            .pushNamed(AppRouter.detail, arguments: user),
+                      );
+                    },
+                    loading: () => const _HomeSkeleton(),
+                    error: (error, _) => AppEmptyState(
+                      title: '推荐页加载失败',
+                      subtitle: '$error',
+                      action: TextButton(
+                        onPressed: () => ref
+                            .read(homeControllerProvider.notifier)
+                            .loadRecommendations(),
+                        child: const Text('重新加载'),
+                      ),
+                    ),
                   ),
                 ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _ActionCircle(
+                      icon: Icons.undo_rounded,
+                      color: AppTheme.secondary,
+                      size: 52,
+                      onTap: controller.canUndo ? _undoLastSwipe : null,
+                    ),
+                    const SizedBox(width: 14),
+                    _ActionCircle(
+                      icon: Icons.close_rounded,
+                      color: AppTheme.error,
+                      size: 58,
+                      onTap: () => _deckKey.currentState?.triggerSwipe(
+                        _SwipeDecision.pass,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    _ActionCircle(
+                      icon: Icons.star_rounded,
+                      color: AppTheme.secondary,
+                      size: 54,
+                      onTap: () => _deckKey.currentState?.triggerSwipe(
+                        _SwipeDecision.superLike,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    _ActionCircle(
+                      icon: Icons.favorite_rounded,
+                      color: AppTheme.primary,
+                      size: 60,
+                      filled: true,
+                      onTap: () => _deckKey.currentState?.triggerSwipe(
+                        _SwipeDecision.like,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
               ],
             ),
-            const SizedBox(height: 18),
-          ],
+          ),
         ),
-      ),
+        IgnorePointer(
+          ignoring: _matchUser == null,
+          child: AnimatedOpacity(
+            opacity: _matchUser == null ? 0 : 1,
+            duration: const Duration(milliseconds: 260),
+            child: _matchUser == null
+                ? const SizedBox.shrink()
+                : _MatchOverlay(
+                    user: _matchUser!,
+                    onClose: () => setState(() => _matchUser = null),
+                    onChat: () {
+                      final user = _matchUser!;
+                      setState(() => _matchUser = null);
+                      Navigator.of(context)
+                          .pushNamed(AppRouter.chat, arguments: user);
+                    },
+                  ),
+          ),
+        ),
+      ],
     );
   }
 
   Future<void> _handleSwipe(_SwipeDecision decision) async {
-    if (decision == _SwipeDecision.like) {
-      final matched =
-          await ref.read(homeControllerProvider.notifier).likeTopCard();
-      if (mounted && matched) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('匹配成功，快去打个招呼吧')),
-        );
+    HomeSwipeResult? result;
+    if (decision == _SwipeDecision.pass) {
+      result = await ref.read(homeControllerProvider.notifier).passTopCard();
+    } else {
+      result = await ref.read(homeControllerProvider.notifier).likeTopCard(
+            isSuperLike: decision == _SwipeDecision.superLike,
+          );
+      if (decision == _SwipeDecision.superLike) {
+        AppFeedback.showToast('已送出超级喜欢');
       }
-      return;
     }
-    await ref.read(homeControllerProvider.notifier).passTopCard();
+
+    if (!mounted || result == null) return;
+    setState(() {});
+    if (result.matched) {
+      final matchedUser = result.user;
+      setState(() => _matchUser = matchedUser);
+    }
+  }
+
+  Future<void> _undoLastSwipe() async {
+    try {
+      final restored =
+          await ref.read(homeControllerProvider.notifier).undoLastSwipe();
+      if (!mounted || restored == null) return;
+      AppFeedback.showToast('已撤销上一张');
+      setState(() {});
+    } catch (error) {
+      AppFeedback.showError('撤销失败：$error');
+    }
   }
 }
 
 enum _SwipeDecision {
   like,
   pass,
+  superLike,
 }
 
 class _SwipeDeck extends StatefulWidget {
@@ -168,10 +247,12 @@ class _SwipeDeck extends StatefulWidget {
     super.key,
     required this.users,
     required this.onSwipe,
+    required this.onCardTap,
   });
 
   final List<AppUser> users;
   final Future<void> Function(_SwipeDecision decision) onSwipe;
+  final ValueChanged<AppUser> onCardTap;
 
   @override
   State<_SwipeDeck> createState() => _SwipeDeckState();
@@ -179,7 +260,8 @@ class _SwipeDeck extends StatefulWidget {
 
 class _SwipeDeckState extends State<_SwipeDeck>
     with SingleTickerProviderStateMixin {
-  static const _swipeThreshold = 118.0;
+  static const _horizontalThreshold = 118.0;
+  static const _verticalThreshold = 138.0;
 
   late final AnimationController _controller;
   Animation<Offset>? _offsetAnimation;
@@ -218,21 +300,21 @@ class _SwipeDeckState extends State<_SwipeDeck>
 
   Future<void> triggerSwipe(_SwipeDecision decision) async {
     if (_isAnimating || widget.users.isEmpty) return;
-    final width = MediaQuery.of(context).size.width;
-    final target = Offset(
-      decision == _SwipeDecision.like ? width * 1.2 : -width * 1.2,
-      -20,
-    );
+    final size = MediaQuery.of(context).size;
+    final target = switch (decision) {
+      _SwipeDecision.like => Offset(size.width * 1.2, -20),
+      _SwipeDecision.pass => Offset(-size.width * 1.2, -20),
+      _SwipeDecision.superLike => Offset(0, -size.height * 0.95),
+    };
     await _animateTo(target, curve: Curves.easeInCubic);
     await widget.onSwipe(decision);
-    if (mounted) {
-      setState(() {
-        _dragOffset = Offset.zero;
-        _offsetAnimation = null;
-        _controller.reset();
-        _isAnimating = false;
-      });
-    }
+    if (!mounted) return;
+    setState(() {
+      _dragOffset = Offset.zero;
+      _offsetAnimation = null;
+      _controller.reset();
+      _isAnimating = false;
+    });
   }
 
   Future<void> _animateTo(
@@ -251,7 +333,10 @@ class _SwipeDeckState extends State<_SwipeDeck>
   @override
   Widget build(BuildContext context) {
     final visible = widget.users.take(3).toList();
-    final swipeProgress = (_effectiveOffset.dx.abs() / _swipeThreshold)
+    final dxProgress = (_effectiveOffset.dx.abs() / _horizontalThreshold)
+        .clamp(0.0, 1.0)
+        .toDouble();
+    final upProgress = ((_effectiveOffset.dy * -1) / _verticalThreshold)
         .clamp(0.0, 1.0)
         .toDouble();
 
@@ -259,157 +344,416 @@ class _SwipeDeckState extends State<_SwipeDeck>
       builder: (context, constraints) {
         return Stack(
           clipBehavior: Clip.none,
-          children: List.generate(visible.length, (index) {
-            final depth = visible.length - 1 - index;
-            final user = visible[depth];
-            final isTop = depth == 0;
-
-            final scale = switch (depth) {
-              0 => 1.0,
-              1 => 0.95 + (swipeProgress * 0.03),
-              _ => 0.9 + (swipeProgress * 0.02),
-            };
-            final topInset = switch (depth) {
-              0 => 0.0,
-              1 => 18.0 - (swipeProgress * 12),
-              _ => 32.0 - (swipeProgress * 14),
-            };
-            final sideInset = switch (depth) {
-              0 => 0.0,
-              1 => 8.0 - (swipeProgress * 5),
-              _ => 16.0 - (swipeProgress * 8),
-            };
-
-            Widget card = UserCard(
-              user: user,
-              overlayBuilder: isTop
-                  ? (context) => _SwipeOverlay(
-                        dx: _effectiveOffset.dx,
-                        progress: swipeProgress,
-                      )
-                  : null,
-              onTap: isTop && !_isAnimating && _effectiveOffset.distance < 10
-                  ? () => Navigator.of(context)
-                      .pushNamed(AppRouter.detail, arguments: user)
-                  : null,
-            );
-
-            if (isTop) {
-              card = GestureDetector(
-                onPanStart: (_) {
-                  if (_isAnimating) return;
-                  _offsetAnimation = null;
-                  _controller.stop();
-                },
-                onPanUpdate: (details) {
-                  if (_isAnimating) return;
-                  setState(() {
-                    _dragOffset += details.delta;
-                  });
-                },
-                onPanEnd: (details) async {
-                  if (_isAnimating) return;
-                  final velocity = details.velocity.pixelsPerSecond.dx;
-                  final shouldLike =
-                      _effectiveOffset.dx > _swipeThreshold || velocity > 900;
-                  final shouldPass =
-                      _effectiveOffset.dx < -_swipeThreshold || velocity < -900;
-
-                  if (shouldLike) {
-                    await triggerSwipe(_SwipeDecision.like);
-                    return;
-                  }
-                  if (shouldPass) {
-                    await triggerSwipe(_SwipeDecision.pass);
-                    return;
-                  }
-
-                  await _animateTo(Offset.zero);
-                  if (mounted) {
-                    setState(() {
-                      _dragOffset = Offset.zero;
-                      _offsetAnimation = null;
-                      _controller.reset();
-                      _isAnimating = false;
-                    });
-                  }
-                },
-                child: Transform.translate(
-                  offset: _effectiveOffset,
-                  child: Transform.rotate(
-                    angle: (_effectiveOffset.dx / constraints.maxWidth) * 0.18,
-                    child: card,
-                  ),
-                ),
-              );
-            }
-
-            return Positioned.fill(
-              top: topInset,
-              left: sideInset,
-              right: sideInset,
-              child: Transform.scale(
-                scale: scale,
-                alignment: Alignment.topCenter,
-                child: IgnorePointer(
-                  ignoring: !isTop,
-                  child: card,
-                ),
+          children: [
+            for (int index = visible.length - 1; index >= 0; index--)
+              _buildCard(
+                context,
+                constraints,
+                visible[index],
+                index,
+                dxProgress: dxProgress,
+                upProgress: upProgress,
               ),
-            );
-          }),
+          ],
         );
       },
     );
+  }
+
+  Widget _buildCard(
+    BuildContext context,
+    BoxConstraints constraints,
+    AppUser user,
+    int index, {
+    required double dxProgress,
+    required double upProgress,
+  }) {
+    final isTop = index == 0;
+    final depth = index.toDouble();
+    final scale = isTop ? 1.0 : 1.0 - (depth * 0.05);
+    final topOffset = isTop ? 0.0 : 18 + (depth * 8);
+
+    Widget child = Positioned.fill(
+      top: topOffset,
+      child: Transform.scale(
+        scale: scale,
+        alignment: Alignment.topCenter,
+        child: Opacity(
+          opacity: isTop ? 1 : 0.72 - (depth * 0.12),
+          child: UserCard(
+            user: user,
+            onTap: () => widget.onCardTap(user),
+            overlayBuilder: isTop
+                ? (_) => _SwipeOverlay(
+                      likeOpacity: _effectiveOffset.dx > 0 ? dxProgress : 0,
+                      passOpacity: _effectiveOffset.dx < 0 ? dxProgress : 0,
+                      superLikeOpacity:
+                          _effectiveOffset.dy < 0 ? upProgress : 0,
+                    )
+                : null,
+          ),
+        ),
+      ),
+    );
+
+    if (!isTop) return child;
+
+    final rotation = (_effectiveOffset.dx / constraints.maxWidth) * 0.18;
+
+    child = Positioned.fill(
+      child: Transform.translate(
+        offset: _effectiveOffset,
+        child: Transform.rotate(
+          angle: rotation,
+          child: child,
+        ),
+      ),
+    );
+
+    return GestureDetector(
+      onPanUpdate: (details) {
+        if (_isAnimating) return;
+        setState(() {
+          _dragOffset += details.delta;
+        });
+      },
+      onPanEnd: (_) async {
+        if (_isAnimating) return;
+        final decision = _decisionForCurrentOffset();
+        if (decision != null) {
+          await triggerSwipe(decision);
+          return;
+        }
+        await _animateTo(Offset.zero);
+        if (!mounted) return;
+        setState(() {
+          _dragOffset = Offset.zero;
+          _offsetAnimation = null;
+          _controller.reset();
+          _isAnimating = false;
+        });
+      },
+      child: child,
+    );
+  }
+
+  _SwipeDecision? _decisionForCurrentOffset() {
+    if (_effectiveOffset.dy <= -_verticalThreshold &&
+        _effectiveOffset.dx.abs() < _horizontalThreshold) {
+      return _SwipeDecision.superLike;
+    }
+    if (_effectiveOffset.dx >= _horizontalThreshold) {
+      return _SwipeDecision.like;
+    }
+    if (_effectiveOffset.dx <= -_horizontalThreshold) {
+      return _SwipeDecision.pass;
+    }
+    return null;
   }
 }
 
 class _SwipeOverlay extends StatelessWidget {
   const _SwipeOverlay({
-    required this.dx,
-    required this.progress,
+    required this.likeOpacity,
+    required this.passOpacity,
+    required this.superLikeOpacity,
   });
 
-  final double dx;
-  final double progress;
+  final double likeOpacity;
+  final double passOpacity;
+  final double superLikeOpacity;
 
   @override
   Widget build(BuildContext context) {
-    final showLike = dx > 0;
-    final opacity = (progress * 1.1).clamp(0.0, 1.0);
+    return Stack(
+      children: [
+        Positioned(
+          left: 20,
+          top: 28,
+          child: Opacity(
+            opacity: passOpacity,
+            child: _Badge(
+              label: '略过',
+              color: AppTheme.error,
+              angle: -0.22,
+            ),
+          ),
+        ),
+        Positioned(
+          right: 20,
+          top: 28,
+          child: Opacity(
+            opacity: likeOpacity,
+            child: _Badge(
+              label: '喜欢',
+              color: AppTheme.primary,
+              angle: 0.16,
+            ),
+          ),
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          top: 52,
+          child: Opacity(
+            opacity: superLikeOpacity,
+            child: const Center(
+              child: _Badge(
+                label: '超级喜欢',
+                color: AppTheme.secondary,
+                angle: 0,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
 
-    return IgnorePointer(
+class _Badge extends StatelessWidget {
+  const _Badge({
+    required this.label,
+    required this.color,
+    required this.angle,
+  });
+
+  final String label;
+  final Color color;
+  final double angle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.rotate(
+      angle: angle,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: color.withValues(alpha: 0.85), width: 2),
+          color: Colors.black.withValues(alpha: 0.18),
+        ),
+        child: Text(
+          label,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w800,
+              ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ActionCircle extends StatelessWidget {
+  const _ActionCircle({
+    required this.icon,
+    required this.color,
+    required this.size,
+    this.filled = false,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final Color color;
+  final double size;
+  final bool filled;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedScale(
+      scale: onTap == null ? 0.94 : 1,
+      duration: const Duration(milliseconds: 180),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: filled
+                ? LinearGradient(
+                    colors: [color, color.withValues(alpha: 0.72)],
+                  )
+                : null,
+            color: filled
+                ? null
+                : AppTheme.surfaceHighest.withValues(
+                    alpha: onTap == null ? 0.22 : 0.68,
+                  ),
+            border: Border.all(color: color.withValues(alpha: 0.22)),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: filled ? 0.32 : 0.12),
+                blurRadius: 20,
+              ),
+            ],
+          ),
+          child: Icon(
+            icon,
+            color: filled ? const Color(0xFF3C1238) : color,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MatchOverlay extends StatefulWidget {
+  const _MatchOverlay({
+    required this.user,
+    required this.onClose,
+    required this.onChat,
+  });
+
+  final AppUser user;
+  final VoidCallback onClose;
+  final VoidCallback onChat;
+
+  @override
+  State<_MatchOverlay> createState() => _MatchOverlayState();
+}
+
+class _MatchOverlayState extends State<_MatchOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final avatarUrl = widget.user.photos.isNotEmpty
+        ? widget.user.photos.first
+        : widget.user.avatarOrFallback;
+
+    return Material(
+      color: Colors.black.withValues(alpha: 0.82),
       child: Stack(
+        fit: StackFit.expand,
         children: [
-          Positioned(
-            top: 30,
-            left: showLike ? null : 24,
-            right: showLike ? 24 : null,
-            child: Transform.rotate(
-              angle: showLike ? 0.18 : -0.18,
-              child: Opacity(
-                opacity: opacity,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
-                  ),
-                  decoration: BoxDecoration(
-                    color: (showLike ? AppTheme.primary : AppTheme.error)
-                        .withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: showLike ? AppTheme.primary : AppTheme.error,
-                      width: 1.6,
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment.topCenter,
+                radius: 1.4,
+                colors: [
+                  AppTheme.primary.withValues(alpha: 0.36),
+                  AppTheme.secondary.withValues(alpha: 0.2),
+                  const Color(0xFF090914),
+                ],
+              ),
+            ),
+          ),
+          ...List.generate(9, (index) {
+            final angle = (math.pi * 2 / 9) * index;
+            return Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              bottom: 0,
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  final distance =
+                      130 + (index * 12.0) + (_controller.value * 18);
+                  return Transform.translate(
+                    offset: Offset(
+                      math.cos(angle) * distance,
+                      math.sin(angle) * distance - 40,
                     ),
+                    child: Opacity(
+                      opacity: (1 - _controller.value) * 0.65,
+                      child: child,
+                    ),
+                  );
+                },
+                child: const Center(
+                  child: Icon(
+                    Icons.favorite_rounded,
+                    color: Color(0x44FFFFFF),
+                    size: 26,
                   ),
-                  child: Text(
-                    showLike ? '喜欢' : '略过',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: showLike ? AppTheme.primary : AppTheme.error,
-                          fontWeight: FontWeight.w800,
+                ),
+              ),
+            );
+          }),
+          Center(
+            child: ScaleTransition(
+              scale: CurvedAnimation(
+                parent: _controller,
+                curve: Curves.elasticOut,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '匹配成功',
+                      style:
+                          Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                fontSize: 42,
+                              ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      '你和 ${widget.user.nickname} 互相喜欢，去打个招呼吧。',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: AppTheme.textSecondary,
+                          ),
+                    ),
+                    const SizedBox(height: 26),
+                    Hero(
+                      tag: 'match-avatar-${widget.user.id}',
+                      child: Container(
+                        width: 160,
+                        height: 160,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.25),
+                            width: 3,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primary.withValues(alpha: 0.28),
+                              blurRadius: 36,
+                            ),
+                          ],
+                          image: DecorationImage(
+                            image: NetworkImage(avatarUrl),
+                            fit: BoxFit.cover,
+                          ),
                         ),
-                  ),
+                      ),
+                    ),
+                    const SizedBox(height: 26),
+                    FilledButton.icon(
+                      onPressed: widget.onChat,
+                      icon: const Icon(Icons.chat_bubble_rounded),
+                      label: const Text('立即聊天'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextButton(
+                      onPressed: widget.onClose,
+                      child: const Text('继续看看'),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -420,63 +764,33 @@ class _SwipeOverlay extends StatelessWidget {
   }
 }
 
-class _ActionCircle extends StatefulWidget {
-  const _ActionCircle({
-    required this.icon,
-    required this.color,
-    required this.size,
-    required this.onTap,
-    this.filled = false,
-  });
-
-  final IconData icon;
-  final Color color;
-  final double size;
-  final VoidCallback onTap;
-  final bool filled;
-
-  @override
-  State<_ActionCircle> createState() => _ActionCircleState();
-}
-
-class _ActionCircleState extends State<_ActionCircle> {
-  bool _pressed = false;
+class _HomeSkeleton extends StatelessWidget {
+  const _HomeSkeleton();
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapCancel: () => setState(() => _pressed = false),
-      onTapUp: (_) => setState(() => _pressed = false),
-      onTap: widget.onTap,
-      child: AnimatedScale(
-        scale: _pressed ? 0.94 : 1,
-        duration: const Duration(milliseconds: 120),
-        child: Container(
-          width: widget.size,
-          height: widget.size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: widget.filled ? null : AppTheme.surfaceHighest,
-            gradient: widget.filled
-                ? const LinearGradient(
-                    colors: [AppTheme.primary, AppTheme.primaryDark],
-                  )
-                : null,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-            boxShadow: [
-              BoxShadow(
-                color: widget.color.withValues(alpha: 0.25),
-                blurRadius: _pressed ? 10 : 18,
+    return Column(
+      children: const [
+        Expanded(
+          child: Stack(
+            children: [
+              Positioned.fill(
+                top: 24,
+                child: AppSkeleton(height: double.infinity, radius: 30),
+              ),
+              Positioned.fill(
+                top: 12,
+                left: 8,
+                right: 8,
+                child: AppSkeleton(height: double.infinity, radius: 30),
+              ),
+              Positioned.fill(
+                child: AppSkeleton(height: double.infinity, radius: 30),
               ),
             ],
           ),
-          child: Icon(
-            widget.icon,
-            color: widget.filled ? const Color(0xFF400050) : widget.color,
-          ),
         ),
-      ),
+      ],
     );
   }
 }

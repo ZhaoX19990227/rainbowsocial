@@ -18,10 +18,11 @@ func NewChatRepository(db *sql.DB) *ChatRepository {
 
 func (r *ChatRepository) SaveMessage(message model.ChatMessage) (*model.ChatMessage, error) {
 	message.Timestamp = time.Now().UTC()
+	message.DeliveryStatus = "delivered"
 	result, err := r.db.Exec(`
-		INSERT INTO messages (client_message_id, from_user_id, to_user_id, content, type, timestamp)
-		VALUES (?, ?, ?, ?, ?, ?)
-	`, message.ClientMessageID, message.FromUser, message.ToUser, message.Content, message.Type, message.Timestamp)
+		INSERT INTO messages (client_message_id, from_user_id, to_user_id, content, type, media_url, duration_seconds, timestamp)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`, message.ClientMessageID, message.FromUser, message.ToUser, message.Content, message.Type, message.MediaURL, message.DurationSeconds, message.Timestamp)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +39,10 @@ func (r *ChatRepository) ListConversationSummaries(userID int64) ([]model.Conver
 		SELECT
 			u.id, u.email, u.nickname, u.avatar, u.age, u.bio, u.tags, u.lat, u.lng,
 			u.online_status, u.created_at, u.last_active_at,
-			COALESCE(msg.content, '') AS last_message,
+			COALESCE(CASE
+				WHEN msg.type = 'audio' THEN '发来一条语音'
+				ELSE msg.content
+			END, '') AS last_message,
 			COALESCE(msg.type, 'text') AS last_type,
 			COALESCE(msg.timestamp, m.created_at) AS last_message_at,
 			m.created_at AS matched_at,
@@ -126,21 +130,56 @@ func (r *ChatRepository) ListConversationSummaries(userID int64) ([]model.Conver
 	return summaries, rows.Err()
 }
 
-func (r *ChatRepository) ListMessagesBetweenUsers(userID, peerUserID int64, limit int) ([]model.ChatMessage, error) {
+func (r *ChatRepository) ListMessagesBetweenUsers(userID, peerUserID int64, limit int, beforeID int64) ([]model.ChatMessage, error) {
 	if limit <= 0 || limit > 200 {
-		limit = 100
+		limit = 30
 	}
 
-	rows, err := r.db.Query(`
-		SELECT id, client_message_id, from_user_id, to_user_id, content, type, timestamp
+	query := `
+		SELECT
+			id,
+			client_message_id,
+			from_user_id,
+			to_user_id,
+			content,
+			type,
+			media_url,
+			duration_seconds,
+			CASE
+				WHEN from_user_id = ? AND unixepoch(timestamp) <= unixepoch(COALESCE((
+					SELECT state.last_read_at
+					FROM conversation_states state
+					WHERE state.user_id = ? AND state.peer_user_id = ?
+				), '1970-01-01T00:00:00Z')) THEN 'read'
+				WHEN from_user_id = ? THEN 'delivered'
+				ELSE ''
+			END AS delivery_status,
+			timestamp
 		FROM messages
-		WHERE
+		WHERE (
 			(from_user_id = ? AND to_user_id = ?)
 			OR
 			(from_user_id = ? AND to_user_id = ?)
-		ORDER BY timestamp ASC
-		LIMIT ?
-	`, userID, peerUserID, peerUserID, userID, limit)
+		)
+	`
+	args := []any{
+		userID,
+		peerUserID,
+		userID,
+		userID,
+		userID,
+		peerUserID,
+		peerUserID,
+		userID,
+	}
+	if beforeID > 0 {
+		query += ` AND id < ?`
+		args = append(args, beforeID)
+	}
+	query += ` ORDER BY timestamp DESC, id DESC LIMIT ?`
+	args = append(args, limit)
+
+	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -156,13 +195,22 @@ func (r *ChatRepository) ListMessagesBetweenUsers(userID, peerUserID int64, limi
 			&message.ToUser,
 			&message.Content,
 			&message.Type,
+			&message.MediaURL,
+			&message.DurationSeconds,
+			&message.DeliveryStatus,
 			&message.Timestamp,
 		); err != nil {
 			return nil, err
 		}
 		messages = append(messages, message)
 	}
-	return messages, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	for left, right := 0, len(messages)-1; left < right; left, right = left+1, right-1 {
+		messages[left], messages[right] = messages[right], messages[left]
+	}
+	return messages, nil
 }
 
 func (r *ChatRepository) MarkConversationRead(userID, peerUserID int64, readAt time.Time) error {

@@ -13,6 +13,7 @@ type Config struct {
 	AppEnv           string
 	ServerPort       string
 	DatabasePath     string
+	UploadDir        string
 	JWTSecret        string
 	JWTExpiryHours   int
 	OTPExpiryMinutes int
@@ -32,6 +33,7 @@ func Load() (*Config, error) {
 		AppEnv:           getEnv("APP_ENV", "development"),
 		ServerPort:       getEnv("SERVER_PORT", "8088"),
 		DatabasePath:     getEnv("DATABASE_PATH", "./social_app.db"),
+		UploadDir:        getEnv("UPLOAD_DIR", "./uploads"),
 		JWTSecret:        getEnv("JWT_SECRET", "change-me-in-production"),
 		JWTExpiryHours:   getEnvAsInt("JWT_EXPIRY_HOURS", 72),
 		OTPExpiryMinutes: getEnvAsInt("OTP_EXPIRY_MINUTES", 5),

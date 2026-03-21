@@ -63,4 +63,16 @@ class SwipeService {
       return const SwipeResult(action: 'pass', matched: false);
     }
   }
+
+  Future<void> undo(String token, int targetUserId) async {
+    try {
+      await _client.post(
+        '/swipe/undo',
+        token: token,
+        body: {'target_user_id': targetUserId},
+      );
+    } catch (_) {
+      if (!AppFlags.useMockFallbacks) rethrow;
+    }
+  }
 }

@@ -18,6 +18,9 @@ class UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final heroImage =
+        user.photos.isNotEmpty ? user.photos.first : user.avatarOrFallback;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -35,7 +38,10 @@ class UserCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.network(user.avatarOrFallback, fit: BoxFit.cover),
+              Hero(
+                tag: 'match-avatar-${user.id}',
+                child: Image.network(heroImage, fit: BoxFit.cover),
+              ),
               DecoratedBox(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
