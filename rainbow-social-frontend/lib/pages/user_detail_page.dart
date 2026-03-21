@@ -10,7 +10,9 @@ import '../models/match_summary.dart';
 import '../routes/app_router.dart';
 import '../services/app_feedback.dart';
 import '../services/relationship_copy.dart';
+import '../theme/app_theme.dart';
 import '../usecases/swipe_usecases.dart';
+import '../widgets/avatar_widget.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/tag_chip.dart';
 
@@ -218,20 +220,34 @@ class UserDetailPage extends ConsumerWidget {
                 if (result.matched) {
                   await ref.read(matchesControllerProvider.notifier).load();
                   await ref.read(matchSummaryControllerProvider.notifier).load();
-                  await showDialog<void>(
-                    context: context,
-                    builder: (context) => _MutualLikeDialog(
+                  await _showRelationshipOverlay(
+                    context,
+                    child: _RelationshipUpgradeOverlay(
+                      mode: _RelationshipOverlayMode.mutual,
                       user: user,
-                      onChat: () {
+                      onPrimary: () {
                         Navigator.of(context).pop();
                         Navigator.of(context)
                             .pushNamed(AppRouter.chat, arguments: user);
                       },
+                      onSecondary: () => Navigator.of(context).pop(),
                     ),
                   );
                 } else {
                   await ref.read(matchSummaryControllerProvider.notifier).load();
-                  AppFeedback.showToast(RelationshipCopy.likeSent(user.nickname));
+                  if (!context.mounted) return;
+                  await _showRelationshipOverlay(
+                    context,
+                    child: _RelationshipUpgradeOverlay(
+                      mode: _RelationshipOverlayMode.likeSent,
+                      user: user,
+                      onPrimary: () {
+                        Navigator.of(context).pop();
+                        ref.read(matchSummaryControllerProvider.notifier).load();
+                      },
+                      onSecondary: () => Navigator.of(context).pop(),
+                    ),
+                  );
                 }
               } catch (error) {
                 AppFeedback.showError('操作失败：$error');
@@ -284,52 +300,240 @@ class UserDetailPage extends ConsumerWidget {
   }
 }
 
-class _MutualLikeDialog extends StatelessWidget {
-  const _MutualLikeDialog({
+Future<void> _showRelationshipOverlay(
+  BuildContext context, {
+  required Widget child,
+}) {
+  return showGeneralDialog<void>(
+    context: context,
+    barrierLabel: 'relationship-upgrade',
+    barrierDismissible: true,
+    barrierColor: Colors.black.withValues(alpha: 0.78),
+    transitionDuration: const Duration(milliseconds: 320),
+    pageBuilder: (context, _, __) => child,
+    transitionBuilder: (context, animation, _, child) {
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+      );
+      return FadeTransition(
+        opacity: curved,
+        child: ScaleTransition(
+          scale: Tween(begin: 0.92, end: 1.0).animate(curved),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
+enum _RelationshipOverlayMode {
+  likeSent,
+  mutual,
+}
+
+class _RelationshipUpgradeOverlay extends StatelessWidget {
+  const _RelationshipUpgradeOverlay({
+    required this.mode,
     required this.user,
-    required this.onChat,
+    required this.onPrimary,
+    required this.onSecondary,
   });
 
+  final _RelationshipOverlayMode mode;
   final AppUser user;
-  final VoidCallback onChat;
+  final VoidCallback onPrimary;
+  final VoidCallback onSecondary;
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      backgroundColor: Colors.transparent,
-      child: GlassCard(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              RelationshipCopy.mutualLikeTitle,
-              style: Theme.of(context).textTheme.headlineSmall,
+    final isMutual = mode == _RelationshipOverlayMode.mutual;
+    final title = isMutual ? '互相喜欢' : '喜欢已送达';
+    final body = isMutual
+        ? RelationshipCopy.mutualLike(user.nickname)
+        : '${user.nickname} 会收到你的提醒，回个喜欢就能聊天。';
+
+    return Material(
+      color: Colors.transparent,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: Alignment.topCenter,
+                radius: 1.18,
+                colors: [
+                  (isMutual ? AppTheme.primary : const Color(0xFFFF9B68))
+                      .withValues(alpha: 0.32),
+                  AppTheme.secondary.withValues(alpha: 0.16),
+                  const Color(0xFF090914),
+                ],
+              ),
             ),
-            const SizedBox(height: 10),
-            Text(
-              RelationshipCopy.mutualLike(user.nickname),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('稍后'),
+          ),
+          ...List.generate(isMutual ? 16 : 10, (index) {
+            final offsetX = ((index % 4) - 1.5) * 72.0;
+            final offsetY = (index ~/ 4) * 82.0;
+            return Positioned(
+              left: MediaQuery.of(context).size.width / 2 + offsetX,
+              top: 90 + offsetY,
+              child: Opacity(
+                opacity: isMutual ? 0.22 : 0.14,
+                child: Text(
+                  isMutual ? '❤' : '✦',
+                  style: TextStyle(
+                    fontSize: isMutual ? 22 + (index % 3) * 4 : 18,
+                    color: Colors.white,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: onChat,
-                    child: const Text('去聊天'),
-                  ),
-                ),
-              ],
+              ),
             ),
-          ],
-        ),
+          }),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: GlassCard(
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+                borderRadius: BorderRadius.circular(34),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(999),
+                        color: Colors.white.withValues(alpha: 0.08),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.08),
+                        ),
+                      ),
+                      child: Text(
+                        isMutual ? '关系升级' : '轻轻靠近',
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: const Color(0xFFF4D7C7),
+                              letterSpacing: 0.7,
+                            ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                            fontSize: isMutual ? 40 : 34,
+                          ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      body,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: const Color(0xFFD8D2E8),
+                          ),
+                    ),
+                    const SizedBox(height: 26),
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Container(
+                          width: isMutual ? 220 : 180,
+                          height: isMutual ? 220 : 180,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                (isMutual ? AppTheme.tertiary : AppTheme.secondary)
+                                    .withValues(alpha: 0.18),
+                                AppTheme.primary.withValues(alpha: 0.08),
+                                Colors.transparent,
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (isMutual)
+                          Transform.translate(
+                            offset: const Offset(-44, 8),
+                            child: CircleAvatar(
+                              radius: 36,
+                              backgroundColor:
+                                  Colors.white.withValues(alpha: 0.08),
+                              child: Text(
+                                '你',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                            ),
+                          ),
+                        Transform.translate(
+                          offset: isMutual
+                              ? const Offset(38, -4)
+                              : const Offset(0, 0),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              gradient: LinearGradient(
+                                colors: isMutual
+                                    ? const [
+                                        Color(0x66FFAA7A),
+                                        Color(0x66EA87FF),
+                                      ]
+                                    : const [
+                                        Color(0x66FFB178),
+                                        Color(0x664ED7FF),
+                                      ],
+                              ),
+                            ),
+                            child: AvatarWidget(
+                              imageUrl: user.avatar,
+                              radius: isMutual ? 54 : 58,
+                              isOnline: user.onlineStatus,
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          child: Text(
+                            isMutual ? '❤' : '✦',
+                            style: TextStyle(
+                              fontSize: isMutual ? 28 : 24,
+                              color: const Color(0xFFF6C5B8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 28),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: onSecondary,
+                            child: Text(isMutual ? '稍后再说' : '继续看看'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: onPrimary,
+                            style: FilledButton.styleFrom(
+                              backgroundColor: isMutual
+                                  ? const Color(0xFFF5A16B)
+                                  : AppTheme.primary,
+                              foregroundColor: const Color(0xFF2A1224),
+                            ),
+                            child: Text(isMutual ? '去聊天' : '知道了'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

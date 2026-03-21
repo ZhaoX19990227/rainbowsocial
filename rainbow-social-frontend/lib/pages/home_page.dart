@@ -680,7 +680,7 @@ class _MatchOverlayState extends State<_MatchOverlay>
             ),
           ),
           ...List.generate(14, (index) {
-            final angle = (math.pi * 2 / 9) * index;
+            final angle = (math.pi * 2 / 14) * index;
             return Positioned(
               left: 0,
               right: 0,
@@ -848,15 +848,64 @@ class _MatchOverlayState extends State<_MatchOverlay>
                       ],
                     ),
                     const SizedBox(height: 30),
-                    FilledButton.icon(
-                      onPressed: widget.onChat,
-                      icon: const Icon(Icons.chat_bubble_rounded),
-                      label: const Text('去聊天'),
-                    ),
-                    const SizedBox(height: 12),
-                    TextButton(
-                      onPressed: widget.onClose,
-                      child: const Text('继续看看'),
+                    Container(
+                      padding: const EdgeInsets.all(1.2),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(26),
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0x66FFB178),
+                            Color(0x55EA87FF),
+                            Color(0x554ED7FF),
+                          ],
+                        ),
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(25),
+                          color: const Color(0xCC141522),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              '聊天已经解锁',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(color: const Color(0xFFFFD4C0)),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '现在是最适合打招呼的时候，别把这股心动晾太久。',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(color: AppTheme.textSecondary),
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: widget.onClose,
+                                    child: const Text('稍后再说'),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: FilledButton.icon(
+                                    onPressed: widget.onChat,
+                                    icon: const Icon(Icons.chat_bubble_rounded),
+                                    label: const Text('去聊天'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),

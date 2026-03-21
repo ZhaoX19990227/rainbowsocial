@@ -3,11 +3,13 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../controllers/auth_controller.dart';
 import '../controllers/chat_controller.dart';
 import '../models/app_user.dart';
+import '../models/chat_message_model.dart';
 import '../models/flirty_action.dart';
 import '../providers/app_providers.dart';
 import '../services/app_feedback.dart';
@@ -34,6 +36,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   final _scrollController = ScrollController();
   final _picker = ImagePicker();
   Timer? _recordingTicker;
+  String? _activeFlirtyClientId;
+  _FlirtyBurstData? _activeBurst;
 
   bool _isRecording = false;
   bool _willCancelRecording = false;
@@ -62,6 +66,20 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             curve: Curves.easeOutCubic,
           );
         });
+        if (next.messages.isNotEmpty) {
+          final latest = next.messages.last;
+          final previousId = previous?.messages.isNotEmpty == true
+              ? previous!.messages.last.clientMessageId
+              : '';
+          final latestKey = latest.clientMessageId.isNotEmpty
+              ? latest.clientMessageId
+              : '${latest.id}_${latest.timestamp.microsecondsSinceEpoch}';
+          if (latest.isFlirty &&
+              latestKey != previousId &&
+              latestKey != _activeFlirtyClientId) {
+            _playFlirtyBurst(latest);
+          }
+        }
       }
       if (previous?.errorMessage != next.errorMessage &&
           next.errorMessage != null) {
@@ -333,6 +351,18 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               ),
             ),
           ),
+          IgnorePointer(
+            ignoring: _activeBurst == null,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 260),
+              child: _activeBurst == null
+                  ? const SizedBox.shrink()
+                  : _FlirtyBurstOverlay(
+                      key: ValueKey(_activeBurst!.messageKey),
+                      data: _activeBurst!,
+                    ),
+            ),
+          ),
         ],
       ),
     );
@@ -370,6 +400,37 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     await ref
         .read(chatControllerProvider(widget.peer).notifier)
         .sendFlirtyAction(action);
+  }
+
+  void _playFlirtyBurst(ChatMessageModel message) {
+    final action = FlirtyAction.byId(message.flirtyActionId);
+    final key = message.clientMessageId.isNotEmpty
+        ? message.clientMessageId
+        : '${message.id}_${message.timestamp.microsecondsSinceEpoch}';
+    _activeFlirtyClientId = key;
+    HapticFeedback.mediumImpact();
+    Future<void>.delayed(const Duration(milliseconds: 120), () {
+      HapticFeedback.selectionClick();
+    });
+    setState(() {
+      _activeBurst = _FlirtyBurstData(
+        messageKey: key,
+        actionId: action.id,
+        label: action.label,
+        preview: message.content,
+        emoji: action.emoji,
+        gradient: action.gradient,
+        isMine: message.isMine(
+          ref.read(authControllerProvider).valueOrNull?.user.id ?? -1,
+        ),
+      );
+    });
+    Future<void>.delayed(const Duration(milliseconds: 1700), () {
+      if (!mounted) return;
+      if (_activeBurst?.messageKey == key) {
+        setState(() => _activeBurst = null);
+      }
+    });
   }
 
   Future<void> _handleRecordStart(LongPressStartDetails _) async {
@@ -476,6 +537,345 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         _recordingSeconds = 0;
       });
       AppFeedback.showError('录音发送失败：$error');
+    }
+  }
+}
+
+class _FlirtyBurstData {
+  const _FlirtyBurstData({
+    required this.messageKey,
+    required this.actionId,
+    required this.label,
+    required this.preview,
+    required this.emoji,
+    required this.gradient,
+    required this.isMine,
+  });
+
+  final String messageKey;
+  final String actionId;
+  final String label;
+  final String preview;
+  final String emoji;
+  final List<Color> gradient;
+  final bool isMine;
+}
+
+class _FlirtyBurstOverlay extends StatefulWidget {
+  const _FlirtyBurstOverlay({
+    super.key,
+    required this.data,
+  });
+
+  final _FlirtyBurstData data;
+
+  @override
+  State<_FlirtyBurstOverlay> createState() => _FlirtyBurstOverlayState();
+}
+
+class _FlirtyBurstOverlayState extends State<_FlirtyBurstOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final progress = Curves.easeOutCubic.transform(_controller.value);
+        final pulse = 1 + (math.sin(progress * math.pi * 4) * 0.05);
+        final screenSize = MediaQuery.of(context).size;
+        return Opacity(
+          opacity: (1 - (progress - 0.65).clamp(0.0, 0.35) / 0.35).clamp(0.0, 1.0),
+          child: Container(
+            color: Colors.black.withValues(alpha: 0.22 * (1 - progress * 0.8)),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: RadialGradient(
+                      center: Alignment.center,
+                      radius: 0.7 + (progress * 0.2),
+                      colors: [
+                        widget.data.gradient.first.withValues(alpha: 0.24),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+                ...List.generate(9, (index) {
+                  final angle = (math.pi * 2 / 9) * index;
+                  final distance = 48 + (index * 16.0) + (progress * 88);
+                  final wobble = math.sin((progress * math.pi * 2) + index) * 8;
+                  return Positioned(
+                    left: screenSize.width / 2 +
+                        (math.cos(angle) * distance) -
+                        18,
+                    top: screenSize.height * 0.42 +
+                        (math.sin(angle) * distance * 0.5) -
+                        18 -
+                        (progress * 54) +
+                        wobble,
+                    child: Opacity(
+                      opacity: (1 - progress).clamp(0.0, 1.0),
+                      child: Text(
+                        widget.data.emoji,
+                        style: TextStyle(fontSize: 18 + (index % 3) * 6),
+                      ),
+                    ),
+                  );
+                }),
+                Positioned.fill(
+                  child: _FlirtyActionScene(
+                    data: widget.data,
+                    progress: progress,
+                  ),
+                ),
+                Center(
+                  child: Transform.translate(
+                    offset: Offset(0, 32 * (1 - progress)),
+                    child: Transform.scale(
+                      scale: pulse,
+                      child: Container(
+                        width: 274,
+                        padding: const EdgeInsets.fromLTRB(24, 26, 24, 24),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(30),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              widget.data.gradient.first.withValues(alpha: 0.86),
+                              widget.data.gradient.last.withValues(alpha: 0.72),
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color:
+                                  widget.data.gradient.first.withValues(alpha: 0.25),
+                              blurRadius: 34,
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(widget.data.emoji, style: const TextStyle(fontSize: 44)),
+                            const SizedBox(height: 10),
+                            Text(
+                              widget.data.label,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineMedium
+                                  ?.copyWith(fontSize: 28),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              widget.data.preview,
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.9),
+                                  ),
+                            ),
+                            const SizedBox(height: 10),
+                            Text(
+                              widget.data.isMine ? '你先撩了一下' : '对方先撩了你一下',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.68),
+                                    letterSpacing: 0.3,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _FlirtyActionScene extends StatelessWidget {
+  const _FlirtyActionScene({
+    required this.data,
+    required this.progress,
+  });
+
+  final _FlirtyBurstData data;
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final floatY = 26 * (1 - progress);
+    final pulse = 1 + (math.sin(progress * math.pi * 3) * 0.08);
+    final shake = math.sin(progress * math.pi * 10) * 10 * (1 - progress);
+
+    switch (data.actionId) {
+      case 'poke_butt':
+        return Stack(
+          children: [
+            Center(
+              child: Transform.translate(
+                offset: Offset(shake, 56 - floatY),
+                child: Transform.scale(
+                  scale: 1.28 * pulse,
+                  child: const Text('🍑', style: TextStyle(fontSize: 94)),
+                ),
+              ),
+            ),
+            Center(
+              child: Transform.translate(
+                offset: Offset(74 - (progress * 18), 60 - floatY),
+                child: Opacity(
+                  opacity: 1 - progress,
+                  child: const Text('👉', style: TextStyle(fontSize: 56)),
+                ),
+              ),
+            ),
+            ...List.generate(3, (index) {
+              final ring = 30 + (progress * 46) + (index * 10);
+              return Center(
+                child: Transform.translate(
+                  offset: const Offset(16, 60),
+                  child: Container(
+                    width: ring,
+                    height: ring,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withValues(
+                          alpha: (0.32 - (progress * 0.24)).clamp(0.0, 0.32),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ],
+        );
+      case 'pat_head':
+        return Stack(
+          children: [
+            Center(
+              child: Transform.translate(
+                offset: Offset(0, 40 - floatY),
+                child: Transform.scale(
+                  scale: 1.18 * pulse,
+                  child: const Text('🙂', style: TextStyle(fontSize: 86)),
+                ),
+              ),
+            ),
+            Center(
+              child: Transform.translate(
+                offset: Offset(0, -6 - floatY),
+                child: const Text('🫳', style: TextStyle(fontSize: 52)),
+              ),
+            ),
+            ...List.generate(6, (index) {
+              final dx = (index - 2.5) * 22.0;
+              return Center(
+                child: Transform.translate(
+                  offset: Offset(dx, -18 - (progress * 42)),
+                  child: Opacity(
+                    opacity: (1 - progress).clamp(0.0, 1.0),
+                    child: const Text('✨', style: TextStyle(fontSize: 20)),
+                  ),
+                ),
+              );
+            }),
+          ],
+        );
+      case 'tug_sleeve':
+        return Stack(
+          children: [
+            Center(
+              child: Transform.translate(
+                offset: Offset(shake * 0.7, 42 - floatY),
+                child: Transform.scale(
+                  scale: 1.18,
+                  child: const Text('🧥', style: TextStyle(fontSize: 86)),
+                ),
+              ),
+            ),
+            Center(
+              child: Transform.translate(
+                offset: Offset(-64 + (progress * 20), 48 - floatY),
+                child: const Text('✊', style: TextStyle(fontSize: 48)),
+              ),
+            ),
+          ],
+        );
+      case 'blow_ear':
+        return Stack(
+          children: [
+            Center(
+              child: Transform.translate(
+                offset: Offset(-22, 38 - floatY),
+                child: const Text('🙂', style: TextStyle(fontSize: 76)),
+              ),
+            ),
+            ...List.generate(8, (index) {
+              final dx = -60 + (progress * (100 + (index * 6)));
+              final dy = 20 + math.sin(progress * math.pi * 4 + index) * 14;
+              return Center(
+                child: Transform.translate(
+                  offset: Offset(dx, dy),
+                  child: Opacity(
+                    opacity: (1 - progress).clamp(0.0, 1.0),
+                    child: const Text('💨', style: TextStyle(fontSize: 20)),
+                  ),
+                ),
+              );
+            }),
+          ],
+        );
+      case 'glance':
+        return Center(
+          child: Transform.translate(
+            offset: Offset(0, 42 - floatY),
+            child: Transform.scale(
+              scale: 1.2 * pulse,
+              child: const Text('👀', style: TextStyle(fontSize: 92)),
+            ),
+          ),
+        );
+      default:
+        return Center(
+          child: Transform.translate(
+            offset: Offset(0, 44 - floatY),
+            child: Transform.scale(
+              scale: 1.24 * pulse,
+              child: Text(
+                data.emoji,
+                style: const TextStyle(fontSize: 88),
+              ),
+            ),
+          ),
+        );
     }
   }
 }
