@@ -476,53 +476,326 @@ class _PickerHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AnimatedBuilder(
-          animation: controller,
-          builder: (context, _) {
-            final glow = 0.14 + controller.value * 0.16;
-            return Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  colors: [Color(0x55E2B17B), Color(0x447094C8)],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0x33E2B17B).withValues(alpha: glow),
-                    blurRadius: 24,
+        Row(
+          children: [
+            AnimatedBuilder(
+              animation: controller,
+              builder: (context, _) {
+                final glow = 0.14 + controller.value * 0.16;
+                return Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      colors: [Color(0x55D7A47A), Color(0x445C7893)],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0x33D7A47A).withValues(alpha: glow),
+                        blurRadius: 24,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.favorite_outline_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'XiongHou Duo',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    '圆脸小熊攻与机灵小猴受的暧昧动作库。',
+                    style: Theme.of(context).textTheme.labelMedium,
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.favorite_outline_rounded,
-                color: Colors.white,
-                size: 22,
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        AnimatedBuilder(
+          animation: controller,
+          builder: (context, _) {
+            final progress = Curves.easeOutCubic.transform(controller.value);
+            return Transform.translate(
+              offset: Offset(0, (1 - progress) * 12),
+              child: Opacity(
+                opacity: progress,
+                child: const _SignatureDuoPanel(),
               ),
             );
           },
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+      ],
+    );
+  }
+}
+
+class _SignatureDuoPanel extends StatelessWidget {
+  const _SignatureDuoPanel();
+
+  @override
+  Widget build(BuildContext context) {
+    final labelStyle = Theme.of(context).textTheme.labelMedium?.copyWith(
+          color: Colors.white.withValues(alpha: 0.86),
+          letterSpacing: 0.18,
+        );
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(26),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0x33D1A17B),
+            Color(0x1AFFFFFF),
+            Color(0x22516A86),
+          ],
+        ),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.08),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              Text(
-                'Relationship Temperature',
-                style: Theme.of(context).textTheme.titleLarge,
+              Expanded(
+                child: Text(
+                  '固定签名角色',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                      ),
+                ),
               ),
-              const SizedBox(height: 3),
-              Text(
-                'Aru 与 Noel 的秘密情绪菜单。',
-                style: Theme.of(context).textTheme.labelMedium,
+              Text('深色氛围 / 柔和电影光', style: labelStyle),
+            ],
+          ),
+          const SizedBox(height: 12),
+          const _SignatureDuoStage(),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: const [
+              _PoseChip(label: 'Neutral', expression: _ChibiExpression.neutral),
+              _PoseChip(label: 'Smile', expression: _ChibiExpression.softSmile),
+              _PoseChip(label: 'Shy', expression: _ChibiExpression.shy),
+              _PoseChip(
+                label: 'Mischief',
+                expression: _ChibiExpression.naughtySmile,
+              ),
+              _PoseChip(
+                label: 'Reactive',
+                expression: _ChibiExpression.surprised,
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SignatureDuoStage extends StatelessWidget {
+  const _SignatureDuoStage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 168,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        gradient: const RadialGradient(
+          center: Alignment(0, -0.26),
+          radius: 1.08,
+          colors: [
+            Color(0x338C7A6B),
+            Color(0xFF10131A),
+          ],
         ),
-      ],
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            left: 28,
+            right: 28,
+            top: 18,
+            height: 64,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: RadialGradient(
+                  colors: [
+                    Colors.white.withValues(alpha: 0.14),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 28,
+            right: 28,
+            bottom: 16,
+            height: 32,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.transparent,
+                    Colors.white.withValues(alpha: 0.08),
+                    Colors.transparent,
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const Positioned(
+            left: 30,
+            top: 12,
+            child: _StageNameTag(label: 'Bear Boy'),
+          ),
+          const Positioned(
+            right: 30,
+            top: 12,
+            child: _StageNameTag(label: 'Monkey Boy'),
+          ),
+          const Positioned(
+            left: 28,
+            top: 28,
+            child: _CharacterStandPreview(
+              proactive: true,
+              expression: _ChibiExpression.neutral,
+            ),
+          ),
+          const Positioned(
+            right: 24,
+            top: 34,
+            child: _CharacterStandPreview(
+              proactive: false,
+              expression: _ChibiExpression.softSmile,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StageNameTag extends StatelessWidget {
+  const _StageNameTag({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        color: Colors.black.withValues(alpha: 0.28),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.78),
+              letterSpacing: 0.18,
+            ),
+      ),
+    );
+  }
+}
+
+class _CharacterStandPreview extends StatelessWidget {
+  const _CharacterStandPreview({
+    required this.proactive,
+    required this.expression,
+  });
+
+  final bool proactive;
+  final _ChibiExpression expression;
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.scale(
+      scale: proactive ? 0.82 : 0.76,
+      child: _ChibiBoy(
+        proactive: proactive,
+        faceRight: proactive,
+        expression: expression,
+        headTilt: proactive ? -0.04 : 0.05,
+        bodyLean: proactive ? 0.04 : -0.02,
+        frontArmReach: 0.14,
+        frontArmLift: 0.12,
+        backArmLift: 0.12,
+        blush: proactive ? 0.1 : 0.18,
+      ),
+    );
+  }
+}
+
+class _PoseChip extends StatelessWidget {
+  const _PoseChip({
+    required this.label,
+    required this.expression,
+  });
+
+  final String label;
+  final _ChibiExpression expression;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        color: Colors.white.withValues(alpha: 0.05),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.06),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 28,
+            height: 22,
+            child: CustomPaint(
+              painter: _FacePainter(
+                expression: expression,
+                blush: expression == _ChibiExpression.shy ? 0.42 : 0.16,
+                proactive: expression == _ChibiExpression.naughtySmile,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.84),
+                  letterSpacing: 0.16,
+                ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1081,7 +1354,7 @@ class _CinematicStage extends StatelessWidget {
                 ),
               ),
               child: const Text(
-                'Aru x Noel',
+                'XiongHou Duo',
                 style: TextStyle(
                   color: Colors.white70,
                   fontSize: 11,
@@ -1712,6 +1985,7 @@ enum _ChibiExpression {
   glance,
   mischief,
   naughtySmile,
+  neutral,
   shy,
   softSmile,
   surprised,
@@ -1744,20 +2018,30 @@ class _ChibiBoy extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = proactive
         ? const _CharacterPalette(
-            hairTop: Color(0xFF855649),
-            hairBase: Color(0xFF26151B),
-            outfitTop: Color(0xFFBE6D63),
-            outfitBase: Color(0xFF5A2636),
-            accent: Color(0xFFF1C08D),
-            accessory: Color(0xFFE7A890),
+            skin: Color(0xFFF0D3BF),
+            hairTop: Color(0xFF5A453D),
+            hairBase: Color(0xFF261E1B),
+            shirtTop: Color(0xFFF6F2ED),
+            shirtBase: Color(0xFFD3CDC8),
+            shortsTop: Color(0xFF25272D),
+            shortsBase: Color(0xFF121317),
+            sneakerTop: Color(0xFFF8F7F5),
+            sneakerBase: Color(0xFFA8A7A5),
+            accent: Color(0xFFD6A47B),
+            shadow: Color(0xFF1C120F),
           )
         : const _CharacterPalette(
-            hairTop: Color(0xFF7E97C6),
-            hairBase: Color(0xFF253552),
-            outfitTop: Color(0xFF5E79A4),
-            outfitBase: Color(0xFF1D2946),
-            accent: Color(0xFFC5D6FF),
-            accessory: Color(0xFF93B2D7),
+            skin: Color(0xFFF4D7C5),
+            hairTop: Color(0xFF43474F),
+            hairBase: Color(0xFF20232A),
+            shirtTop: Color(0xFFF7F4F0),
+            shirtBase: Color(0xFFD8D4CF),
+            shortsTop: Color(0xFF20242C),
+            shortsBase: Color(0xFF0F1218),
+            sneakerTop: Color(0xFFF9F8F6),
+            sneakerBase: Color(0xFFBAB8B4),
+            accent: Color(0xFF6F889A),
+            shadow: Color(0xFF11141B),
           );
 
     final frontArmAngle =
@@ -1791,7 +2075,7 @@ class _ChibiBoy extends StatelessWidget {
               bottom: 18,
               child: _Limb(
                 angle: -0.10,
-                color: palette.outfitBase,
+                color: const Color(0xFFD6BEAE),
                 height: 40,
                 width: 16,
               ),
@@ -1801,9 +2085,25 @@ class _ChibiBoy extends StatelessWidget {
               bottom: 18,
               child: _Limb(
                 angle: 0.1,
-                color: palette.outfitBase,
+                color: const Color(0xFFD6BEAE),
                 height: 40,
                 width: 16,
+              ),
+            ),
+            Positioned(
+              left: 26,
+              bottom: 10,
+              child: _Sneaker(
+                colorTop: palette.sneakerTop,
+                colorBase: palette.sneakerBase,
+              ),
+            ),
+            Positioned(
+              right: 22,
+              bottom: 10,
+              child: _Sneaker(
+                colorTop: palette.sneakerTop,
+                colorBase: palette.sneakerBase,
               ),
             ),
             Positioned(
@@ -1811,7 +2111,7 @@ class _ChibiBoy extends StatelessWidget {
               top: 78,
               child: _Limb(
                 angle: backArmAngle + bodyLean * 0.1,
-                color: palette.outfitTop,
+                color: palette.skin,
                 height: 44,
                 width: 15,
               ),
@@ -1821,7 +2121,7 @@ class _ChibiBoy extends StatelessWidget {
               top: 78 - frontArmLift * 10,
               child: _Limb(
                 angle: frontArmAngle,
-                color: palette.outfitTop,
+                color: palette.skin,
                 height: 50,
                 width: 15,
               ),
@@ -1859,20 +2159,30 @@ class _ChibiBoy extends StatelessWidget {
 
 class _CharacterPalette {
   const _CharacterPalette({
+    required this.skin,
     required this.hairTop,
     required this.hairBase,
-    required this.outfitTop,
-    required this.outfitBase,
+    required this.shirtTop,
+    required this.shirtBase,
+    required this.shortsTop,
+    required this.shortsBase,
+    required this.sneakerTop,
+    required this.sneakerBase,
     required this.accent,
-    required this.accessory,
+    required this.shadow,
   });
 
+  final Color skin;
   final Color hairTop;
   final Color hairBase;
-  final Color outfitTop;
-  final Color outfitBase;
+  final Color shirtTop;
+  final Color shirtBase;
+  final Color shortsTop;
+  final Color shortsBase;
+  final Color sneakerTop;
+  final Color sneakerBase;
   final Color accent;
-  final Color accessory;
+  final Color shadow;
 }
 
 class _ChibiBody extends StatelessWidget {
@@ -1886,89 +2196,105 @@ class _ChibiBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bodyWidth = proactive ? 84.0 : 72.0;
+    final bodyRadius = proactive ? 32.0 : 28.0;
     return SizedBox(
-      width: 78,
-      height: 86,
+      width: proactive ? 86 : 78,
+      height: 90,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Container(
-            width: 78,
-            height: 82,
+            width: bodyWidth,
+            height: 52,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(30),
+              borderRadius: BorderRadius.circular(bodyRadius),
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [palette.outfitTop, palette.outfitBase],
+                colors: [palette.shirtTop, palette.shirtBase],
               ),
               boxShadow: [
                 BoxShadow(
-                  color: palette.outfitTop.withValues(alpha: 0.18),
+                  color: Colors.white.withValues(alpha: 0.12),
                   blurRadius: 18,
                 ),
               ],
             ),
           ),
           Positioned(
-            left: 12,
-            right: 12,
+            left: 14,
+            right: proactive ? 14 : 10,
             top: 10,
-            height: 14,
+            height: 12,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(999),
-                color: Colors.white.withValues(alpha: 0.08),
+                color: Colors.white.withValues(alpha: 0.18),
               ),
             ),
           ),
-          if (proactive)
-            Positioned(
-              right: 10,
-              top: 18,
-              child: Container(
-                width: 12,
-                height: 34,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(999),
-                  color: palette.accent.withValues(alpha: 0.24),
-                ),
-              ),
-            )
-          else
-            Positioned(
-              left: 20,
-              right: 20,
-              top: 24,
-              height: 20,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(999),
-                  color: palette.accent.withValues(alpha: 0.18),
-                ),
-              ),
-            ),
           Positioned(
-            left: 26,
-            right: 26,
-            top: -4,
-            height: 22,
+            left: proactive ? 26 : 22,
+            right: proactive ? 26 : 22,
+            top: -6,
+            height: 24,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(999),
-                color: const Color(0xFFF6D9CC),
+                color: palette.skin,
+              ),
+            ),
+          ),
+          Positioned(
+            left: proactive ? 20 : 18,
+            right: proactive ? 20 : 18,
+            top: 48,
+            height: 32,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [palette.shortsTop, palette.shortsBase],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: proactive ? 22 : 18,
+            top: 56,
+            child: Container(
+              width: proactive ? 10 : 8,
+              height: 22,
+              decoration: BoxDecoration(
+                color: palette.skin,
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+          ),
+          Positioned(
+            right: proactive ? 22 : 18,
+            top: 56,
+            child: Container(
+              width: proactive ? 10 : 8,
+              height: 22,
+              decoration: BoxDecoration(
+                color: palette.skin,
+                borderRadius: BorderRadius.circular(999),
               ),
             ),
           ),
           Positioned(
             left: proactive ? 10 : 14,
-            right: proactive ? 18 : 14,
-            bottom: 10,
-            height: proactive ? 16 : 20,
+            right: proactive ? 10 : 14,
+            top: 36,
+            height: 16,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(999),
-                color: Colors.black.withValues(alpha: proactive ? 0.12 : 0.08),
+                color: palette.accent.withValues(alpha: proactive ? 0.14 : 0.09),
               ),
             ),
           ),
@@ -1993,21 +2319,23 @@ class _ChibiHead extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final faceWidth = proactive ? 78.0 : 68.0;
+    final faceHeight = proactive ? 72.0 : 70.0;
     return SizedBox(
-      width: 90,
-      height: 86,
+      width: proactive ? 96 : 88,
+      height: 90,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Positioned(
-            left: 8,
+            left: proactive ? 8 : 12,
             top: 14,
             child: Container(
-              width: 74,
-              height: 68,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Color(0xFFF6D8CA),
+              width: faceWidth,
+              height: faceHeight,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(proactive ? 36 : 28),
+                color: palette.skin,
               ),
             ),
           ),
@@ -2030,30 +2358,17 @@ class _ChibiHead extends StatelessWidget {
               ),
             ),
           Positioned(
-            left: proactive ? 7 : 12,
-            top: proactive ? 22 : 18,
+            left: proactive ? 10 : 15,
+            top: proactive ? 20 : 18,
             child: Container(
-              width: proactive ? 56 : 50,
-              height: 22,
+              width: proactive ? 58 : 44,
+              height: proactive ? 16 : 14,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(18),
                 color: palette.hairBase.withValues(alpha: 0.94),
               ),
             ),
           ),
-          if (proactive)
-            Positioned(
-              right: 8,
-              top: 34,
-              child: Container(
-                width: 5,
-                height: 10,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(999),
-                  color: palette.accent,
-                ),
-              ),
-            ),
           Positioned(
             left: 20,
             top: 34,
@@ -2102,6 +2417,56 @@ class _Limb extends StatelessWidget {
   }
 }
 
+class _Sneaker extends StatelessWidget {
+  const _Sneaker({
+    required this.colorTop,
+    required this.colorBase,
+  });
+
+  final Color colorTop;
+  final Color colorBase;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 22,
+      height: 12,
+      child: Stack(
+        children: [
+          Positioned(
+            left: 1,
+            right: 0,
+            top: 2,
+            bottom: 0,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [colorTop, colorBase],
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 2,
+            bottom: 0,
+            child: Container(
+              height: 3,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                color: const Color(0xFFE9E6E2),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _FacePainter extends CustomPainter {
   _FacePainter({
     required this.expression,
@@ -2128,6 +2493,11 @@ class _FacePainter extends CustomPainter {
       ..strokeWidth = 2.1
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
+    final stubble = Paint()
+      ..color = const Color(0xFF5A4A46).withValues(alpha: 0.28)
+      ..strokeWidth = 1.1
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
     final blushPaint = Paint()
       ..color = const Color(0xFFF1A7AB).withValues(alpha: 0.22 + blush * 0.36);
 
@@ -2151,6 +2521,23 @@ class _FacePainter extends CustomPainter {
     );
 
     switch (expression) {
+      case _ChibiExpression.neutral:
+        canvas.drawLine(
+          leftEye + const Offset(-3, 0.2),
+          leftEye + const Offset(3, -0.2),
+          stroke,
+        );
+        canvas.drawLine(
+          rightEye + const Offset(-3, -0.2),
+          rightEye + const Offset(3, 0.2),
+          stroke,
+        );
+        canvas.drawLine(
+          Offset(size.width * 0.44, size.height * 0.72),
+          Offset(size.width * 0.6, size.height * 0.72),
+          mouth,
+        );
+        break;
       case _ChibiExpression.mischief:
         canvas.drawLine(
           leftEye + const Offset(-3, 0.4),
@@ -2281,9 +2668,35 @@ class _FacePainter extends CustomPainter {
             size.height * 0.84,
             size.width * 0.6,
             size.height * 0.72,
-          );
+        );
         canvas.drawPath(path, mouth);
         break;
+    }
+
+    if (proactive) {
+      final beard = Path()
+        ..moveTo(size.width * 0.36, size.height * 0.78)
+        ..quadraticBezierTo(
+          size.width * 0.52,
+          size.height * 0.88,
+          size.width * 0.68,
+          size.height * 0.78,
+        );
+      canvas.drawPath(beard, stubble);
+      canvas.drawPoints(
+        PointMode.points,
+        [
+          Offset(size.width * 0.38, size.height * 0.76),
+          Offset(size.width * 0.45, size.height * 0.82),
+          Offset(size.width * 0.52, size.height * 0.84),
+          Offset(size.width * 0.59, size.height * 0.82),
+          Offset(size.width * 0.66, size.height * 0.76),
+        ],
+        Paint()
+          ..color = const Color(0xFF4B3A36).withValues(alpha: 0.34)
+          ..strokeWidth = 1.3
+          ..strokeCap = StrokeCap.round,
+      );
     }
   }
 
@@ -2309,16 +2722,16 @@ class _ProactiveHairPainter extends CustomPainter {
         colors: [palette.hairTop, palette.hairBase],
       ).createShader(Offset.zero & size);
     final path = Path()
-      ..moveTo(6, 28)
-      ..quadraticBezierTo(8, 6, 36, 2)
-      ..quadraticBezierTo(62, 0, 78, 14)
-      ..quadraticBezierTo(82, 28, 74, 42)
-      ..lineTo(62, 32)
-      ..lineTo(56, 44)
-      ..lineTo(48, 34)
-      ..lineTo(34, 46)
-      ..lineTo(24, 30)
-      ..lineTo(12, 40)
+      ..moveTo(4, 32)
+      ..quadraticBezierTo(6, 8, 32, 3)
+      ..quadraticBezierTo(60, -1, 80, 12)
+      ..quadraticBezierTo(86, 26, 78, 40)
+      ..lineTo(68, 36)
+      ..lineTo(58, 48)
+      ..lineTo(50, 36)
+      ..lineTo(36, 48)
+      ..lineTo(24, 34)
+      ..lineTo(12, 44)
       ..close();
     canvas.drawPath(path, paint);
   }
@@ -2342,14 +2755,14 @@ class _ShyHairPainter extends CustomPainter {
       ).createShader(Offset.zero & size);
     final path = Path()
       ..moveTo(10, 18)
-      ..quadraticBezierTo(20, -2, 44, 0)
-      ..quadraticBezierTo(68, -1, 78, 16)
-      ..quadraticBezierTo(80, 34, 72, 46)
-      ..lineTo(62, 42)
-      ..quadraticBezierTo(54, 50, 44, 48)
-      ..quadraticBezierTo(34, 54, 22, 48)
-      ..lineTo(14, 40)
-      ..quadraticBezierTo(8, 30, 10, 18)
+      ..quadraticBezierTo(20, 0, 42, 0)
+      ..quadraticBezierTo(68, -1, 80, 18)
+      ..quadraticBezierTo(82, 34, 74, 46)
+      ..lineTo(64, 50)
+      ..quadraticBezierTo(54, 56, 44, 54)
+      ..quadraticBezierTo(34, 58, 22, 52)
+      ..lineTo(12, 42)
+      ..quadraticBezierTo(6, 30, 10, 18)
       ..close();
     canvas.drawPath(path, paint);
   }
