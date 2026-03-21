@@ -12,6 +12,19 @@ class UserRepository {
   Future<AppUser> updateProfile(String token, AppUser user) =>
       _service.updateProfile(token, user);
 
+  Future<AppUser> updateLocation(
+    String token, {
+    required double lat,
+    required double lng,
+    required String locationLabel,
+  }) =>
+      _service.updateLocation(
+        token,
+        lat: lat,
+        lng: lng,
+        locationLabel: locationLabel,
+      );
+
   Future<List<AppUser>> listUsers(String token) => _service.listUsers(token);
 
   Future<List<AppUser>> nearby(

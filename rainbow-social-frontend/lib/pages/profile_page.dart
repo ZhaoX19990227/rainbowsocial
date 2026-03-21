@@ -242,9 +242,11 @@ class _ProfileHero extends StatelessWidget {
                               children: [
                                 _InfoPill(label: '${user.age} 岁'),
                                 _InfoPill(
-                                  label: user.distanceKm == null
-                                      ? '就在附近'
-                                      : '${user.distanceKm!.toStringAsFixed(1)} km',
+                                  label: user.locationLabel.trim().isNotEmpty
+                                      ? user.locationLabel.trim()
+                                      : user.distanceKm == null
+                                          ? '就在附近'
+                                          : '${user.distanceKm!.toStringAsFixed(1)} km',
                                 ),
                                 _InfoPill(label: '$relationshipCount 段关系动态'),
                               ],
@@ -288,6 +290,20 @@ class _ProfileHero extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 14),
+                  if (user.locationLabel.trim().isNotEmpty) ...[
+                    Text(
+                      '当前城市',
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      user.locationLabel.trim(),
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: const Color(0xFFE7E0F3),
+                          ),
+                    ),
+                    const SizedBox(height: 14),
+                  ],
                   Text(
                     user.bio,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(

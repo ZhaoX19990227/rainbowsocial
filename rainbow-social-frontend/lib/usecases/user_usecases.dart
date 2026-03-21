@@ -17,6 +17,10 @@ final updateProfileUseCaseProvider = Provider<UpdateProfileUseCase>((ref) {
   return UpdateProfileUseCase(ref.read(userRepositoryProvider));
 });
 
+final updateLocationUseCaseProvider = Provider<UpdateLocationUseCase>((ref) {
+  return UpdateLocationUseCase(ref.read(userRepositoryProvider));
+});
+
 final getNearbyUsersUseCaseProvider = Provider<GetNearbyUsersUseCase>((ref) {
   return GetNearbyUsersUseCase(ref.read(userRepositoryProvider));
 });
@@ -34,6 +38,24 @@ class UpdateProfileUseCase {
 
   Future<AppUser> call(String token, AppUser user) =>
       _repository.updateProfile(token, user);
+}
+
+class UpdateLocationUseCase {
+  const UpdateLocationUseCase(this._repository);
+  final UserRepository _repository;
+
+  Future<AppUser> call(
+    String token, {
+    required double lat,
+    required double lng,
+    required String locationLabel,
+  }) =>
+      _repository.updateLocation(
+        token,
+        lat: lat,
+        lng: lng,
+        locationLabel: locationLabel,
+      );
 }
 
 class GetNearbyUsersUseCase {

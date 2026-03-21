@@ -21,7 +21,7 @@ class NearbyController extends StateNotifier<AsyncValue<List<AppUser>>> {
 
   Future<void> load({
     NearbyFilter filter = const NearbyFilter(),
-    bool useDeviceLocation = false,
+    bool useDeviceLocation = true,
   }) async {
     final session = _ref.read(authControllerProvider).valueOrNull;
     if (session == null) {
@@ -37,6 +37,17 @@ class NearbyController extends StateNotifier<AsyncValue<List<AppUser>>> {
             await _ref.read(locationServiceProvider).getCurrentPosition();
         lat = position.latitude;
         lng = position.longitude;
+        final locationLabel = await _ref.read(locationLabelServiceProvider).getLocationLabel(
+              lat: lat,
+              lng: lng,
+            );
+        final updatedUser = await _ref.read(updateLocationUseCaseProvider)(
+          session.token,
+          lat: lat,
+          lng: lng,
+          locationLabel: locationLabel,
+        );
+        _ref.read(authControllerProvider.notifier).updateSessionUser(updatedUser);
       } catch (_) {
         // fall back to saved location
       }
