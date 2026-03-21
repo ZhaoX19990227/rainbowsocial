@@ -9,14 +9,17 @@ class AuthService {
 
   final ApiClient _client;
 
-  Future<void> sendCode(String email) async {
-    await _client.post('/auth/send-code', body: {'email': email});
+  Future<void> register(String account, String password) async {
+    await _client.post('/auth/register', body: {
+      'account': account,
+      'password': password,
+    });
   }
 
-  Future<AuthSession> login(String email, String code) async {
+  Future<AuthSession> login(String account, String password) async {
     final response = await _client.post('/auth/login', body: {
-      'email': email,
-      'code': code,
+      'account': account,
+      'password': password,
     });
     final data = response['data'] as Map<String, dynamic>;
     return AuthSession(
@@ -25,14 +28,14 @@ class AuthService {
     );
   }
 
-  AuthSession demoSession(String email) {
+  AuthSession demoSession(String account) {
     if (!AppFlags.useMockFallbacks) {
       throw Exception('Mock fallback is disabled');
     }
     final user = MockSocialData.users.first.copyWith(
       id: 99,
-      email: email,
-      nickname: 'You',
+      email: account,
+      nickname: account,
       age: 25,
       bio: 'A little mysterious, a little radiant.',
       tags: const ['Night walks', 'Coffee', 'Design'],

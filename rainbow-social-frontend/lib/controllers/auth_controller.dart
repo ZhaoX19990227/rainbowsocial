@@ -25,26 +25,26 @@ class AuthController extends StateNotifier<AsyncValue<AuthSession?>> {
     );
   }
 
-  Future<void> sendCode(String email) async {
+  Future<void> register(String account, String password) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      await _ref.read(sendCodeUseCaseProvider)(email);
+      await _ref.read(registerUseCaseProvider)(account, password);
       return state.valueOrNull;
     });
   }
 
-  Future<void> login(String email, String code) async {
+  Future<void> login(String account, String password) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       try {
-        final session = await _ref.read(loginUseCaseProvider)(email, code);
+        final session = await _ref.read(loginUseCaseProvider)(account, password);
         await _ref.read(saveSessionUseCaseProvider)(session);
         return session;
       } catch (error) {
         if (!AppFlags.useMockFallbacks) {
           rethrow;
         }
-        final session = _ref.read(loginUseCaseProvider).demoSession(email);
+        final session = _ref.read(loginUseCaseProvider).demoSession(account);
         await _ref.read(saveSessionUseCaseProvider)(session);
         return session;
       }

@@ -8,20 +8,21 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(ref.read(authServiceProvider));
 });
 
-final sendCodeUseCaseProvider = Provider<SendCodeUseCase>((ref) {
-  return SendCodeUseCase(ref.read(authRepositoryProvider));
+final registerUseCaseProvider = Provider<RegisterUseCase>((ref) {
+  return RegisterUseCase(ref.read(authRepositoryProvider));
 });
 
 final loginUseCaseProvider = Provider<LoginUseCase>((ref) {
   return LoginUseCase(ref.read(authRepositoryProvider));
 });
 
-class SendCodeUseCase {
-  const SendCodeUseCase(this._repository);
+class RegisterUseCase {
+  const RegisterUseCase(this._repository);
 
   final AuthRepository _repository;
 
-  Future<void> call(String email) => _repository.sendCode(email);
+  Future<void> call(String account, String password) =>
+      _repository.register(account, password);
 }
 
 class LoginUseCase {
@@ -29,8 +30,8 @@ class LoginUseCase {
 
   final AuthRepository _repository;
 
-  Future<AuthSession> call(String email, String code) =>
-      _repository.login(email, code);
+  Future<AuthSession> call(String account, String password) =>
+      _repository.login(account, password);
 
-  AuthSession demoSession(String email) => _repository.demoSession(email);
+  AuthSession demoSession(String account) => _repository.demoSession(account);
 }

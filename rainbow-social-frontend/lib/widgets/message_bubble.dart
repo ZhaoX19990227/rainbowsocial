@@ -1,12 +1,17 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 
 import '../models/chat_message_model.dart';
 import '../models/flirty_action.dart';
+import '../providers/app_providers.dart';
+import '../services/app_feedback.dart';
+import '../services/secure_screen_service.dart';
 import '../theme/app_theme.dart';
 
 class MessageBubble extends StatelessWidget {
@@ -98,6 +103,11 @@ class MessageBubble extends StatelessWidget {
                             message: message,
                             isMine: isMine,
                           )
+                    : message.isFlashImage
+                        ? _FlashImageContent(
+                            message: message,
+                            isMine: isMine,
+                          )
                     : message.isImage
                         ? _ImageMessageContent(message: message)
                         : Text(message.content),
@@ -146,6 +156,360 @@ class MessageBubble extends StatelessWidget {
       ),
     );
   }
+}
+
+class _FlashImageContent extends ConsumerStatefulWidget {
+  const _FlashImageContent({
+    required this.message,
+    required this.isMine,
+  });
+
+  final ChatMessageModel message;
+  final bool isMine;
+
+  @override
+  ConsumerState<_FlashImageContent> createState() => _FlashImageContentState();
+}
+
+class _FlashImageContentState extends ConsumerState<_FlashImageContent> {
+  bool _isLoading = true;
+  bool _isBurned = false;
+
+  String get _flashId => widget.message.clientMessageId.isNotEmpty
+      ? widget.message.clientMessageId
+      : 'flash_${widget.message.id}';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBurnState();
+  }
+
+  Future<void> _loadBurnState() async {
+    final burned = await ref
+        .read(flashPhotoStateServiceProvider)
+        .isBurned(_flashId);
+    if (!mounted) return;
+    setState(() {
+      _isBurned = burned;
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _openViewer() async {
+    if (_isBurned || widget.message.imageSource.isEmpty) return;
+    await showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: 'flash-photo',
+      barrierColor: Colors.black.withValues(alpha: 0.92),
+      transitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (context, _, __) {
+        return _FlashPhotoViewer(
+          imageUrl: widget.message.imageSource,
+          flashId: _flashId,
+        );
+      },
+      transitionBuilder: (context, animation, _, child) {
+        return FadeTransition(
+          opacity: CurvedAnimation(parent: animation, curve: Curves.easeOut),
+          child: child,
+        );
+      },
+    );
+    await _loadBurnState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final burned = _isBurned;
+
+    return GestureDetector(
+      onTap: burned ? null : () => AppFeedback.showToast('长按查看，5 秒后焚毁'),
+      onLongPress: burned ? null : _openViewer,
+      child: Container(
+        width: 220,
+        height: 278,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          color: const Color(0xFF141623),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (widget.message.imageSource.isNotEmpty && !burned)
+              _MosaicImage(source: widget.message.imageSource)
+            else
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: burned
+                        ? const [Color(0xFF22232F), Color(0xFF181922)]
+                        : const [Color(0xFF1D2237), Color(0xFF241528)],
+                  ),
+                ),
+              ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.06),
+                    Colors.black.withValues(alpha: 0.2),
+                    Colors.black.withValues(alpha: 0.7),
+                  ],
+                ),
+              ),
+            ),
+            if (!_isLoading)
+              Positioned(
+                left: 14,
+                top: 14,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(999),
+                    color: burned
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : const Color(0xAAFF835E),
+                  ),
+                  child: Text(
+                    burned ? '已焚毁' : '闪照',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: Colors.white,
+                          letterSpacing: 0.3,
+                        ),
+                  ),
+                ),
+              ),
+            Center(
+              child: Container(
+                width: 88,
+                height: 88,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.black.withValues(alpha: 0.3),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
+                  ),
+                ),
+                child: Icon(
+                  burned ? Icons.visibility_off_rounded : Icons.lock_open_rounded,
+                  color: Colors.white,
+                  size: 32,
+                ),
+              ),
+            ),
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 16,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    burned ? '这张闪照已经焚毁' : '这是一张闪照',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
+                        ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    burned
+                        ? '已无法再次查看'
+                        : '点击会提示，长按进入查看，5 秒后自动销毁',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.78),
+                          letterSpacing: 0.15,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FlashPhotoViewer extends ConsumerStatefulWidget {
+  const _FlashPhotoViewer({
+    required this.imageUrl,
+    required this.flashId,
+  });
+
+  final String imageUrl;
+  final String flashId;
+
+  @override
+  ConsumerState<_FlashPhotoViewer> createState() => _FlashPhotoViewerState();
+}
+
+class _FlashPhotoViewerState extends ConsumerState<_FlashPhotoViewer> {
+  Timer? _timer;
+  int _secondsLeft = 5;
+
+  @override
+  void initState() {
+    super.initState();
+    SecureScreenService.setProtected(true);
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
+      if (_secondsLeft <= 1) {
+        timer.cancel();
+        await _burnAndClose();
+        return;
+      }
+      if (!mounted) return;
+      setState(() => _secondsLeft -= 1);
+    });
+  }
+
+  Future<void> _burnAndClose() async {
+    await ref.read(flashPhotoStateServiceProvider).markBurned(widget.flashId);
+    await SecureScreenService.setProtected(false);
+    if (!mounted) return;
+    Navigator.of(context).pop();
+    AppFeedback.showToast('闪照已焚毁');
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    SecureScreenService.setProtected(false);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      child: Material(
+        color: Colors.black,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            InteractiveViewer(
+              minScale: 1,
+              maxScale: 3,
+              child: Center(
+                child: Image.network(
+                  widget.imageUrl,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+            Positioned(
+              top: 56,
+              left: 20,
+              right: 20,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(999),
+                        gradient: const LinearGradient(
+                          colors: [
+                            Color(0x66FF9B68),
+                            Color(0x66EA87FF),
+                            Color(0x664ED7FF),
+                          ],
+                        ),
+                      ),
+                      child: Text(
+                        '查看中，$_secondsLeft 秒后焚毁',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              color: Colors.white,
+                            ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              left: 24,
+              right: 24,
+              bottom: 42,
+              child: Text(
+                '已启用安全查看模式',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.72),
+                      letterSpacing: 0.3,
+                    ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MosaicImage extends StatelessWidget {
+  const _MosaicImage({required this.source});
+
+  final String source;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Transform.scale(
+          scale: 1.08,
+          child: ImageFiltered(
+            imageFilter: ui.ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Image(
+              image: _imageProvider(source),
+              fit: BoxFit.cover,
+            ),
+          ),
+        ),
+        CustomPaint(
+          painter: _PixelGridPainter(),
+        ),
+      ],
+    );
+  }
+
+  ImageProvider _imageProvider(String value) {
+    if (value.startsWith('http')) {
+      return NetworkImage(value);
+    }
+    return FileImage(File(value));
+  }
+}
+
+class _PixelGridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    const cell = 12.0;
+    final paint = Paint()..color = Colors.black.withValues(alpha: 0.14);
+    for (double y = 0; y < size.height; y += cell) {
+      for (double x = 0; x < size.width; x += cell) {
+        if (((x / cell).floor() + (y / cell).floor()) % 2 == 0) {
+          canvas.drawRect(Rect.fromLTWH(x, y, cell, cell), paint);
+        }
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _FlirtyActionContent extends StatefulWidget {
@@ -505,7 +869,11 @@ class _StatusLabel extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             Text(
-              message.isAudio ? '语音发送中' : '发送中',
+              message.isAudio
+                  ? '语音发送中'
+                  : message.isFlashImage
+                      ? '闪照发送中'
+                      : '发送中',
               style: Theme.of(context)
                   .textTheme
                   .labelSmall
@@ -525,7 +893,11 @@ class _StatusLabel extends StatelessWidget {
             ),
             const SizedBox(width: 5),
             Text(
-              message.isAudio ? '语音发送失败' : '发送失败',
+              message.isAudio
+                  ? '语音发送失败'
+                  : message.isFlashImage
+                      ? '闪照发送失败'
+                      : '发送失败',
               style: Theme.of(context)
                   .textTheme
                   .labelSmall
@@ -550,7 +922,7 @@ class _StatusLabel extends StatelessWidget {
               switch (message.deliveryStatus) {
                 ChatDeliveryStatus.read => '已读',
                 ChatDeliveryStatus.delivered => '已送达',
-                ChatDeliveryStatus.none => '已发送',
+                ChatDeliveryStatus.none => message.isFlashImage ? '闪照已发送' : '已发送',
               },
               style: Theme.of(context)
                   .textTheme

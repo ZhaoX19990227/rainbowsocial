@@ -16,38 +16,43 @@ func NewAuthHandler(authService *service.AuthService) *AuthHandler {
 	return &AuthHandler{authService: authService}
 }
 
-type sendCodeRequest struct {
-	Email string `json:"email" binding:"required"`
+type registerRequest struct {
+	Account  string `json:"account" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
 
 type loginRequest struct {
-	Email string `json:"email" binding:"required"`
-	Code  string `json:"code" binding:"required"`
+	Account  string `json:"account" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
 
-func (h *AuthHandler) SendCode(c *gin.Context) {
-	var req sendCodeRequest
+func (h *AuthHandler) Register(c *gin.Context) {
+	var req registerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		failure(c, http.StatusBadRequest, "email is required")
+		failure(c, http.StatusBadRequest, "账号和密码不能为空")
 		return
 	}
 
-	if err := h.authService.SendCode(req.Email); err != nil {
+	user, err := h.authService.Register(req.Account, req.Password)
+	if err != nil {
 		failure(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	success(c, gin.H{"message": "verification code sent"})
+	success(c, gin.H{
+		"message": "register success",
+		"user":    user,
+	})
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		failure(c, http.StatusBadRequest, "email and code are required")
+		failure(c, http.StatusBadRequest, "账号和密码不能为空")
 		return
 	}
 
-	token, user, err := h.authService.Login(req.Email, req.Code)
+	token, user, err := h.authService.Login(req.Account, req.Password)
 	if err != nil {
 		failure(c, http.StatusBadRequest, err.Error())
 		return

@@ -6,10 +6,11 @@ class AuthRepository {
 
   final AuthService _service;
 
-  Future<void> sendCode(String email) => _service.sendCode(email);
+  Future<void> register(String account, String password) =>
+      _service.register(account, password);
 
-  Future<AuthSession> login(String email, String code) =>
-      _service.login(email, code);
+  Future<AuthSession> login(String account, String password) =>
+      _service.login(account, password);
 
-  AuthSession demoSession(String email) => _service.demoSession(email);
+  AuthSession demoSession(String account) => _service.demoSession(account);
 }

@@ -46,6 +46,8 @@ func migrate(db *sql.DB) error {
 		`CREATE TABLE IF NOT EXISTS users (
 			id INTEGER PRIMARY KEY AUTOINCREMENT,
 			email TEXT NOT NULL UNIQUE,
+			account TEXT NOT NULL DEFAULT '' UNIQUE,
+			password_hash TEXT NOT NULL DEFAULT '',
 			nickname TEXT NOT NULL,
 			avatar TEXT NOT NULL DEFAULT '',
 			photos TEXT NOT NULL DEFAULT '[]',
@@ -165,8 +167,20 @@ func migrate(db *sql.DB) error {
 	if err := addColumnIfNotExists(db, "messages", "duration_seconds", "INTEGER NOT NULL DEFAULT 0"); err != nil {
 		return err
 	}
+	if err := addColumnIfNotExists(db, "users", "account", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
+	if err := addColumnIfNotExists(db, "users", "password_hash", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
 	if err := addColumnIfNotExists(db, "users", "photos", "TEXT NOT NULL DEFAULT '[]'"); err != nil {
 		return err
+	}
+	if _, err := db.Exec(`UPDATE users SET account = email WHERE account = ''`); err != nil {
+		return fmt.Errorf("backfill users.account: %w", err)
+	}
+	if _, err := db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_account_unique ON users(account)`); err != nil {
+		return fmt.Errorf("create users account index: %w", err)
 	}
 	return nil
 }

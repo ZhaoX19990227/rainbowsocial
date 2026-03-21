@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"net/mail"
 	"strings"
-	"time"
+
+	"golang.org/x/crypto/bcrypt"
 
 	"rainbow-social-backend/internal/model"
 	"rainbow-social-backend/internal/repository"
@@ -19,7 +19,6 @@ type AuthService struct {
 	userRepo   *repository.UserRepository
 	sender     email.Sender
 	jwtManager *utils.JWTManager
-	otpTTL     time.Duration
 }
 
 func NewAuthService(
@@ -27,75 +26,81 @@ func NewAuthService(
 	userRepo *repository.UserRepository,
 	sender email.Sender,
 	jwtManager *utils.JWTManager,
-	otpTTL time.Duration,
+	_ any,
 ) *AuthService {
 	return &AuthService{
 		authRepo:   authRepo,
 		userRepo:   userRepo,
 		sender:     sender,
 		jwtManager: jwtManager,
-		otpTTL:     otpTTL,
 	}
 }
 
-func (s *AuthService) SendCode(emailAddr string) error {
-	emailAddr = strings.TrimSpace(strings.ToLower(emailAddr))
-	if _, err := mail.ParseAddress(emailAddr); err != nil {
-		return fmt.Errorf("invalid email address")
+func (s *AuthService) Register(account, password string) (*model.User, error) {
+	account = normalizeAccount(account)
+	password = strings.TrimSpace(password)
+
+	if err := validateAccount(account); err != nil {
+		return nil, err
+	}
+	if err := validatePassword(password); err != nil {
+		return nil, err
 	}
 
-	code, err := utils.GenerateOTP()
+	if _, err := s.userRepo.GetByAccount(account); err == nil {
+		return nil, fmt.Errorf("账号已存在")
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
+
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("password hash failed")
 	}
 
-	if err := s.authRepo.SaveCode(emailAddr, code, time.Now().UTC().Add(s.otpTTL)); err != nil {
-		return err
+	nickname := account
+	user, err := s.userRepo.Create(
+		account,
+		account,
+		nickname,
+		string(passwordHash),
+	)
+	if err != nil {
+		return nil, err
 	}
-
-	return s.sender.SendOTP(emailAddr, code)
+	return user, nil
 }
 
-func (s *AuthService) Login(emailAddr, code string) (string, *model.User, error) {
-	emailAddr = strings.TrimSpace(strings.ToLower(emailAddr))
-	code = strings.TrimSpace(code)
+func (s *AuthService) Login(account, password string) (string, *model.User, error) {
+	account = normalizeAccount(account)
+	password = strings.TrimSpace(password)
 
-	if _, err := mail.ParseAddress(emailAddr); err != nil {
-		return "", nil, fmt.Errorf("invalid email address")
+	if err := validateAccount(account); err != nil {
+		return "", nil, err
 	}
-	if len(code) != 6 {
-		return "", nil, fmt.Errorf("verification code must be 6 digits")
+	if password == "" {
+		return "", nil, fmt.Errorf("密码不能为空")
 	}
 
-	otp, err := s.authRepo.GetCode(emailAddr)
+	passwordHash, err := s.userRepo.GetPasswordHashByAccount(account)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return "", nil, fmt.Errorf("verification code not found")
+			return "", nil, fmt.Errorf("账号或密码错误")
 		}
 		return "", nil, err
 	}
 
-	if otp.ExpiresAt.Before(time.Now().UTC()) {
-		_ = s.authRepo.DeleteCode(emailAddr)
-		return "", nil, fmt.Errorf("verification code expired")
+	if passwordHash == "" {
+		return "", nil, fmt.Errorf("该账号暂不支持密码登录")
 	}
-	if otp.Code != code {
-		return "", nil, fmt.Errorf("invalid verification code")
+	if err := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password)); err != nil {
+		return "", nil, fmt.Errorf("账号或密码错误")
 	}
 
-	user, err := s.userRepo.GetByEmail(emailAddr)
+	user, err := s.userRepo.GetByAccount(account)
 	if err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
-			return "", nil, err
-		}
-		nickname := strings.Split(emailAddr, "@")[0]
-		user, err = s.userRepo.Create(emailAddr, nickname)
-		if err != nil {
-			return "", nil, err
-		}
+		return "", nil, err
 	}
-
-	_ = s.authRepo.DeleteCode(emailAddr)
 
 	token, err := s.jwtManager.GenerateToken(user.ID, user.Email)
 	if err != nil {
@@ -103,4 +108,30 @@ func (s *AuthService) Login(emailAddr, code string) (string, *model.User, error)
 	}
 
 	return token, user, nil
+}
+
+func normalizeAccount(account string) string {
+	return strings.ToLower(strings.TrimSpace(account))
+}
+
+func validateAccount(account string) error {
+	if len(account) < 4 || len(account) > 24 {
+		return fmt.Errorf("账号长度需为 4 到 24 位")
+	}
+	for _, char := range account {
+		if (char >= 'a' && char <= 'z') ||
+			(char >= '0' && char <= '9') ||
+			char == '_' {
+			continue
+		}
+		return fmt.Errorf("账号仅支持小写字母、数字和下划线")
+	}
+	return nil
+}
+
+func validatePassword(password string) error {
+	if len(password) < 6 || len(password) > 32 {
+		return fmt.Errorf("密码长度需为 6 到 32 位")
+	}
+	return nil
 }

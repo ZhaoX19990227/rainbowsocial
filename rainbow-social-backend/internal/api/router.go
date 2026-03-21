@@ -63,7 +63,7 @@ func NewRouter(cfg *config.Config, deps Dependencies) *gin.Engine {
 
 	auth := router.Group("/auth")
 	{
-		auth.POST("/send-code", authHandler.SendCode)
+		auth.POST("/register", authHandler.Register)
 		auth.POST("/login", authHandler.Login)
 	}
 
