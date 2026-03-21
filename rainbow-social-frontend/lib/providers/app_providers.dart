@@ -6,6 +6,7 @@ import '../services/audio_recorder_service.dart';
 import '../services/auth_service.dart';
 import '../services/chat_service.dart';
 import '../services/flash_photo_state_service.dart';
+import '../services/horoscope_service.dart';
 import '../services/match_service.dart';
 import '../services/safety_service.dart';
 import '../services/location_service.dart';
@@ -49,6 +50,10 @@ final locationServiceProvider = Provider<LocationService>((ref) {
 
 final locationLabelServiceProvider = Provider<LocationLabelService>((ref) {
   return LocationLabelService();
+});
+
+final horoscopeServiceProvider = Provider<HoroscopeService>((ref) {
+  return HoroscopeService();
 });
 
 final flashPhotoStateServiceProvider = Provider<FlashPhotoStateService>((ref) {

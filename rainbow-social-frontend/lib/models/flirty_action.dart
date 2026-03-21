@@ -11,26 +11,26 @@ extension FlirtyMoodGroupCopy on FlirtyMoodGroup {
   String get title {
     switch (this) {
       case FlirtyMoodGroup.tease:
-        return 'Tease A Little';
+        return '坏一点';
       case FlirtyMoodGroup.closer:
-        return 'Get Closer';
+        return '再靠近';
       case FlirtyMoodGroup.cute:
-        return 'Act Cute';
+        return '软绵绵';
       case FlirtyMoodGroup.stir:
-        return 'Stir The Mood';
+        return '撩一下';
     }
   }
 
   String get subtitle {
     switch (this) {
       case FlirtyMoodGroup.tease:
-        return '轻坏一下，让气氛先升温。';
+        return '先坏一下，再看他炸毛和脸红。';
       case FlirtyMoodGroup.closer:
-        return '把距离悄悄缩短一点。';
+        return '距离压近一点，暧昧就会自己升温。';
       case FlirtyMoodGroup.cute:
-        return '软一点，黏一点，更像在撒娇。';
+        return '软下来、慢下来，像温柔落在肩上。';
       case FlirtyMoodGroup.stir:
-        return '不明说，但足够让人心跳加速。';
+        return '不需要碰很多，眼神和呼吸就够了。';
     }
   }
 }
@@ -55,6 +55,60 @@ class FlirtyAssetPlan {
   final String effectsFormat;
 }
 
+class FlirtyBeat {
+  const FlirtyBeat({
+    required this.timing,
+    required this.title,
+    required this.description,
+  });
+
+  final String timing;
+  final String title;
+  final String description;
+}
+
+class FlirtyRigSuggestion {
+  const FlirtyRigSuggestion({
+    required this.bones,
+    required this.controllers,
+    required this.notes,
+  });
+
+  final List<String> bones;
+  final List<String> controllers;
+  final String notes;
+}
+
+class FlirtyActionStoryboard {
+  const FlirtyActionStoryboard({
+    required this.coverFrame,
+    required this.previewDuration,
+    required this.previewBeats,
+    required this.fullDuration,
+    required this.fullBeats,
+    required this.poseNotes,
+    required this.expressionNotes,
+    required this.gazeNotes,
+    required this.forceNotes,
+    required this.reboundNotes,
+    required this.rigSuggestion,
+    required this.effectLayers,
+  });
+
+  final String coverFrame;
+  final String previewDuration;
+  final List<FlirtyBeat> previewBeats;
+  final String fullDuration;
+  final List<FlirtyBeat> fullBeats;
+  final String poseNotes;
+  final String expressionNotes;
+  final String gazeNotes;
+  final String forceNotes;
+  final String reboundNotes;
+  final FlirtyRigSuggestion rigSuggestion;
+  final List<String> effectLayers;
+}
+
 class FlirtyAction {
   const FlirtyAction({
     required this.id,
@@ -73,6 +127,7 @@ class FlirtyAction {
     required this.loopNotes,
     required this.assetRecommendation,
     required this.assetPlan,
+    required this.storyboard,
   });
 
   final String id;
@@ -91,214 +146,537 @@ class FlirtyAction {
   final String loopNotes;
   final String assetRecommendation;
   final FlirtyAssetPlan assetPlan;
+  final FlirtyActionStoryboard storyboard;
 
   static const all = <FlirtyAction>[
     FlirtyAction(
       id: 'poke_butt',
-      label: '坏坏戳一下',
-      preview: '指尖坏坏点了点你一下',
+      label: '拍拍屁股',
+      preview: '小熊坏笑着轻拍了一下你',
       icon: Icons.back_hand_rounded,
-      gradient: [Color(0xFFDE8A69), Color(0xFF4C1E28)],
-      hint: '坏心思先落下去，笑意再慢半拍追上来。',
-      stageTitle: '坏坏偷袭',
-      stageSubtitle: '指尖点一下就撤，留给对方一个夸张到可爱的反应弹跳。',
-      motionNotes: '前 15% 蓄力歪头，20% 快戳命中，随后 2 次弹性回弹。',
-      hapticNotes: '命中一瞬间 medium impact，第二次回弹加一次 light tick。',
+      gradient: [Color(0xFF9B63FF), Color(0xFF7CCBFF)],
+      hint: '拍得很轻，反应要大，坏笑要比动作慢半拍落下来。',
+      stageTitle: '坏笑轻拍',
+      stageSubtitle: '小熊靠近半步，手腕轻弹一下，小猴炸毛回头，气氛瞬间从平静变成甜辣。',
+      motionNotes: '蓄力要短，命中要轻，反应重点落在小猴臀线、肩线和回头节奏。',
+      hapticNotes: '命中瞬间 medium impact，第二次回弹补一次 light impact。',
       moodGroup: FlirtyMoodGroup.tease,
-      moodTag: 'Tease',
-      sceneMoment: '他忍着笑往前一探，指尖点到的瞬间，对方整个人像被电到一样弹开半步。',
-      loopNotes: '采用三段循环: 蓄力 -> 轻戳 -> 臀部和肩线同步回弹，再回到坏笑待机。',
-      assetRecommendation: '主角与受击 bounce 用 Rive，命中星点和速度线用 sprite sheet。',
+      moodTag: 'Mischief',
+      sceneMoment: '坏笑先到，拍击后到，小猴被撩得整个上半身都弹了一下。',
+      loopNotes: '蓄力 15%，轻拍 10%，双回弹 45%，最后收在小猴回头瞪人的半羞恼状态。',
+      assetRecommendation: '主角骨骼走 Rive，拍击星点和速度线拆成独立 sprite sheet。',
       assetPlan: FlirtyAssetPlan(
-        coverFrame: '定格在坏笑侧身、指尖即将命中的半拍前。',
-        previewAnimation: '1.2 秒三段式预览: 蓄力、轻戳、双重回弹。',
-        fullscreenAnimation: '2.5 秒完整版，包含夸张臀部 bounce、肩线晃动和回头羞恼表情。',
+        coverFrame: '停在小熊坏笑前倾、手掌即将落下的那一帧。',
+        previewAnimation: '1.3 秒：靠近、轻拍、炸毛回头。',
+        fullscreenAnimation: '2.8 秒：补足臀部双回弹、肩线晃动和视线对撞。',
         coverFormat: 'static png/webp',
         previewFormat: 'Rive',
         fullscreenFormat: 'Rive',
         effectsFormat: 'sprite sheet',
       ),
-    ),
-    FlirtyAction(
-      id: 'tug_sleeve',
-      label: '拽住衣角',
-      preview: '悄悄勾住了你的袖口',
-      icon: Icons.waving_hand_rounded,
-      gradient: [Color(0xFFC18C63), Color(0xFF49303B)],
-      hint: '不是拦住你，是舍不得让你走快一点。',
-      stageTitle: '袖口停留',
-      stageSubtitle: '手指只是轻轻勾住，空气却会因此变得更黏一点。',
-      motionNotes: '先探手停顿，再小幅回拉，末尾补一个带呼吸感的迟疑收手。',
-      hapticNotes: '勾住袖口时 selection click，回拉时补一个极轻 soft impact。',
-      moodGroup: FlirtyMoodGroup.cute,
-      moodTag: 'Soft',
-      sceneMoment: '害羞的那位先垂眼，又像鼓起勇气一样勾住对方袖口，轻轻把人往自己这边留一下。',
-      loopNotes: '待机时保留袖口晃动和肩膀轻颤，形成“想松手又没舍得”的循环。',
-      assetRecommendation: '角色主体用 Rive，袖口拉扯布料变形可用序列帧或 sprite sheet。',
-      assetPlan: FlirtyAssetPlan(
-        coverFrame: '停在袖口被两指轻轻勾住、视线垂下的一瞬间。',
-        previewAnimation: '1.4 秒轻探手到小回拉，保留袖口张力和肩膀轻颤。',
-        fullscreenAnimation: '2.8 秒完整版，加入布料拉伸、呼吸停顿、松手前迟疑。',
-        coverFormat: 'static png/webp',
-        previewFormat: 'Rive',
-        fullscreenFormat: 'Rive',
-        effectsFormat: 'sprite sheet',
-      ),
-    ),
-    FlirtyAction(
-      id: 'pat_head',
-      label: '摸摸你的头',
-      preview: '掌心轻轻落在你的发顶',
-      icon: Icons.pan_tool_alt_rounded,
-      gradient: [Color(0xFF7E8EE4), Color(0xFF393064)],
-      hint: '掌心落下来的那一下，像安抚，也像偏爱。',
-      stageTitle: '发顶安抚',
-      stageSubtitle: '手没有很快收走，像故意把温柔停留给你看。',
-      motionNotes: '手掌柔和落下，头发微压再回弹，停留半拍后带笑收回。',
-      hapticNotes: '手掌落下时 soft impact，停留结束时 selection tick。',
-      moodGroup: FlirtyMoodGroup.cute,
-      moodTag: 'Warm',
-      sceneMoment: '主动的那位把掌心轻轻压在发顶，对方先愣一下，再因为被摸头而软下来。',
-      loopNotes: '适合做轻循环: 落手拍一下 -> 停住眯眼 -> 发丝与耳朵小幅回弹。',
-      assetRecommendation: '角色姿态和发丝形变适合 Rive，发顶小星点可用 Lottie。',
-      assetPlan: FlirtyAssetPlan(
-        coverFrame: '掌心刚落在发顶，另一方眼神开始软下来的定格。',
-        previewAnimation: '1.3 秒落手、轻拍、停留。',
-        fullscreenAnimation: '2.4 秒完整版，增加发丝压缩回弹和眯眼回应。',
-        coverFormat: 'static png/webp',
-        previewFormat: 'Rive',
-        fullscreenFormat: 'Rive',
-        effectsFormat: 'Lottie',
-      ),
-    ),
-    FlirtyAction(
-      id: 'hook_finger',
-      label: '勾住手指',
-      preview: '小指轻轻勾住了你',
-      icon: Icons.gesture_rounded,
-      gradient: [Color(0xFFE2B17B), Color(0xFF5A2E35)],
-      hint: '比牵手更轻，却更像一句只说给你听的话。',
-      stageTitle: '指尖确认',
-      stageSubtitle: '不是一下握住，而是先试探地碰，再慢慢把小指勾住。',
-      motionNotes: '两次接近后才真正勾住，勾上后做极轻的心跳式晃动停留。',
-      hapticNotes: '第一次触碰用 selection click，真正勾住时 soft impact。',
-      moodGroup: FlirtyMoodGroup.closer,
-      moodTag: 'Intimate',
-      sceneMoment: '两只手先在空气里迟疑了一下，第二次靠近才真正把小指勾住，眼神也因此停住。',
-      loopNotes: '建议做双段式节奏: 试探接近 -> 勾住停留；停留时只保留指尖晃动和呼吸。',
-      assetRecommendation: '这是最适合 Rive 的主打场景，指尖连接和视线停顿都需要可控骨骼动画。',
-      assetPlan: FlirtyAssetPlan(
-        coverFrame: '两只小指还差一点点接触、眼神已经先停住的时刻。',
-        previewAnimation: '1.5 秒双段式: 试探接近、停顿、真正勾住。',
-        fullscreenAnimation: '3 秒完整版，包含两次犹豫、指尖锁住、呼吸感悬停。',
-        coverFormat: 'static png/webp',
-        previewFormat: 'Rive',
-        fullscreenFormat: 'Rive',
-        effectsFormat: 'Lottie',
+      storyboard: FlirtyActionStoryboard(
+        coverFrame: '小熊身体偏左前压，右掌悬在小猴臀后半掌位置；小猴还没回头，耳朵放松，形成偷袭前一帧。',
+        previewDuration: '1.3s',
+        previewBeats: [
+          FlirtyBeat(
+            timing: '0.0s - 0.3s',
+            title: '坏笑靠近',
+            description: '小熊肩线压低、头微歪、手肘收紧，小猴视线仍朝前。',
+          ),
+          FlirtyBeat(
+            timing: '0.3s - 0.55s',
+            title: '轻拍命中',
+            description: '掌心快速落下，命中点偏身体外侧，不做厚重挥击。',
+          ),
+          FlirtyBeat(
+            timing: '0.55s - 1.3s',
+            title: '炸毛回头',
+            description: '小猴臀线先弹、肩再弹、最后头回转，表情从懵到羞恼。',
+          ),
+        ],
+        fullDuration: '2.8s',
+        fullBeats: [
+          FlirtyBeat(
+            timing: '0.0s - 0.35s',
+            title: '蓄力试探',
+            description: '小熊脚尖前送半步，重心从后脚转到前脚，坏笑慢慢抬起。',
+          ),
+          FlirtyBeat(
+            timing: '0.35s - 0.62s',
+            title: '手掌轻拍',
+            description: '手腕弹出而不是整条手臂甩出，保持轻、快、俏皮。',
+          ),
+          FlirtyBeat(
+            timing: '0.62s - 1.35s',
+            title: '双段回弹',
+            description: '小猴下盘弹起两次，第二次幅度更小，耳朵和发丝延迟 2 帧跟上。',
+          ),
+          FlirtyBeat(
+            timing: '1.35s - 2.8s',
+            title: '回头对视',
+            description: '小猴回头炸毛，小熊仍挂着坏笑，视线正面碰上后停顿半拍。',
+          ),
+        ],
+        poseNotes: '小熊厚实前倾，小猴身体先被动弹起再主动回头；受力点落在小猴臀后侧和腰线。',
+        expressionNotes: '小熊用坏笑和半眯眼，小猴从日常切到炸毛，再落到害羞瞪视。',
+        gazeNotes: '命中前小熊偷看，小猴朝前；回头时两人短暂正对视线，形成笑点。',
+        forceNotes: '受力来自小熊手腕轻弹，小猴反馈以臀线夸张 bounce 和肩颈迟到反应呈现。',
+        reboundNotes: '回弹采用快-慢两段阻尼，第一下大、第二下小，最终停在头部仍轻颤的余波。',
+        rigSuggestion: FlirtyRigSuggestion(
+          bones: [
+            'bear_root / spine / head / arm_front / arm_back / hand_front',
+            'monkey_root / hip / spine / head / ear_l / ear_r / tail_stub',
+          ],
+          controllers: [
+            '拍击命中点 controller',
+            '臀线 bounce controller',
+            '耳朵拖尾 secondary controller',
+          ],
+          notes: '命中瞬间建议单独暴露 hip squash 与 shoulder lag 两个参数，方便做不同强度版本。',
+        ),
+        effectLayers: ['心跳光点', '速度线', '星点', '腮红', '呼吸辉光'],
       ),
     ),
     FlirtyAction(
       id: 'lean_closer',
       label: '忽然靠近',
-      preview: '突然朝你靠近了一点',
+      preview: '小熊忽然朝你压近了一点',
       icon: Icons.zoom_in_map_rounded,
-      gradient: [Color(0xFF8C6178), Color(0xFF231A2E)],
-      hint: '明明还没碰到，气压已经低下来了一点。',
-      stageTitle: '靠近半步',
-      stageSubtitle: '身体只往前送半步，真正先抵达的是眼神和呼吸。',
-      motionNotes: '以镜头推近和角色前倾同步，近距离停顿后再缓慢退回呼吸位。',
-      hapticNotes: '距离压到最近点时 medium impact。',
+      gradient: [Color(0xFFA06CFF), Color(0xFF85C6FF)],
+      hint: '没有接触，张力全靠距离、呼吸和眼神停顿撑起来。',
+      stageTitle: '距离压近',
+      stageSubtitle: '两只角色压到最近却不碰，像空气被轻轻抽紧，舞台中心只剩呼吸和目光。',
+      motionNotes: '前进要慢，悬停要稳，退回要柔；镜头和角色都只推半步。',
+      hapticNotes: '距离压到最近点时 medium impact，退回时补 selection click。',
       moodGroup: FlirtyMoodGroup.closer,
-      moodTag: 'Close',
-      sceneMoment: '主动的人先压低肩线往前靠，另一个下意识屏住一下呼吸，眼神完全来不及躲开。',
-      loopNotes: '避免频繁冲刺，建议做慢靠近和悬停循环，强调停顿比位移更重要。',
-      assetRecommendation: '角色前倾和镜头层次适合 Rive，背景景深呼吸光建议用 shader 或 Lottie。',
+      moodTag: 'Heat',
+      sceneMoment: '身体先靠近，眼神更先抵达，谁都没碰到谁，但空气已经发烫。',
+      loopNotes: '核心不是冲刺，而是慢推近后的停顿呼吸，最后留一点未尽感再退回。',
+      assetRecommendation: '角色前倾和镜头景深呼吸适合 Rive，呼吸辉光和粒子尘雾单独做 Lottie。',
       assetPlan: FlirtyAssetPlan(
-        coverFrame: '停在距离最近但还没碰到的半步，目光已经锁住。',
-        previewAnimation: '1.4 秒慢靠近加短暂停顿，强调眼神先到。',
-        fullscreenAnimation: '2.8 秒完整版，镜头轻推近、呼吸停顿、再缓慢退回。',
+        coverFrame: '停在两人距离最近但还差一口气的位置。',
+        previewAnimation: '1.4 秒：慢靠近、停顿、呼吸发亮。',
+        fullscreenAnimation: '2.9 秒：加入镜头轻推、目光锁定和慢速退回。',
         coverFormat: 'static png/webp',
         previewFormat: 'Rive',
         fullscreenFormat: 'Rive',
         effectsFormat: 'Lottie',
       ),
+      storyboard: FlirtyActionStoryboard(
+        coverFrame: '小熊肩线向前压，小猴上半身微后撤，但眼睛还停在小熊脸上，鼻尖间距留出安全空隙。',
+        previewDuration: '1.4s',
+        previewBeats: [
+          FlirtyBeat(
+            timing: '0.0s - 0.5s',
+            title: '慢慢压近',
+            description: '两人同时轻前倾，小熊主动更多，小猴后撤更细微。',
+          ),
+          FlirtyBeat(
+            timing: '0.5s - 0.95s',
+            title: '目光锁住',
+            description: '位移停止，只有胸腔呼吸和睫毛轻颤继续运动。',
+          ),
+          FlirtyBeat(
+            timing: '0.95s - 1.4s',
+            title: '含笑退半步',
+            description: '小熊先退一点，小猴眼神跟着追，热度不立刻散掉。',
+          ),
+        ],
+        fullDuration: '2.9s',
+        fullBeats: [
+          FlirtyBeat(
+            timing: '0.0s - 0.65s',
+            title: '肩线压低',
+            description: '小熊先把肩膀放松，胸腔前送；小猴意识到靠近后轻轻屏息。',
+          ),
+          FlirtyBeat(
+            timing: '0.65s - 1.45s',
+            title: '距离最近点',
+            description: '镜头轻推近，背景发光更柔，角色几乎不动，只剩表情和呼吸细动。',
+          ),
+          FlirtyBeat(
+            timing: '1.45s - 2.1s',
+            title: '气氛悬停',
+            description: '两人维持对视，小猴腮红上浮，小熊嘴角轻提但不坏笑过头。',
+          ),
+          FlirtyBeat(
+            timing: '2.1s - 2.9s',
+            title: '慢速回弹',
+            description: '小熊先回弹，小猴视线晚 3 帧才移开，保留余温。',
+          ),
+        ],
+        poseNotes: '小熊前倾角度更明显，小猴重心向后但脚不退，制造想逃又没逃开的暧昧。',
+        expressionNotes: '小熊是轻微坏笑，小猴是屏住呼吸后的心动和慌张混合。',
+        gazeNotes: '整段动作以眼睛为主驱动，最近点必须保持锁定，不要做夸张甩头。',
+        forceNotes: '无接触受力，张力由胸腔前送、脖颈前伸和肩线压低来体现。',
+        reboundNotes: '回弹不做弹簧感，只做柔和重心回收和呼吸节奏恢复。',
+        rigSuggestion: FlirtyRigSuggestion(
+          bones: [
+            'root / pelvis / spine_01 / spine_02 / neck / head',
+            'eye_target_l / eye_target_r / jaw / shoulder_l / shoulder_r',
+          ],
+          controllers: [
+            'camera_push controller',
+            'breath halo opacity',
+            'gaze lock controller',
+          ],
+          notes: '建议把眼球目标、头部朝向和胸腔呼吸拆开，方便做“眼神先到、身体后到”的节奏。',
+        ),
+        effectLayers: ['呼吸辉光', '心跳光点', '轻颗粒', '腮红'],
+      ),
     ),
     FlirtyAction(
-      id: 'sneak_glance',
-      label: '偏头偷看',
-      preview: '侧过脸偷偷看了你一眼',
-      icon: Icons.visibility_rounded,
-      gradient: [Color(0xFF7094C8), Color(0xFF23334C)],
-      hint: '明明想装没事，眼神还是把心思先交代了。',
-      stageTitle: '余光泄密',
-      stageSubtitle: '先是偏头偷看，发现被抓到后才慢半拍地假装无事发生。',
-      motionNotes: '偷看切入要快，被发现后的收回更快，中间留一个很短的对视停点。',
-      hapticNotes: '对视命中时 light tick。',
-      moodGroup: FlirtyMoodGroup.tease,
-      moodTag: 'Glance',
-      sceneMoment: '害羞的那位偷看时嘴角还没来得及收好，刚好撞上对方回头，于是慌张把脸别开。',
-      loopNotes: '适合做不规则循环，加入长短不同的偷看间隔会更像真人反应。',
-      assetRecommendation: '脸部表情与视线建议 Rive，瞬间收回的小速度线可用 sprite sheet。',
+      id: 'pat_head',
+      label: '摸摸头',
+      preview: '小熊掌心轻轻落在你发顶',
+      icon: Icons.pan_tool_alt_rounded,
+      gradient: [Color(0xFF8B7BFF), Color(0xFF91D5FF)],
+      hint: '重点不是拍下去，是掌心停住那一下的安抚感。',
+      stageTitle: '发顶安抚',
+      stageSubtitle: '掌心温柔按下，小猴耳朵和眼神一起软掉，空气从暧昧过渡到偏爱的安全感。',
+      motionNotes: '掌心下落弧线要圆，头顶压缩和耳朵回弹要软，收手要慢。',
+      hapticNotes: '落掌 soft impact，停留结束时 selection click。',
+      moodGroup: FlirtyMoodGroup.cute,
+      moodTag: 'Warm',
+      sceneMoment: '摸头发生的一瞬间，小猴表情明显软下来，像被偏爱稳稳接住。',
+      loopNotes: '落手、停留、轻抚收回三段即可，留出发丝和耳朵的软回弹。',
+      assetRecommendation: '角色主体和发顶压缩走 Rive，星点与柔光层可用 Lottie。',
       assetPlan: FlirtyAssetPlan(
-        coverFrame: '偷看被抓包前的余光定格。',
-        previewAnimation: '1.1 秒偷看、对视、慌张收回。',
-        fullscreenAnimation: '2.2 秒完整版，加入表情补救和耳尖泛红。',
+        coverFrame: '掌心刚落到发顶，小猴眼神开始变软的定格。',
+        previewAnimation: '1.3 秒：落掌、轻按、耳朵回弹。',
+        fullscreenAnimation: '2.6 秒：补足停留、发丝压缩和收手后的余温。',
+        coverFormat: 'static png/webp',
+        previewFormat: 'Rive',
+        fullscreenFormat: 'Rive',
+        effectsFormat: 'Lottie',
+      ),
+      storyboard: FlirtyActionStoryboard(
+        coverFrame: '小熊手掌包住小猴头顶 1/3，手臂形成圆弧；小猴肩膀放松，耳朵微向外展开。',
+        previewDuration: '1.3s',
+        previewBeats: [
+          FlirtyBeat(
+            timing: '0.0s - 0.35s',
+            title: '掌心落下',
+            description: '小熊带着温柔笑意抬手，小猴先短暂停住。',
+          ),
+          FlirtyBeat(
+            timing: '0.35s - 0.8s',
+            title: '轻轻按住',
+            description: '头顶轻压，耳朵向下软折，表情从微愣变成舒服。',
+          ),
+          FlirtyBeat(
+            timing: '0.8s - 1.3s',
+            title: '发丝回弹',
+            description: '耳朵和发顶晚一点回弹，眼神仍停在被摸头的满足里。',
+          ),
+        ],
+        fullDuration: '2.6s',
+        fullBeats: [
+          FlirtyBeat(
+            timing: '0.0s - 0.4s',
+            title: '抬手靠近',
+            description: '小熊先看向小猴头顶，手肘抬起时肩膀保持松弛。',
+          ),
+          FlirtyBeat(
+            timing: '0.4s - 1.05s',
+            title: '掌心安抚',
+            description: '头顶压缩约 6% 到 8%，小猴眯眼，耳朵轻轻折下。',
+          ),
+          FlirtyBeat(
+            timing: '1.05s - 1.75s',
+            title: '停留半拍',
+            description: '小熊手不急着收，小猴身体向掌心方向轻贴过去。',
+          ),
+          FlirtyBeat(
+            timing: '1.75s - 2.6s',
+            title: '轻抚收回',
+            description: '手离开发顶时带一点滑动，小猴耳朵和腮红慢慢恢复。',
+          ),
+        ],
+        poseNotes: '小熊上臂不要抬太高，保持包覆感；小猴脊柱略向掌心方向弯，显得更软。',
+        expressionNotes: '小熊是温柔微笑，小猴从日常到害羞再到心动放松。',
+        gazeNotes: '摸头前小熊看向发顶，摸头后改看小猴脸；小猴先垂眼再抬一点点看向小熊。',
+        forceNotes: '受力点在头顶中心，传导到耳朵和肩线；压缩幅度小但要可见。',
+        reboundNotes: '回弹以发丝和耳朵为主，速度比身体慢，像棉花慢慢弹回。',
+        rigSuggestion: FlirtyRigSuggestion(
+          bones: [
+            'head_top deform bone',
+            'ear_l / ear_r',
+            'hand_front / wrist / finger_curl',
+          ],
+          controllers: [
+            'head squash controller',
+            'ear softness controller',
+            'hand linger blend',
+          ],
+          notes: '头顶压缩建议做局部 mesh 变形而不是整头缩放，能更可爱也更自然。',
+        ),
+        effectLayers: ['星点', '呼吸辉光', '腮红', '心跳光点'],
+      ),
+    ),
+    FlirtyAction(
+      id: 'hook_finger',
+      label: '勾勾手指',
+      preview: '小指轻轻勾住了你',
+      icon: Icons.gesture_rounded,
+      gradient: [Color(0xFFAB73FF), Color(0xFF8FD1FF)],
+      hint: '真正动人的不是勾住，而是勾住之前那两次迟疑。',
+      stageTitle: '指尖确认',
+      stageSubtitle: '两只手先试探，再轻轻勾上，小范围动作却比拥抱更私密。',
+      motionNotes: '试探要两次，第一次故意不到位，第二次才成立；成立后整体要安静。',
+      hapticNotes: '第一次触碰 selection click，真正勾住时 soft impact。',
+      moodGroup: FlirtyMoodGroup.closer,
+      moodTag: 'Link',
+      sceneMoment: '指尖碰上的瞬间谁都没多动，但心跳像被一起拉住了。',
+      loopNotes: '适合两段式：第一次接近失败，第二次勾住后进入轻呼吸停留。',
+      assetRecommendation: '指尖、眼球和呼吸节奏都适合 Rive，心跳细闪单独 Lottie。',
+      assetPlan: FlirtyAssetPlan(
+        coverFrame: '两根小指还差一点点就碰到的瞬间。',
+        previewAnimation: '1.5 秒：试探、再靠近、轻轻勾住。',
+        fullscreenAnimation: '3.0 秒：加入两次犹豫、成立后悬停和微呼吸。',
+        coverFormat: 'static png/webp',
+        previewFormat: 'Rive',
+        fullscreenFormat: 'Rive',
+        effectsFormat: 'Lottie',
+      ),
+      storyboard: FlirtyActionStoryboard(
+        coverFrame: '两人手肘都略收，只有小指向外试探，脸已经先有一点停顿和期待。',
+        previewDuration: '1.5s',
+        previewBeats: [
+          FlirtyBeat(
+            timing: '0.0s - 0.45s',
+            title: '第一次试探',
+            description: '两只手慢慢靠近，但第一下故意没碰上。',
+          ),
+          FlirtyBeat(
+            timing: '0.45s - 0.9s',
+            title: '第二次靠近',
+            description: '小猴更轻一点，小熊更稳一点，节奏错半拍更有张力。',
+          ),
+          FlirtyBeat(
+            timing: '0.9s - 1.5s',
+            title: '勾住停住',
+            description: '小指轻勾成立后，身体基本停下，只保留呼吸和眼神。',
+          ),
+        ],
+        fullDuration: '3.0s',
+        fullBeats: [
+          FlirtyBeat(
+            timing: '0.0s - 0.55s',
+            title: '手指试探',
+            description: '两人都不完全确定，小指先伸，掌心还保持克制。',
+          ),
+          FlirtyBeat(
+            timing: '0.55s - 1.2s',
+            title: '第二次接近',
+            description: '小熊的手稳稳再往前一点，小猴跟上半拍，终于成功勾住。',
+          ),
+          FlirtyBeat(
+            timing: '1.2s - 2.2s',
+            title: '链接成立',
+            description: '指尖锁住后几乎没有大动作，只剩胸腔起伏和轻微手指摆动。',
+          ),
+          FlirtyBeat(
+            timing: '2.2s - 3.0s',
+            title: '目光停留',
+            description: '视线在手和脸之间切一次，最后停回彼此眼睛上。',
+          ),
+        ],
+        poseNotes: '上半身都要收，不做过多肩膀动作；肘部轻贴身体，突出指尖私密感。',
+        expressionNotes: '小熊带一点“我知道发生了什么”的微笑，小猴从迟疑到心动。',
+        gazeNotes: '前半段看手，后半段看脸；对视只需半拍，不要拖太满。',
+        forceNotes: '受力点只在小指勾连，整段靠微小连接和悬停创造强烈情绪。',
+        reboundNotes: '没有明显弹跳，只做锁住后极轻微的左右摇摆和呼吸波动。',
+        rigSuggestion: FlirtyRigSuggestion(
+          bones: [
+            'forearm_front / wrist / pinky_01 / pinky_02',
+            'eye_target / clavicle / chest_breath',
+          ],
+          controllers: [
+            'finger contact blend',
+            'linked sway controller',
+            'eye contact controller',
+          ],
+          notes: '如果资源有限，其他手指可合并成手掌 deform，仅单独给小指两段骨骼以保住“勾”的识别度。',
+        ),
+        effectLayers: ['心跳光点', '轻颗粒', '呼吸辉光', '腮红'],
+      ),
+    ),
+    FlirtyAction(
+      id: 'tug_sleeve',
+      label: '拽住衣角',
+      preview: '小猴害羞地拽住了你的衣角',
+      icon: Icons.waving_hand_rounded,
+      gradient: [Color(0xFFB582FF), Color(0xFF95D7FF)],
+      hint: '不是强行留住，是舍不得你就这样走开。',
+      stageTitle: '袖口停留',
+      stageSubtitle: '小猴低头轻勾衣角，把小熊往回留了一点点，软绵绵但很有效。',
+      motionNotes: '视线先躲开再伸手，拉扯幅度很小，重点在布料张力和犹豫感。',
+      hapticNotes: '勾住时 selection click，回拉时 soft impact。',
+      moodGroup: FlirtyMoodGroup.cute,
+      moodTag: 'Soft',
+      sceneMoment: '明明动作很轻，却能把人心一下子勾住，不想再往前走。',
+      loopNotes: '伸手、勾住、微拉、想松又没松，节奏要像害羞的人鼓起勇气。',
+      assetRecommendation: '角色和手势用 Rive，袖口布料拉伸单独 sprite sheet 或 mesh deform。',
+      assetPlan: FlirtyAssetPlan(
+        coverFrame: '两指勾住衣角、小猴视线垂下的瞬间。',
+        previewAnimation: '1.4 秒：低头、伸手、轻拉一下。',
+        fullscreenAnimation: '2.8 秒：补足布料张力、肩膀轻颤和迟疑停留。',
         coverFormat: 'static png/webp',
         previewFormat: 'Rive',
         fullscreenFormat: 'Rive',
         effectsFormat: 'sprite sheet',
       ),
-    ),
-    FlirtyAction(
-      id: 'brush_shoulder',
-      label: '轻蹭肩膀',
-      preview: '肩侧若有若无地擦过你',
-      icon: Icons.airline_seat_recline_extra_rounded,
-      gradient: [Color(0xFF5F96B4), Color(0xFF1E3146)],
-      hint: '像路过时没躲开，又像故意留了一点接触。',
-      stageTitle: '肩线擦过',
-      stageSubtitle: '不是撞上去，是在错身时故意放慢半拍，让肩膀轻轻带过去。',
-      motionNotes: '贴近要顺，接触要轻，擦过后一定要给一个回头确认反应。',
-      hapticNotes: '接触峰值 very light impact。',
-      moodGroup: FlirtyMoodGroup.stir,
-      moodTag: 'Tension',
-      sceneMoment: '两个人错身的瞬间肩膀轻轻擦过，回头那一下比接触本身更暧昧。',
-      loopNotes: '适合横向位移循环，核心不是撞感，而是擦肩后的迟到半拍回望。',
-      assetRecommendation: '角色位移适合 Rive，擦肩光痕和拖尾用 sprite sheet 或 APNG。',
-      assetPlan: FlirtyAssetPlan(
-        coverFrame: '擦肩刚结束、两人回头错开半拍的定格。',
-        previewAnimation: '1.4 秒横向错身和迟到回望。',
-        fullscreenAnimation: '2.6 秒完整版，加入肩线擦过的拖尾和微弱停顿。',
-        coverFormat: 'static png/webp',
-        previewFormat: 'Rive',
-        fullscreenFormat: 'Rive',
-        effectsFormat: 'APNG',
+      storyboard: FlirtyActionStoryboard(
+        coverFrame: '小猴站在偏后位置，两指勾住小熊袖口边缘，肩膀微缩，留白多，显得拘谨又可爱。',
+        previewDuration: '1.4s',
+        previewBeats: [
+          FlirtyBeat(
+            timing: '0.0s - 0.4s',
+            title: '先躲眼神',
+            description: '小猴先把视线移开，肩膀缩一点，再慢慢把手伸出去。',
+          ),
+          FlirtyBeat(
+            timing: '0.4s - 0.85s',
+            title: '勾住衣角',
+            description: '两指夹住袖口边，布料立即形成细小张力线。',
+          ),
+          FlirtyBeat(
+            timing: '0.85s - 1.4s',
+            title: '轻轻往回留',
+            description: '身体后坐半步，袖口被拉回一点，小猴再偷看小熊反应。',
+          ),
+        ],
+        fullDuration: '2.8s',
+        fullBeats: [
+          FlirtyBeat(
+            timing: '0.0s - 0.55s',
+            title: '勇气预备',
+            description: '小猴先低头，再像下定决心一样伸手，耳朵稍向后收。',
+          ),
+          FlirtyBeat(
+            timing: '0.55s - 1.1s',
+            title: '布料张力建立',
+            description: '袖口边缘被勾住，小熊被轻轻拽回，衣料出现柔软拉伸。',
+          ),
+          FlirtyBeat(
+            timing: '1.1s - 2.0s',
+            title: '不舍停留',
+            description: '小猴没立刻松手，肩膀和指尖都有轻颤，眼神偷偷抬起。',
+          ),
+          FlirtyBeat(
+            timing: '2.0s - 2.8s',
+            title: '几乎松手',
+            description: '手指略松又重新收住，像在问“你能不能别走”。',
+          ),
+        ],
+        poseNotes: '小猴身体向后收，小熊被拉回半步但保持稳定；动作重点在手和肩膀。',
+        expressionNotes: '小猴一定要害羞，小熊的回应是温柔被逗笑而不是夸张惊讶。',
+        gazeNotes: '小猴先避开视线，后半段只抬眼看一下；小熊被拉回时第一反应看向手。',
+        forceNotes: '受力点在衣角边缘，小猴手指内扣，小熊袖口局部产生轻拉扯变形。',
+        reboundNotes: '松手趋势出现后用轻微回拉代替弹跳，质感更软也更亲密。',
+        rigSuggestion: FlirtyRigSuggestion(
+          bones: [
+            'sleeve_tip deform',
+            'hand_front / finger_pincher',
+            'shoulder_shy / neck tuck',
+          ],
+          controllers: [
+            'cloth tension amount',
+            'hesitation controller',
+            'look-up glance controller',
+          ],
+          notes: '衣角建议做独立 mesh 或单骨骼拉伸，避免整件衣服一起变形显得太硬。',
+        ),
+        effectLayers: ['轻颗粒', '腮红', '呼吸辉光', '速度线'],
       ),
     ),
     FlirtyAction(
-      id: 'naughty_smile',
-      label: '给你坏笑',
-      preview: '嘴角一挑，冲你坏笑了一下',
-      icon: Icons.mood_rounded,
-      gradient: [Color(0xFFC97358), Color(0xFF4B2037)],
-      hint: '什么都没说，但节奏已经被他拿走了。',
-      stageTitle: '笑意挑衅',
-      stageSubtitle: '不是夸张的大笑，只是一点抬眼和一侧嘴角，就足够让人乱掉节拍。',
-      motionNotes: '先抬眼，再单边扬唇，最后补一记慢眨眼，停在最有杀伤力的瞬间。',
-      hapticNotes: '笑意定格时 selection click。',
+      id: 'sneak_glance',
+      label: '偷看被抓包',
+      preview: '小猴偷看你时，被你当场抓包了',
+      icon: Icons.visibility_rounded,
+      gradient: [Color(0xFF9779FF), Color(0xFF8CD4FF)],
+      hint: '真正可爱的是对视后的慌张移开，而不是偷看本身。',
+      stageTitle: '余光泄密',
+      stageSubtitle: '小猴偏头偷看，小熊突然回头，对视半拍后两人都慌张收神，像空气被点亮一下。',
+      motionNotes: '偷看切入要快，被抓包后的脸和眼球回收更快，中间对视停住半拍。',
+      hapticNotes: '对视命中时 selection click。',
       moodGroup: FlirtyMoodGroup.stir,
-      moodTag: 'Smirk',
-      sceneMoment: '主动的那位先看过来，再一点点把笑意抬上嘴角，对方的耳朵明显先红。',
-      loopNotes: '用长待机配短表情爆点，让“坏笑一下”更像被抓拍到的瞬间。',
-      assetRecommendation: '这类面部主导场景适合 Rive；如果资源有限，可退化成 APNG 循环。',
+      moodTag: 'Caught',
+      sceneMoment: '偷看的心思被抓到之后，脸热和移开视线反而比偷看更暧昧。',
+      loopNotes: '用短偷看、短对视、短收回组成不规则节奏，越像真实反应越动人。',
+      assetRecommendation: '眼球、眼皮、头部偏转建议 Rive；抓包速度线可用 sprite sheet。',
       assetPlan: FlirtyAssetPlan(
-        coverFrame: '坏笑刚扬起来、对面已经耳热的瞬间。',
-        previewAnimation: '1.1 秒抬眼、扬唇、慢眨眼。',
-        fullscreenAnimation: '2.2 秒完整版，强调眼神停顿和对面反应。',
+        coverFrame: '小猴侧过脸偷看，小熊刚要回头的瞬间。',
+        previewAnimation: '1.2 秒：偷看、被抓、慌张移开。',
+        fullscreenAnimation: '2.5 秒：加入嘴角没收住、对视停顿和耳尖泛红。',
         coverFormat: 'static png/webp',
         previewFormat: 'Rive',
         fullscreenFormat: 'Rive',
-        effectsFormat: 'APNG',
+        effectsFormat: 'sprite sheet',
+      ),
+      storyboard: FlirtyActionStoryboard(
+        coverFrame: '小猴只用眼睛和一点点头部偏转看向小熊，小熊还没完全转过来，悬念最强。',
+        previewDuration: '1.2s',
+        previewBeats: [
+          FlirtyBeat(
+            timing: '0.0s - 0.3s',
+            title: '偷偷偏头',
+            description: '小猴头偏、眼先走，嘴角还有一点没收住的笑。',
+          ),
+          FlirtyBeat(
+            timing: '0.3s - 0.65s',
+            title: '回头抓包',
+            description: '小熊忽然回头，视线正好撞上，小猴瞬间僵住。',
+          ),
+          FlirtyBeat(
+            timing: '0.65s - 1.2s',
+            title: '慌张移开',
+            description: '小猴快速把脸转回去，耳尖和腮红后知后觉地浮上来。',
+          ),
+        ],
+        fullDuration: '2.5s',
+        fullBeats: [
+          FlirtyBeat(
+            timing: '0.0s - 0.45s',
+            title: '余光偷看',
+            description: '小猴先用余光试探，再带一点头部角度偏过去，动作很轻。',
+          ),
+          FlirtyBeat(
+            timing: '0.45s - 0.92s',
+            title: '瞬间抓到',
+            description: '小熊回头速度略快，目光直接锁到小猴脸上，形成短暂停格。',
+          ),
+          FlirtyBeat(
+            timing: '0.92s - 1.55s',
+            title: '对视半拍',
+            description: '谁都没来得及解释，表情先出卖心思，空气亮一下。',
+          ),
+          FlirtyBeat(
+            timing: '1.55s - 2.5s',
+            title: '故作镇定',
+            description: '两人都把视线挪开，小猴慌得更明显，小熊则偷笑收回。',
+          ),
+        ],
+        poseNotes: '主体动作集中在头部和眼睛，身体保持相对静止，避免抢掉“偷看”的细腻感。',
+        expressionNotes: '小猴从微笑到慌张，小熊从平静到抓包后的轻挑坏笑。',
+        gazeNotes: '偷看先走眼睛再走头，被抓包后头部和眼球同时急退，形成慌乱感。',
+        forceNotes: '没有接触，动作驱动力来自眼神突发变化和颈部快速回收。',
+        reboundNotes: '回收后脸部保留微颤，耳尖和腮红延后出现，制造“心思被看穿”的后劲。',
+        rigSuggestion: FlirtyRigSuggestion(
+          bones: [
+            'neck / head / eye_target_l / eye_target_r / brow_l / brow_r',
+            'cheek_blush mask',
+          ],
+          controllers: [
+            'glance snap controller',
+            'caught freeze controller',
+            'blush reveal opacity',
+          ],
+          notes: '这个动作对眼球 target 和眼皮 blendshape 很敏感，建议优先保证脸部控制精度。',
+        ),
+        effectLayers: ['速度线', '腮红', '轻颗粒', '心跳光点'],
       ),
     ),
   ];

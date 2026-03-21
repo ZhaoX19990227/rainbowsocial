@@ -5,7 +5,9 @@ import '../controllers/nearby_controller.dart';
 import '../models/app_user.dart';
 import '../models/nearby_filter.dart';
 import '../routes/app_router.dart';
+import '../services/mbti_catalog.dart';
 import '../services/tag_options.dart';
+import '../services/zodiac_utils.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/app_skeleton.dart';
@@ -194,6 +196,8 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
     return users.where((user) {
       return user.nickname.toLowerCase().contains(normalized) ||
           user.bio.toLowerCase().contains(normalized) ||
+          user.mbtiType.toLowerCase().contains(normalized) ||
+          ZodiacUtils.displayName(user.zodiacSign).toLowerCase().contains(normalized) ||
           user.tags.any((tag) => tag.toLowerCase().contains(normalized));
     }).toList();
   }
@@ -208,7 +212,7 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
         return StatefulBuilder(
           builder: (context, setModalState) {
             return SafeArea(
-              child: Padding(
+              child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -256,6 +260,54 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
                       },
                     ),
                     const SizedBox(height: 12),
+                    Text(
+                      'MBTI',
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: MbtiCatalog.validTypes.map((type) {
+                        final selected = draft.mbtiType == type;
+                        return FilterChip(
+                          selected: selected,
+                          label: Text(type),
+                          onSelected: (_) {
+                            setModalState(() {
+                              draft = draft.copyWith(
+                                mbtiType: selected ? '' : type,
+                              );
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '星座',
+                      style: Theme.of(context).textTheme.labelLarge,
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: ZodiacUtils.signs.map((sign) {
+                        final selected = draft.zodiacSign == sign;
+                        return FilterChip(
+                          selected: selected,
+                          label: Text(ZodiacUtils.displayName(sign)),
+                          onSelected: (_) {
+                            setModalState(() {
+                              draft = draft.copyWith(
+                                zodiacSign: selected ? '' : sign,
+                              );
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 12),
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
@@ -286,7 +338,9 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
                         Expanded(
                           child: FilledButton(
                             onPressed: () => Navigator.of(context).pop(
-                              draft.copyWith(tag: tagController.text.trim()),
+                              draft.copyWith(
+                                tag: tagController.text.trim(),
+                              ),
                             ),
                             child: const Text('应用'),
                           ),

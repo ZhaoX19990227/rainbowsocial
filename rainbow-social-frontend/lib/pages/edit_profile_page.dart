@@ -8,6 +8,7 @@ import '../models/app_user.dart';
 import '../services/api_config.dart';
 import '../services/app_feedback.dart';
 import '../services/tag_options.dart';
+import '../services/zodiac_utils.dart';
 import '../usecases/upload_usecases.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/gradient_button.dart';
@@ -26,6 +27,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   final _nickname = TextEditingController();
   final _avatar = TextEditingController();
   final _age = TextEditingController();
+  final _heightCm = TextEditingController();
+  final _weightKg = TextEditingController();
+  final _birthday = TextEditingController();
   final _bio = TextEditingController();
   final _tags = TextEditingController();
   final _picker = ImagePicker();
@@ -39,6 +43,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     _nickname.dispose();
     _avatar.dispose();
     _age.dispose();
+    _heightCm.dispose();
+    _weightKg.dispose();
+    _birthday.dispose();
     _bio.dispose();
     _tags.dispose();
     super.dispose();
@@ -52,6 +59,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       _nickname.text = user.nickname;
       _avatar.text = user.avatar;
       _age.text = '${user.age}';
+      _heightCm.text = '${user.heightCm}';
+      _weightKg.text = '${user.weightKg}';
+      _birthday.text = user.birthday;
       _bio.text = user.bio;
       _tags.text = user.tags.join(', ');
       _selectedTags = [...user.tags];
@@ -107,6 +117,53 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                 decoration: const InputDecoration(hintText: '年龄'),
               ),
               const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _heightCm,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(hintText: '身高(cm)'),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _weightKg,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(hintText: '体重(kg)'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _birthday,
+                readOnly: true,
+                onTap: _pickBirthday,
+                decoration: InputDecoration(
+                  hintText: '生日',
+                  suffixIcon: _birthday.text.trim().isEmpty
+                      ? null
+                      : Padding(
+                          padding: const EdgeInsets.only(right: 12),
+                          child: Center(
+                            widthFactor: 1,
+                            child: Text(
+                              ZodiacUtils.displayName(
+                                ZodiacUtils.zodiacFromBirthday(
+                                      ZodiacUtils.tryParseBirthday(
+                                        _birthday.text.trim(),
+                                      ),
+                                    ) ??
+                                    '',
+                              ),
+                            ),
+                          ),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 14),
               TextField(
                 controller: _bio,
                 maxLines: 4,
@@ -159,10 +216,21 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                           avatar: _avatar.text.trim(),
                           photos: _photos,
                           age: int.tryParse(_age.text.trim()) ?? profile.age,
+                          heightCm: int.tryParse(_heightCm.text.trim()) ??
+                              profile.heightCm,
+                          weightKg: int.tryParse(_weightKg.text.trim()) ??
+                              profile.weightKg,
+                          birthday: _birthday.text.trim(),
+                          zodiacSign: ZodiacUtils.zodiacFromBirthday(
+                                ZodiacUtils.tryParseBirthday(_birthday.text.trim()),
+                              ) ??
+                              '',
+                          mbtiType: profile.mbtiType,
                           bio: _bio.text.trim(),
                           tags: _parseTags(_tags.text),
                           lat: profile.lat,
                           lng: profile.lng,
+                          locationLabel: profile.locationLabel,
                           onlineStatus: profile.onlineStatus,
                           distanceKm: profile.distanceKm,
                         );
@@ -180,6 +248,21 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         ),
       ),
     );
+  }
+
+  Future<void> _pickBirthday() async {
+    final existing = ZodiacUtils.tryParseBirthday(_birthday.text.trim());
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: existing ?? DateTime(now.year - 24, now.month, now.day),
+      firstDate: DateTime(1960, 1, 1),
+      lastDate: DateTime(now.year - 18, now.month, now.day),
+    );
+    if (picked == null) return;
+    setState(() {
+      _birthday.text = ZodiacUtils.formatBirthday(picked);
+    });
   }
 
   Future<void> _pickAndUploadImage({required bool isAvatar}) async {

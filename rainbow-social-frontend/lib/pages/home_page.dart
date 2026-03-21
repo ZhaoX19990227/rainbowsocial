@@ -113,6 +113,16 @@ class _HomePageState extends ConsumerState<HomePage> {
                   ),
                 ),
                 const SizedBox(height: 18),
+                _MbtiEntryCard(
+                  onTap: () =>
+                      Navigator.of(context).pushNamed(AppRouter.mbtiTest),
+                ),
+                const SizedBox(height: 12),
+                _HoroscopeEntryCard(
+                  onTap: () =>
+                      Navigator.of(context).pushNamed(AppRouter.birthdaySetup),
+                ),
+                const SizedBox(height: 18),
                 Expanded(
                   child: state.when(
                     data: (users) {
@@ -254,6 +264,190 @@ class _HomePageState extends ConsumerState<HomePage> {
     } catch (error) {
       AppFeedback.showError('撤销失败：$error');
     }
+  }
+}
+
+class _MbtiEntryCard extends StatelessWidget {
+  const _MbtiEntryCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(32),
+      child: Ink(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(32),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF7B36C2),
+              Color(0xFF9552DD),
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primary.withValues(alpha: 0.16),
+              blurRadius: 32,
+              offset: const Offset(0, 16),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -30,
+              right: -18,
+              child: Container(
+                width: 132,
+                height: 132,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.14),
+                ),
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.16),
+                  ),
+                  child: const Icon(
+                    Icons.psychology_alt_rounded,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  '发现你的隐藏人格',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        color: Colors.white,
+                        height: 1.15,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '完善人格档案，提升匹配成功率 +30%',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.84),
+                      ),
+                ),
+              ],
+            ),
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HoroscopeEntryCard extends StatelessWidget {
+  const _HoroscopeEntryCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(32),
+      child: Ink(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(32),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFF4AA5FD),
+              Color(0xFF6E7CFF),
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.secondary.withValues(alpha: 0.18),
+              blurRadius: 32,
+              offset: const Offset(0, 16),
+            ),
+          ],
+        ),
+        child: Stack(
+          children: [
+            Positioned(
+              top: -28,
+              left: -18,
+              child: Container(
+                width: 132,
+                height: 132,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.12),
+                ),
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.white.withValues(alpha: 0.16),
+                  ),
+                  child: const Icon(
+                    Icons.auto_awesome_rounded,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  '查看今日运势',
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        color: Colors.white,
+                        height: 1.15,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '输入生日，解锁你的星座档案和今日气场',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.84),
+                      ),
+                ),
+              ],
+            ),
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: Icon(
+                Icons.chevron_right_rounded,
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

@@ -32,6 +32,11 @@ func (s *UserService) UpdateProfile(userID int64, input model.User) (*model.User
 	existing.Nickname = strings.TrimSpace(input.Nickname)
 	existing.Avatar = strings.TrimSpace(input.Avatar)
 	existing.Age = input.Age
+	existing.HeightCM = input.HeightCM
+	existing.WeightKG = input.WeightKG
+	existing.Birthday = strings.TrimSpace(input.Birthday)
+	existing.ZodiacSign = sanitizeZodiacSign(input.ZodiacSign)
+	existing.MBTIType = sanitizeMBTIType(input.MBTIType)
 	existing.Bio = strings.TrimSpace(input.Bio)
 	existing.Tags = sanitizeTags(input.Tags)
 	existing.Photos = sanitizePhotos(input.Photos)
@@ -45,6 +50,21 @@ func (s *UserService) UpdateProfile(userID int64, input model.User) (*model.User
 	if existing.Age < 18 || existing.Age > 99 {
 		return nil, fmt.Errorf("age must be between 18 and 99")
 	}
+	if existing.HeightCM < 120 || existing.HeightCM > 230 {
+		return nil, fmt.Errorf("height_cm must be between 120 and 230")
+	}
+	if existing.WeightKG < 30 || existing.WeightKG > 200 {
+		return nil, fmt.Errorf("weight_kg must be between 30 and 200")
+	}
+	if existing.MBTIType != "" && !isValidMBTIType(existing.MBTIType) {
+		return nil, fmt.Errorf("mbti_type is invalid")
+	}
+	if existing.Birthday == "" && existing.ZodiacSign != "" {
+		return nil, fmt.Errorf("birthday is required when zodiac_sign is set")
+	}
+	if existing.ZodiacSign != "" && !isValidZodiacSign(existing.ZodiacSign) {
+		return nil, fmt.Errorf("zodiac_sign is invalid")
+	}
 
 	return s.userRepo.UpdateProfile(existing)
 }
@@ -56,13 +76,15 @@ func (s *UserService) ListUsers(limit int) ([]model.User, error) {
 	return s.userRepo.ListUsers(limit)
 }
 
-func (s *UserService) Nearby(userID int64, lat, lng float64, minAge, maxAge int, onlineOnly bool, tag string) ([]model.User, error) {
+func (s *UserService) Nearby(userID int64, lat, lng float64, minAge, maxAge int, onlineOnly bool, tag, mbtiType, zodiacSign string) ([]model.User, error) {
 	users, err := s.userRepo.ListOtherUsers(userID)
 	if err != nil {
 		return nil, err
 	}
 
 	tag = strings.ToLower(strings.TrimSpace(tag))
+	mbtiType = sanitizeMBTIType(mbtiType)
+	zodiacSign = sanitizeZodiacSign(zodiacSign)
 	for i := range users {
 		if minAge > 0 && users[i].Age < minAge {
 			users[i].DistanceKM = -1
@@ -77,6 +99,14 @@ func (s *UserService) Nearby(userID int64, lat, lng float64, minAge, maxAge int,
 			continue
 		}
 		if tag != "" && !containsTag(users[i].Tags, tag) {
+			users[i].DistanceKM = -1
+			continue
+		}
+		if mbtiType != "" && users[i].MBTIType != mbtiType {
+			users[i].DistanceKM = -1
+			continue
+		}
+		if zodiacSign != "" && users[i].ZodiacSign != zodiacSign {
 			users[i].DistanceKM = -1
 			continue
 		}
@@ -162,6 +192,63 @@ func containsTag(tags []string, target string) bool {
 		}
 	}
 	return false
+}
+
+func sanitizeMBTIType(value string) string {
+	return strings.ToUpper(strings.TrimSpace(value))
+}
+
+func isValidMBTIType(value string) bool {
+	switch value {
+	case "INTJ", "INTP", "ENTJ", "ENTP",
+		"INFJ", "INFP", "ENFJ", "ENFP",
+		"ISTJ", "ISFJ", "ESTJ", "ESFJ",
+		"ISTP", "ISFP", "ESTP", "ESFP":
+		return true
+	default:
+		return false
+	}
+}
+
+func sanitizeZodiacSign(value string) string {
+	value = strings.TrimSpace(value)
+	switch strings.ToLower(value) {
+	case "aries":
+		return "Aries"
+	case "taurus":
+		return "Taurus"
+	case "gemini":
+		return "Gemini"
+	case "cancer":
+		return "Cancer"
+	case "leo":
+		return "Leo"
+	case "virgo":
+		return "Virgo"
+	case "libra":
+		return "Libra"
+	case "scorpio":
+		return "Scorpio"
+	case "sagittarius":
+		return "Sagittarius"
+	case "capricorn":
+		return "Capricorn"
+	case "aquarius":
+		return "Aquarius"
+	case "pisces":
+		return "Pisces"
+	default:
+		return value
+	}
+}
+
+func isValidZodiacSign(value string) bool {
+	switch value {
+	case "Aries", "Taurus", "Gemini", "Cancer", "Leo", "Virgo", "Libra", "Scorpio", "Sagittarius", "Capricorn", "Aquarius", "Pisces":
+		return true
+	default:
+		return false
+	}
 }
 
 func (s *UserService) SaveDeviceToken(userID int64, token, platform string) error {

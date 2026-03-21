@@ -9,12 +9,16 @@ import '../models/block_status.dart';
 import '../models/match_summary.dart';
 import '../routes/app_router.dart';
 import '../services/app_feedback.dart';
+import '../services/mbti_catalog.dart';
 import '../services/relationship_copy.dart';
+import '../services/zodiac_utils.dart';
 import '../theme/app_theme.dart';
 import '../usecases/swipe_usecases.dart';
 import '../widgets/avatar_widget.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/mbti_badge.dart';
 import '../widgets/tag_chip.dart';
+import '../widgets/zodiac_badge.dart';
 
 class UserDetailPage extends ConsumerWidget {
   const UserDetailPage({super.key, required this.user});
@@ -207,6 +211,25 @@ class UserDetailPage extends ConsumerWidget {
                                             height: 1.45,
                                           ),
                                     ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      user.basicsLine,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelMedium
+                                          ?.copyWith(
+                                            color: const Color(0xFFE9E0FB),
+                                            letterSpacing: 0.2,
+                                          ),
+                                    ),
+                                    if (user.mbtiType.trim().isNotEmpty) ...[
+                                      const SizedBox(height: 10),
+                                      MbtiBadge(type: user.mbtiType),
+                                    ],
+                                    if (user.zodiacSign.trim().isNotEmpty) ...[
+                                      const SizedBox(height: 10),
+                                      ZodiacBadge(sign: user.zodiacSign),
+                                    ],
                                   ],
                                 ),
                               ),
@@ -244,6 +267,45 @@ class UserDetailPage extends ConsumerWidget {
                                 Text('更多介绍',
                                     style:
                                         Theme.of(context).textTheme.labelMedium),
+                                if (user.mbtiType.trim().isNotEmpty) ...[
+                                  const SizedBox(height: 10),
+                                  Text(
+                                    '人格类型 · ${MbtiCatalog.resolve(user.mbtiType).name}',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(color: const Color(0xFFF0EAFE)),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    MbtiCatalog.resolve(user.mbtiType).summary,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(color: const Color(0xFFD8D0EA)),
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
+                                if (user.zodiacSign.trim().isNotEmpty) ...[
+                                  Text(
+                                    '星座档案 · ${ZodiacUtils.displayName(user.zodiacSign)}',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(color: const Color(0xFFF0EAFE)),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    user.birthday.trim().isEmpty
+                                        ? '这个星座通常更在意聊天氛围、靠近节奏和情绪流动。'
+                                        : '${user.birthday} 出生，互动时往往更有自己的情绪节奏。',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(color: const Color(0xFFD8D0EA)),
+                                  ),
+                                  const SizedBox(height: 12),
+                                ],
                                 const SizedBox(height: 10),
                                 Text(
                                   user.bio.trim().isEmpty

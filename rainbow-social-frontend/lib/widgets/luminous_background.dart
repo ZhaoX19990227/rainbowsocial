@@ -14,31 +14,47 @@ class LuminousBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: AppTheme.background,
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Color(0xFFF8F9FE),
+            Color(0xFFF6F1FF),
+            Color(0xFFF2F7FF),
+          ],
+        ),
       ),
       child: Stack(
         children: [
           Positioned(
-            top: -100,
-            left: -70,
+            top: -90,
+            left: -50,
             child: _GlowOrb(
-              color: AppTheme.primary.withValues(alpha: 0.16),
+              color: AppTheme.primary.withValues(alpha: 0.2),
+              size: 240,
+            ),
+          ),
+          Positioned(
+            bottom: -100,
+            right: -40,
+            child: _GlowOrb(
+              color: AppTheme.secondary.withValues(alpha: 0.2),
               size: 220,
             ),
           ),
           Positioned(
-            bottom: -120,
-            right: -60,
+            top: 180,
+            right: -10,
             child: _GlowOrb(
-              color: AppTheme.secondary.withValues(alpha: 0.12),
-              size: 260,
+              color: AppTheme.tertiary.withValues(alpha: 0.1),
+              size: 180,
             ),
           ),
           Positioned(
-            top: 240,
-            right: 40,
+            left: 20,
+            bottom: 120,
             child: _GlowOrb(
-              color: AppTheme.tertiary.withValues(alpha: 0.08),
+              color: const Color(0x339552DD),
               size: 160,
             ),
           ),

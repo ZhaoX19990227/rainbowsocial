@@ -2,79 +2,87 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const Color background = Color(0xFF0D0D18);
-  static const Color surface = Color(0xFF181826);
-  static const Color surfaceHigh = Color(0xFF1E1E2D);
-  static const Color surfaceHighest = Color(0xFF242434);
-  static const Color textPrimary = Color(0xFFE9E6F7);
-  static const Color textSecondary = Color(0xFFABA9B9);
-  static const Color primary = Color(0xFFEA87FF);
-  static const Color primaryDark = Color(0xFFE470FF);
-  static const Color secondary = Color(0xFF00D2FF);
-  static const Color tertiary = Color(0xFFFF6E85);
+  static const Color background = Color(0xFFF8F9FE);
+  static const Color surface = Color(0xFFF8F9FE);
+  static const Color surfaceHigh = Color(0xFFFFFFFF);
+  static const Color surfaceHighest = Color(0xFFF2F3F8);
+  static const Color textPrimary = Color(0xFF191C1F);
+  static const Color textSecondary = Color(0xFF4C4453);
+  static const Color primary = Color(0xFF7B36C2);
+  static const Color primaryDark = Color(0xFF9552DD);
+  static const Color secondary = Color(0xFF4AA5FD);
+  static const Color tertiary = Color(0xFFC2438F);
   static const Color error = Color(0xFFD73357);
-  static const Color ghostBorder = Color(0x26474754);
+  static const Color ghostBorder = Color(0x26CEC2D5);
 
   static ThemeData get darkTheme {
-    final base = ThemeData.dark(useMaterial3: true);
+    final base = ThemeData.light(useMaterial3: true);
     return base.copyWith(
       scaffoldBackgroundColor: background,
-      colorScheme: const ColorScheme.dark(
+      colorScheme: const ColorScheme.light(
         primary: primary,
         secondary: secondary,
         surface: surface,
         error: error,
       ),
-      textTheme: GoogleFonts.interTextTheme(base.textTheme).copyWith(
-        displayLarge: GoogleFonts.manrope(
+      textTheme: GoogleFonts.manropeTextTheme(base.textTheme).copyWith(
+        displayLarge: GoogleFonts.plusJakartaSans(
           fontSize: 46,
           fontWeight: FontWeight.w800,
           letterSpacing: -1.2,
           color: textPrimary,
         ),
-        headlineLarge: GoogleFonts.manrope(
+        headlineLarge: GoogleFonts.plusJakartaSans(
           fontSize: 32,
           fontWeight: FontWeight.w800,
           letterSpacing: -0.8,
           color: textPrimary,
         ),
-        headlineMedium: GoogleFonts.manrope(
+        headlineMedium: GoogleFonts.plusJakartaSans(
           fontSize: 24,
           fontWeight: FontWeight.w800,
           color: textPrimary,
         ),
-        titleLarge: GoogleFonts.manrope(
+        titleLarge: GoogleFonts.plusJakartaSans(
           fontSize: 20,
           fontWeight: FontWeight.w700,
           color: textPrimary,
         ),
-        bodyLarge: GoogleFonts.inter(
+        bodyLarge: GoogleFonts.manrope(
           fontSize: 16,
           height: 1.5,
           color: textPrimary,
         ),
-        bodyMedium: GoogleFonts.inter(
+        bodyMedium: GoogleFonts.manrope(
           fontSize: 14,
-          height: 1.4,
+          height: 1.5,
           color: textPrimary,
         ),
-        labelMedium: GoogleFonts.inter(
+        labelLarge: GoogleFonts.manrope(
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          color: textSecondary,
+        ),
+        labelMedium: GoogleFonts.manrope(
           fontSize: 12,
           fontWeight: FontWeight.w600,
-          letterSpacing: 0.7,
+          letterSpacing: 0.4,
           color: textSecondary,
         ),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: background.withValues(alpha: 0.65),
+        backgroundColor: Colors.white.withValues(alpha: 0.74),
         foregroundColor: textPrimary,
         elevation: 0,
         centerTitle: true,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: surfaceHigh,
-        hintStyle: const TextStyle(color: textSecondary),
+        fillColor: surfaceHighest,
+        hintStyle: GoogleFonts.manrope(
+          color: textSecondary,
+          fontSize: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(28),
           borderSide: BorderSide.none,
@@ -85,7 +93,10 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(28),
-          borderSide: const BorderSide(color: primary, width: 1.2),
+          borderSide: BorderSide(
+            color: primary.withValues(alpha: 0.35),
+            width: 1.6,
+          ),
         ),
       ),
     );

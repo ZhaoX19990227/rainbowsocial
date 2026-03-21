@@ -12,6 +12,7 @@ import '../models/app_user.dart';
 import '../models/chat_message_model.dart';
 import '../models/flirty_action.dart';
 import '../providers/app_providers.dart';
+import '../routes/app_router.dart';
 import '../services/app_feedback.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_empty_state.dart';
@@ -19,6 +20,7 @@ import '../widgets/app_skeleton.dart';
 import '../widgets/avatar_widget.dart';
 import '../widgets/flirty_action_system.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/luminous_background.dart';
 import '../widgets/message_bubble.dart';
 
 class ChatPage extends ConsumerStatefulWidget {
@@ -46,6 +48,22 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   bool _isStartingRecording = false;
   int _recordingSeconds = 0;
 
+  void _scrollToLatest({bool animated = false}) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!_scrollController.hasClients) return;
+      final target = _scrollController.position.maxScrollExtent + 120;
+      if (animated) {
+        _scrollController.animateTo(
+          target,
+          duration: const Duration(milliseconds: 280),
+          curve: Curves.easeOutCubic,
+        );
+        return;
+      }
+      _scrollController.jumpTo(target);
+    });
+  }
+
   @override
   void dispose() {
     _recordingTicker?.cancel();
@@ -62,16 +80,12 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       final shouldAllowAutoReplay = _hasHydratedHistory;
       if (!_hasHydratedHistory && !next.isLoading) {
         _hasHydratedHistory = true;
+        if (next.messages.isNotEmpty) {
+          _scrollToLatest();
+        }
       }
       if ((previous?.messages.length ?? 0) != next.messages.length) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!_scrollController.hasClients) return;
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent + 120,
-            duration: const Duration(milliseconds: 280),
-            curve: Curves.easeOutCubic,
-          );
-        });
+        _scrollToLatest(animated: shouldAllowAutoReplay);
         if (next.messages.isNotEmpty) {
           final latest = next.messages.last;
           final previousId = previous?.messages.isNotEmpty == true
@@ -116,240 +130,251 @@ class _ChatPageState extends ConsumerState<ChatPage> {
             ),
           ],
         ),
+        actions: [
+          IconButton(
+            tooltip: '查看熊猴互动设计稿',
+            onPressed: () => Navigator.of(context).pushNamed(AppRouter.flirtyDesign),
+            icon: const Icon(Icons.design_services_rounded),
+          ),
+        ],
       ),
       body: Stack(
         children: [
-          SafeArea(
-            child: Column(
-              children: [
-                if (roomState.errorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                    child: Text(
-                      roomState.errorMessage!,
-                      style: Theme.of(context).textTheme.labelMedium,
+          LuminousBackground(
+            child: SafeArea(
+              child: Column(
+                children: [
+                  if (roomState.errorMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                      child: Text(
+                        roomState.errorMessage!,
+                        style: Theme.of(context).textTheme.labelMedium,
+                      ),
                     ),
-                  ),
-                Expanded(
-                  child: roomState.isLoading
-                      ? const _ChatSkeleton()
-                      : roomState.messages.isEmpty
-                          ? const AppEmptyState(
-                              title: '还没有聊天记录',
-                              subtitle: '发出第一句问候，让这段连接开始吧。',
-                            )
-                          : NotificationListener<ScrollNotification>(
-                              onNotification: (notification) {
-                                if (notification.metrics.pixels <= 60 &&
-                                    roomState.hasMore &&
-                                    !roomState.isLoadingMore) {
-                                  ref
-                                      .read(chatControllerProvider(widget.peer)
-                                          .notifier)
-                                      .loadMoreHistory();
-                                }
-                                return false;
-                              },
-                              child: ListView.builder(
-                                controller: _scrollController,
-                                padding:
-                                    const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                                itemCount: roomState.messages.length + 2,
-                                itemBuilder: (context, index) {
-                                  if (index == 0) {
-                                    return AnimatedSwitcher(
-                                      duration:
-                                          const Duration(milliseconds: 220),
-                                      child: roomState.isLoadingMore
-                                          ? const Padding(
-                                              key: ValueKey('loading-more'),
-                                              padding:
-                                                  EdgeInsets.only(bottom: 12),
-                                              child: Center(
-                                                child: SizedBox(
-                                                  width: 18,
-                                                  height: 18,
-                                                  child:
-                                                      CircularProgressIndicator(
-                                                    strokeWidth: 2,
+                  Expanded(
+                    child: roomState.isLoading
+                        ? const _ChatSkeleton()
+                        : roomState.messages.isEmpty
+                            ? const AppEmptyState(
+                                title: '还没有聊天记录',
+                                subtitle: '发出第一句问候，让这段连接开始吧。',
+                              )
+                            : NotificationListener<ScrollNotification>(
+                                onNotification: (notification) {
+                                  if (notification.metrics.pixels <= 60 &&
+                                      roomState.hasMore &&
+                                      !roomState.isLoadingMore) {
+                                    ref
+                                        .read(chatControllerProvider(widget.peer)
+                                            .notifier)
+                                        .loadMoreHistory();
+                                  }
+                                  return false;
+                                },
+                                child: ListView.builder(
+                                  controller: _scrollController,
+                                  padding:
+                                      const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                                  itemCount: roomState.messages.length + 2,
+                                  itemBuilder: (context, index) {
+                                    if (index == 0) {
+                                      return AnimatedSwitcher(
+                                        duration:
+                                            const Duration(milliseconds: 220),
+                                        child: roomState.isLoadingMore
+                                            ? const Padding(
+                                                key: ValueKey('loading-more'),
+                                                padding:
+                                                    EdgeInsets.only(bottom: 12),
+                                                child: Center(
+                                                  child: SizedBox(
+                                                    width: 18,
+                                                    height: 18,
+                                                    child:
+                                                        CircularProgressIndicator(
+                                                      strokeWidth: 2,
+                                                    ),
                                                   ),
                                                 ),
+                                              )
+                                            : const SizedBox.shrink(
+                                                key: ValueKey('loading-idle'),
                                               ),
-                                            )
-                                          : const SizedBox.shrink(
-                                              key: ValueKey('loading-idle'),
-                                            ),
-                                    );
-                                  }
-                                  if (index == 1) {
-                                    return Center(
-                                      child: Container(
-                                        margin:
-                                            const EdgeInsets.only(bottom: 16),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 14,
-                                          vertical: 7,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0x22181826),
-                                          borderRadius:
-                                              BorderRadius.circular(999),
-                                        ),
-                                        child: Text(
-                                          '今天',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .labelMedium,
-                                        ),
-                                      ),
-                                    );
-                                  }
-                                  final message = roomState.messages[index - 2];
-                                  return MessageBubble(
-                                    message: message,
-                                    isMine: message.isMine(
-                                      session?.user.id ?? -1,
-                                    ),
-                                    onFlirtyTap: message.isFlirty
-                                        ? () => _playFlirtyBurst(
-                                              message,
-                                              isReplay: true,
-                                            )
-                                        : null,
-                                    onRetry: message.isFailed
-                                        ? () => ref
-                                            .read(
-                                              chatControllerProvider(
-                                                      widget.peer)
-                                                  .notifier,
-                                            )
-                                            .retryMessage(message)
-                                        : null,
-                                  );
-                                },
-                              ),
-                            ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                  child: GlassCard(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
-                    borderRadius: BorderRadius.circular(999),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          onPressed: _openFlirtyActions,
-                          icon: Container(
-                            width: 34,
-                            height: 34,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: const LinearGradient(
-                                colors: [
-                                  Color(0x44FF855F),
-                                  Color(0x44EA87FF),
-                                ],
-                              ),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.08),
-                              ),
-                            ),
-                            child: const Icon(
-                              Icons.auto_awesome_rounded,
-                              size: 18,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: _openMediaActions,
-                          icon: const Icon(Icons.add_circle_outline_rounded),
-                        ),
-                        Expanded(
-                          child: TextField(
-                            controller: _controller,
-                            minLines: 1,
-                            maxLines: 4,
-                            onChanged: (_) => setState(() {}),
-                            decoration: InputDecoration(
-                              hintText: _isRecording ? '松开发送，向上取消' : '输入消息...',
-                              border: InputBorder.none,
-                              filled: false,
-                            ),
-                            onSubmitted: (_) => _sendCurrentMessage(),
-                          ),
-                        ),
-                        AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 220),
-                          transitionBuilder: (child, animation) {
-                            return ScaleTransition(
-                              scale: animation,
-                              child: FadeTransition(
-                                opacity: animation,
-                                child: child,
-                              ),
-                            );
-                          },
-                          child: _controller.text.trim().isNotEmpty
-                              ? IconButton(
-                                  key: const ValueKey('send-button'),
-                                  onPressed: _sendCurrentMessage,
-                                  icon: roomState.isSending
-                                      ? const SizedBox(
-                                          width: 18,
-                                          height: 18,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
+                                      );
+                                    }
+                                    if (index == 1) {
+                                      return Center(
+                                        child: Container(
+                                          margin:
+                                              const EdgeInsets.only(bottom: 16),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 14,
+                                            vertical: 7,
                                           ),
-                                        )
-                                      : const Icon(Icons.send_rounded),
-                                )
-                              : GestureDetector(
-                                  key: const ValueKey('record-button'),
-                                  onLongPressStart: _handleRecordStart,
-                                  onLongPressMoveUpdate:
-                                      _handleRecordMoveUpdate,
-                                  onLongPressEnd: _handleRecordEnd,
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 180),
-                                    width: 46,
-                                    height: 46,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      gradient: LinearGradient(
-                                        colors: _isRecording
-                                            ? _willCancelRecording
-                                                ? const [
-                                                    Color(0xFFFF9387),
-                                                    Color(0xFFFF6E85),
-                                                  ]
-                                                : const [
-                                                    Color(0xFF7CE8FF),
-                                                    Color(0xFFEA87FF),
-                                                  ]
-                                            : const [
-                                                Color(0x26FFFFFF),
-                                                Color(0x18FFFFFF),
-                                              ],
+                                          decoration: BoxDecoration(
+                                            color: const Color(0x22181826),
+                                            borderRadius:
+                                                BorderRadius.circular(999),
+                                          ),
+                                          child: Text(
+                                            '今天',
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .labelMedium,
+                                          ),
+                                        ),
+                                      );
+                                    }
+                                    final message = roomState.messages[index - 2];
+                                    return MessageBubble(
+                                      message: message,
+                                      isMine: message.isMine(
+                                        session?.user.id ?? -1,
                                       ),
-                                    ),
-                                    child: Icon(
-                                      _isRecording
-                                          ? Icons.mic_rounded
-                                          : Icons.mic_none_rounded,
-                                      color: Colors.white,
+                                      onFlirtyTap: message.isFlirty
+                                          ? () => _playFlirtyBurst(
+                                                message,
+                                                isReplay: true,
+                                              )
+                                          : null,
+                                      onRetry: message.isFailed
+                                          ? () => ref
+                                              .read(
+                                                chatControllerProvider(
+                                                        widget.peer)
+                                                    .notifier,
+                                              )
+                                              .retryMessage(message)
+                                          : null,
+                                    );
+                                  },
+                                ),
+                              ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                    child: GlassCard(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 8,
+                      ),
+                      borderRadius: BorderRadius.circular(999),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: _openFlirtyActions,
+                            icon: Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0x44FF855F),
+                                    Color(0x44EA87FF),
+                                  ],
+                                ),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.08),
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.auto_awesome_rounded,
+                                size: 18,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: _openMediaActions,
+                            icon: const Icon(Icons.add_circle_outline_rounded),
+                          ),
+                          Expanded(
+                            child: TextField(
+                              controller: _controller,
+                              minLines: 1,
+                              maxLines: 4,
+                              onChanged: (_) => setState(() {}),
+                              decoration: InputDecoration(
+                                hintText:
+                                    _isRecording ? '松开发送，向上取消' : '输入消息...',
+                                border: InputBorder.none,
+                                filled: false,
+                              ),
+                              onSubmitted: (_) => _sendCurrentMessage(),
+                            ),
+                          ),
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 220),
+                            transitionBuilder: (child, animation) {
+                              return ScaleTransition(
+                                scale: animation,
+                                child: FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                ),
+                              );
+                            },
+                            child: _controller.text.trim().isNotEmpty
+                                ? IconButton(
+                                    key: const ValueKey('send-button'),
+                                    onPressed: _sendCurrentMessage,
+                                    icon: roomState.isSending
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : const Icon(Icons.send_rounded),
+                                  )
+                                : GestureDetector(
+                                    key: const ValueKey('record-button'),
+                                    onLongPressStart: _handleRecordStart,
+                                    onLongPressMoveUpdate:
+                                        _handleRecordMoveUpdate,
+                                    onLongPressEnd: _handleRecordEnd,
+                                    child: AnimatedContainer(
+                                      duration:
+                                          const Duration(milliseconds: 180),
+                                      width: 46,
+                                      height: 46,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        gradient: LinearGradient(
+                                          colors: _isRecording
+                                              ? _willCancelRecording
+                                                  ? const [
+                                                      Color(0xFFFF9387),
+                                                      Color(0xFFFF6E85),
+                                                    ]
+                                                  : const [
+                                                      Color(0xFF7CE8FF),
+                                                      Color(0xFFEA87FF),
+                                                    ]
+                                              : const [
+                                                  Color(0x26FFFFFF),
+                                                  Color(0x18FFFFFF),
+                                                ],
+                                        ),
+                                      ),
+                                      child: Icon(
+                                        _isRecording
+                                            ? Icons.mic_rounded
+                                            : Icons.mic_none_rounded,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
-                                ),
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
           IgnorePointer(

@@ -4,8 +4,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 import '../models/flirty_action.dart';
-import '../theme/app_theme.dart';
-import 'glass_card.dart';
 
 class FlirtyReplayData {
   const FlirtyReplayData({
@@ -87,13 +85,15 @@ class _FlirtyActionOverlayState extends State<FlirtyActionOverlay>
                   ),
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.54 * opacity),
+                      color: const Color(0xFFF3EEFF).withValues(
+                        alpha: 0.74 * opacity,
+                      ),
                       gradient: RadialGradient(
                         center: const Alignment(0, -0.14),
                         radius: 1.12,
                         colors: [
-                          action.gradient.first.withValues(alpha: 0.18 * opacity),
-                          const Color(0xEF090B11).withValues(alpha: opacity),
+                          action.gradient.first.withValues(alpha: 0.16 * opacity),
+                          const Color(0xFFF7F4FF).withValues(alpha: opacity),
                         ],
                       ),
                     ),
@@ -129,11 +129,11 @@ class _FlirtyActionOverlayState extends State<FlirtyActionOverlay>
                               Text(
                                 action.stageTitle,
                                 textAlign: TextAlign.center,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headlineMedium
-                                    ?.copyWith(
-                                      color: Colors.white,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .headlineMedium
+                                  ?.copyWith(
+                                      color: const Color(0xFF2D2350),
                                       fontSize: 30,
                                       letterSpacing: -0.4,
                                     ),
@@ -148,7 +148,7 @@ class _FlirtyActionOverlayState extends State<FlirtyActionOverlay>
                                     .textTheme
                                     .bodyMedium
                                     ?.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.86),
+                                      color: const Color(0xFF665C89),
                                       height: 1.45,
                                     ),
                               ),
@@ -253,13 +253,13 @@ class _FlirtyActionMessageCardState extends State<FlirtyActionMessageCard>
               children: [
                 DecoratedBox(
                   decoration: BoxDecoration(
-                    color: const Color(0xE910131A),
+                    color: const Color(0xF4FDFBFF),
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.white.withValues(alpha: 0.05),
-                        const Color(0xE910131A),
+                        Colors.white.withValues(alpha: 0.82),
+                        const Color(0xFFF1EDFF),
                       ],
                     ),
                   ),
@@ -292,7 +292,7 @@ class _FlirtyActionMessageCardState extends State<FlirtyActionMessageCard>
                               .textTheme
                               .titleLarge
                               ?.copyWith(
-                                color: Colors.white,
+                                color: const Color(0xFF2F2650),
                                 fontSize: 19,
                               ),
                         ),
@@ -305,7 +305,7 @@ class _FlirtyActionMessageCardState extends State<FlirtyActionMessageCard>
                               .textTheme
                               .bodyMedium
                               ?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.9),
+                                color: const Color(0xFF5B527D),
                               ),
                         ),
                         const SizedBox(height: 10),
@@ -320,8 +320,7 @@ class _FlirtyActionMessageCardState extends State<FlirtyActionMessageCard>
                                     .textTheme
                                     .labelMedium
                                     ?.copyWith(
-                                      color: AppTheme.textSecondary
-                                          .withValues(alpha: 0.88),
+                                      color: const Color(0xFF7B7297),
                                       letterSpacing: 0.15,
                                     ),
                               ),
@@ -334,9 +333,9 @@ class _FlirtyActionMessageCardState extends State<FlirtyActionMessageCard>
                               ),
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(999),
-                                color: Colors.white.withValues(alpha: 0.05),
+                                color: Colors.white.withValues(alpha: 0.64),
                                 border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.06),
+                                  color: Colors.white.withValues(alpha: 0.9),
                                 ),
                               ),
                               child: Text(
@@ -345,7 +344,7 @@ class _FlirtyActionMessageCardState extends State<FlirtyActionMessageCard>
                                     .textTheme
                                     .labelMedium
                                     ?.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.82),
+                                      color: const Color(0xFF5D537F),
                                       letterSpacing: 0.2,
                                     ),
                               ),
@@ -364,7 +363,7 @@ class _FlirtyActionMessageCardState extends State<FlirtyActionMessageCard>
                           begin: const Alignment(-0.8, -1),
                           end: const Alignment(0.3, 0.9),
                           colors: [
-                            Colors.white.withValues(alpha: 0.07),
+                            Colors.white.withValues(alpha: 0.22),
                             Colors.transparent,
                           ],
                           stops: const [0, 0.54],
@@ -418,9 +417,28 @@ class _FlirtyActionPickerSheetState extends State<FlirtyActionPickerSheet>
         right: 14,
         bottom: MediaQuery.of(context).viewInsets.bottom + 14,
       ),
-      child: GlassCard(
+      child: Container(
         padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-        borderRadius: BorderRadius.circular(34),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(34),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xF7FBF7FF),
+              Color(0xF2F0FBFF),
+              Color(0xEEF2FFFF),
+            ],
+          ),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.9)),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0x339B63FF),
+              blurRadius: 28,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxHeight: 640),
           child: Column(
@@ -491,11 +509,11 @@ class _PickerHeader extends StatelessWidget {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: const LinearGradient(
-                      colors: [Color(0x55D7A47A), Color(0x445C7893)],
+                      colors: [Color(0xFFB37BFF), Color(0xFF84CFFF)],
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0x33D7A47A).withValues(alpha: glow),
+                        color: const Color(0x33A56BFF).withValues(alpha: glow),
                         blurRadius: 24,
                       ),
                     ],
@@ -514,13 +532,17 @@ class _PickerHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Tatan Duo',
-                    style: Theme.of(context).textTheme.titleLarge,
+                    '熊猴互动',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: const Color(0xFF2E2550),
+                        ),
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '胖乎乎、圆滚滚、带点淘气感的 Q 版互动动作库。',
-                    style: Theme.of(context).textTheme.labelMedium,
+                    '用小熊和小猴承载暧昧动作，气质更轻松，也更有记忆点。',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: const Color(0xFF7D739B),
+                        ),
                   ),
                 ],
               ),
@@ -563,13 +585,13 @@ class _SignatureDuoPanel extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0x33D1A17B),
-            Color(0x1AFFFFFF),
-            Color(0x22516A86),
+            Color(0x33A76BFF),
+            Color(0xCCFFFFFF),
+            Color(0x3389CDFF),
           ],
         ),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.08),
+          color: Colors.white.withValues(alpha: 0.82),
         ),
       ),
       child: Column(
@@ -581,11 +603,11 @@ class _SignatureDuoPanel extends StatelessWidget {
                 child: Text(
                   '固定签名角色',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white,
+                        color: const Color(0xFF2E2550),
                       ),
                 ),
               ),
-              Text('Q 版胖团子 / 柔和电影光', style: labelStyle),
+              Text('小熊 x 小猴 / 明亮紫调', style: labelStyle),
             ],
           ),
           const SizedBox(height: 12),
@@ -595,15 +617,15 @@ class _SignatureDuoPanel extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: const [
-              _PoseChip(label: 'Neutral', expression: _ChibiExpression.neutral),
-              _PoseChip(label: 'Smile', expression: _ChibiExpression.softSmile),
-              _PoseChip(label: 'Shy', expression: _ChibiExpression.shy),
+              _PoseChip(label: '日常', expression: _ChibiExpression.neutral),
+              _PoseChip(label: '微笑', expression: _ChibiExpression.softSmile),
+              _PoseChip(label: '害羞', expression: _ChibiExpression.shy),
               _PoseChip(
-                label: 'Mischief',
+                label: '坏笑',
                 expression: _ChibiExpression.naughtySmile,
               ),
               _PoseChip(
-                label: 'Reactive',
+                label: '心动',
                 expression: _ChibiExpression.surprised,
               ),
             ],
@@ -627,8 +649,8 @@ class _SignatureDuoStage extends StatelessWidget {
           center: Alignment(0, -0.26),
           radius: 1.08,
           colors: [
-            Color(0x338C7A6B),
-            Color(0xFF10131A),
+            Color(0x66B67BFF),
+            Color(0xFFF5F1FF),
           ],
         ),
       ),
@@ -643,7 +665,7 @@ class _SignatureDuoStage extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: RadialGradient(
                   colors: [
-                    Colors.white.withValues(alpha: 0.14),
+                    Colors.white.withValues(alpha: 0.78),
                     Colors.transparent,
                   ],
                 ),
@@ -661,7 +683,7 @@ class _SignatureDuoStage extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [
                     Colors.transparent,
-                    Colors.white.withValues(alpha: 0.08),
+                    const Color(0x40AA74FF),
                     Colors.transparent,
                   ],
                 ),
@@ -671,12 +693,12 @@ class _SignatureDuoStage extends StatelessWidget {
           const Positioned(
             left: 30,
             top: 12,
-            child: _StageNameTag(label: 'Tatan Vibe'),
+            child: _StageNameTag(label: '熊仔'),
           ),
           const Positioned(
             right: 30,
             top: 12,
-            child: _StageNameTag(label: 'Bestie'),
+            child: _StageNameTag(label: '猴仔'),
           ),
           const Positioned(
             left: 28,
@@ -830,12 +852,12 @@ class _MoodSection extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            groupTint.withValues(alpha: 0.09),
-            Colors.white.withValues(alpha: 0.03),
+            groupTint.withValues(alpha: 0.11),
+            Colors.white.withValues(alpha: 0.56),
           ],
         ),
         border: Border.all(
-          color: groupTint.withValues(alpha: 0.16),
+          color: groupTint.withValues(alpha: 0.22),
         ),
       ),
       child: Column(
@@ -849,7 +871,7 @@ class _MoodSection extends StatelessWidget {
                 Text(
                   group.title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white,
+                        color: const Color(0xFF2F2650),
                         letterSpacing: -0.1,
                       ),
                 ),
@@ -860,7 +882,7 @@ class _MoodSection extends StatelessWidget {
                       child: Text(
                         group.subtitle,
                         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              color: AppTheme.textSecondary.withValues(alpha: 0.9),
+                              color: const Color(0xFF6F658F),
                               letterSpacing: 0.15,
                             ),
                       ),
@@ -878,7 +900,7 @@ class _MoodSection extends StatelessWidget {
                       child: Text(
                         '${actions.length} 款',
                         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.76),
+                              color: const Color(0xFF544A78),
                               letterSpacing: 0.12,
                             ),
                       ),
@@ -945,7 +967,7 @@ class _RelationshipActionCell extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(23),
-            color: const Color(0xE511141C),
+            color: const Color(0xF8FFFDFE),
           ),
           child: Padding(
             padding: const EdgeInsets.all(13),
@@ -959,12 +981,12 @@ class _RelationshipActionCell extends StatelessWidget {
                       height: 34,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.06),
+                        color: action.gradient.first.withValues(alpha: 0.14),
                       ),
                       child: Icon(
                         action.icon,
                         size: 16,
-                        color: Colors.white,
+                        color: const Color(0xFF3E3364),
                       ),
                     ),
                     const Spacer(),
@@ -975,12 +997,12 @@ class _RelationshipActionCell extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(999),
-                        color: Colors.white.withValues(alpha: 0.05),
+                        color: Colors.white.withValues(alpha: 0.76),
                       ),
                       child: Text(
                         action.moodTag,
                         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              color: Colors.white.withValues(alpha: 0.74),
+                              color: const Color(0xFF5C527E),
                               letterSpacing: 0.18,
                             ),
                       ),
@@ -1011,9 +1033,9 @@ class _RelationshipActionCell extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(16),
-                            color: Colors.black.withValues(alpha: 0.34),
+                            color: const Color(0x80FFFFFF),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.06),
+                              color: Colors.white.withValues(alpha: 0.9),
                             ),
                           ),
                           child: Text(
@@ -1024,7 +1046,7 @@ class _RelationshipActionCell extends StatelessWidget {
                                 .textTheme
                                 .labelMedium
                                 ?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.8),
+                                  color: const Color(0xFF574D79),
                                   letterSpacing: 0.05,
                                 ),
                           ),
@@ -1040,7 +1062,7 @@ class _RelationshipActionCell extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(999),
-                            color: Colors.black.withValues(alpha: 0.3),
+                            color: Colors.white.withValues(alpha: 0.72),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -1048,7 +1070,7 @@ class _RelationshipActionCell extends StatelessWidget {
                               const Icon(
                                 Icons.play_circle_fill_rounded,
                                 size: 12,
-                                color: Colors.white70,
+                                color: Color(0xFF726794),
                               ),
                               const SizedBox(width: 5),
                               Text(
@@ -1057,7 +1079,7 @@ class _RelationshipActionCell extends StatelessWidget {
                                     .textTheme
                                     .labelMedium
                                     ?.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.76),
+                                      color: const Color(0xFF726794),
                                       letterSpacing: 0.12,
                                     ),
                               ),
@@ -1072,7 +1094,7 @@ class _RelationshipActionCell extends StatelessWidget {
                 Text(
                   action.label,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Colors.white,
+                        color: const Color(0xFF2F2650),
                         fontSize: 15,
                       ),
                 ),
@@ -1082,7 +1104,7 @@ class _RelationshipActionCell extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.62),
+                        color: const Color(0xFF6A608D),
                         letterSpacing: 0.18,
                       ),
                 ),
@@ -1095,7 +1117,7 @@ class _RelationshipActionCell extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              color: AppTheme.textSecondary.withValues(alpha: 0.9),
+                              color: const Color(0xFF756B96),
                               letterSpacing: 0.15,
                             ),
                       ),
@@ -1104,7 +1126,7 @@ class _RelationshipActionCell extends StatelessWidget {
                     Icon(
                       Icons.arrow_outward_rounded,
                       size: 14,
-                      color: Colors.white.withValues(alpha: 0.44),
+                      color: const Color(0xFF8277A4),
                     ),
                   ],
                 ),
@@ -1136,8 +1158,8 @@ class _CompactSceneFrame extends StatelessWidget {
           center: const Alignment(0, -0.3),
           radius: 1.18,
           colors: [
-            action.gradient.first.withValues(alpha: 0.2),
-            const Color(0xFF0E1118),
+            action.gradient.first.withValues(alpha: 0.18),
+            const Color(0xFFF5F1FF),
           ],
         ),
       ),
@@ -1173,15 +1195,15 @@ class _OverlayTopLine extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(999),
-            color: Colors.white.withValues(alpha: 0.05),
+            color: Colors.white.withValues(alpha: 0.82),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.06),
+              color: Colors.white.withValues(alpha: 0.92),
             ),
           ),
           child: Text(
             isMine ? '你先伸手' : '他先靠近',
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.82),
+                  color: const Color(0xFF635985),
                   letterSpacing: 0.2,
                 ),
           ),
@@ -1209,13 +1231,13 @@ class _MoodChip extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
         gradient: LinearGradient(
-          colors: [
-            colors.first.withValues(alpha: 0.22),
-            colors.last.withValues(alpha: 0.14),
+            colors: [
+            colors.first.withValues(alpha: 0.18),
+            colors.last.withValues(alpha: 0.12),
           ],
         ),
         border: Border.all(
-          color: colors.first.withValues(alpha: 0.34),
+          color: colors.first.withValues(alpha: 0.28),
         ),
       ),
       child: Row(
@@ -1226,7 +1248,7 @@ class _MoodChip extends StatelessWidget {
           Text(
             label,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.92),
+                  color: const Color(0xFF413566),
                   letterSpacing: 0.2,
                 ),
           ),
@@ -1247,12 +1269,12 @@ class _ReplayBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
-        color: Colors.white.withValues(alpha: 0.05),
+        color: Colors.white.withValues(alpha: 0.76),
       ),
       child: Text(
         isMine ? '你发出的暧昧' : '对方向你靠近',
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: Colors.white.withValues(alpha: 0.72),
+              color: const Color(0xFF6B618D),
               letterSpacing: 0.1,
             ),
       ),
@@ -1281,12 +1303,12 @@ class _CinematicStage extends StatelessWidget {
           center: const Alignment(0, -0.28),
           radius: 1.08,
           colors: [
-            Colors.white.withValues(alpha: 0.05),
-            const Color(0xFF0C1016),
+            Colors.white.withValues(alpha: 0.92),
+            const Color(0xFFF3EEFF),
           ],
         ),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.06),
+          color: Colors.white.withValues(alpha: 0.94),
         ),
       ),
       child: Stack(
@@ -1299,9 +1321,9 @@ class _CinematicStage extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    action.gradient.first.withValues(alpha: 0.18),
+                    action.gradient.first.withValues(alpha: 0.14),
                     Colors.transparent,
-                    const Color(0xFF091017).withValues(alpha: 0.84),
+                    const Color(0xFFEFEAFF).withValues(alpha: 0.9),
                   ],
                 ),
               ),
@@ -1316,7 +1338,7 @@ class _CinematicStage extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: RadialGradient(
                   colors: [
-                    Colors.white.withValues(alpha: 0.2),
+                    Colors.white.withValues(alpha: 0.92),
                     Colors.transparent,
                   ],
                 ),
@@ -1334,7 +1356,7 @@ class _CinematicStage extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [
                     Colors.white.withValues(alpha: 0.03),
-                    action.gradient.first.withValues(alpha: 0.24),
+                    action.gradient.first.withValues(alpha: 0.16),
                     Colors.white.withValues(alpha: 0.03),
                   ],
                 ),
@@ -1348,15 +1370,15 @@ class _CinematicStage extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(999),
-                color: Colors.black.withValues(alpha: 0.22),
+                color: Colors.white.withValues(alpha: 0.7),
                 border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.06),
+                  color: Colors.white.withValues(alpha: 0.9),
                 ),
               ),
               child: const Text(
                 'XiongHou Duo',
                 style: TextStyle(
-                  color: Colors.white70,
+                  color: Color(0xFF6D628F),
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.3,

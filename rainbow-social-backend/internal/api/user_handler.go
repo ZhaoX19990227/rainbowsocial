@@ -99,8 +99,10 @@ func (h *UserHandler) Nearby(c *gin.Context) {
 	maxAge, _ := strconv.Atoi(c.DefaultQuery("max_age", "0"))
 	onlineOnly := c.DefaultQuery("online_only", "false") == "true"
 	tag := c.Query("tag")
+	mbtiType := c.Query("mbti_type")
+	zodiacSign := c.Query("zodiac_sign")
 
-	users, err := h.userService.Nearby(middleware.GetUserID(c), lat, lng, minAge, maxAge, onlineOnly, tag)
+	users, err := h.userService.Nearby(middleware.GetUserID(c), lat, lng, minAge, maxAge, onlineOnly, tag, mbtiType, zodiacSign)
 	if err != nil {
 		failure(c, http.StatusInternalServerError, err.Error())
 		return

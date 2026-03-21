@@ -10,6 +10,11 @@ type User struct {
 	Avatar        string    `json:"avatar"`
 	Photos        []string  `json:"photos"`
 	Age           int       `json:"age"`
+	HeightCM      int       `json:"height_cm"`
+	WeightKG      int       `json:"weight_kg"`
+	Birthday      string    `json:"birthday,omitempty"`
+	ZodiacSign    string    `json:"zodiac_sign,omitempty"`
+	MBTIType      string    `json:"mbti_type,omitempty"`
 	Bio           string    `json:"bio"`
 	Tags          []string  `json:"tags"`
 	Lat           float64   `json:"lat"`

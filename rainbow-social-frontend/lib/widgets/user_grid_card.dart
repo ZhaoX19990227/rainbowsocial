@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../models/app_user.dart';
 import '../theme/app_theme.dart';
+import 'mbti_badge.dart';
+import 'zodiac_badge.dart';
 
 class UserGridCard extends StatelessWidget {
   const UserGridCard({
@@ -71,6 +73,20 @@ class UserGridCard extends StatelessWidget {
                       user.title,
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
+                    if (user.mbtiType.trim().isNotEmpty ||
+                        user.zodiacSign.trim().isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if (user.mbtiType.trim().isNotEmpty)
+                            MbtiBadge(type: user.mbtiType, compact: true),
+                          if (user.zodiacSign.trim().isNotEmpty)
+                            ZodiacBadge(sign: user.zodiacSign, compact: true),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 4),
                     Text(
                       user.distanceKm == null

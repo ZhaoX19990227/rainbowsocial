@@ -8,6 +8,11 @@ class AppUser {
     required this.avatar,
     required this.photos,
     required this.age,
+    required this.heightCm,
+    required this.weightKg,
+    required this.birthday,
+    required this.zodiacSign,
+    required this.mbtiType,
     required this.bio,
     required this.tags,
     required this.lat,
@@ -23,6 +28,11 @@ class AppUser {
   final String avatar;
   final List<String> photos;
   final int age;
+  final int heightCm;
+  final int weightKg;
+  final String birthday;
+  final String zodiacSign;
+  final String mbtiType;
   final String bio;
   final List<String> tags;
   final double lat;
@@ -42,6 +52,11 @@ class AppUser {
           ? (json['photos'] as List).cast<String>()
           : const [],
       age: ((json['age'] ?? 18) as num).toInt(),
+      heightCm: ((json['height_cm'] ?? 175) as num).toInt(),
+      weightKg: ((json['weight_kg'] ?? 70) as num).toInt(),
+      birthday: '${json['birthday'] ?? ''}',
+      zodiacSign: '${json['zodiac_sign'] ?? ''}',
+      mbtiType: '${json['mbti_type'] ?? ''}',
       bio: '${json['bio'] ?? ''}',
       tags: rawTags is List ? rawTags.cast<String>() : const [],
       lat: ((json['lat'] ?? 0) as num).toDouble(),
@@ -62,6 +77,11 @@ class AppUser {
       'avatar': avatar,
       'photos': photos,
       'age': age,
+      'height_cm': heightCm,
+      'weight_kg': weightKg,
+      'birthday': birthday,
+      'zodiac_sign': zodiacSign,
+      'mbti_type': mbtiType,
       'bio': bio,
       'tags': tags,
       'lat': lat,
@@ -73,6 +93,7 @@ class AppUser {
   }
 
   String get title => '$nickname, $age';
+  String get basicsLine => '$age 岁 · ${heightCm}cm · ${weightKg}kg';
   String get avatarOrFallback =>
       avatar.trim().isEmpty ? Defaults.fallbackAvatar : avatar;
 
@@ -83,6 +104,11 @@ class AppUser {
     String? avatar,
     List<String>? photos,
     int? age,
+    int? heightCm,
+    int? weightKg,
+    String? birthday,
+    String? zodiacSign,
+    String? mbtiType,
     String? bio,
     List<String>? tags,
     double? lat,
@@ -98,6 +124,11 @@ class AppUser {
       avatar: avatar ?? this.avatar,
       photos: photos ?? this.photos,
       age: age ?? this.age,
+      heightCm: heightCm ?? this.heightCm,
+      weightKg: weightKg ?? this.weightKg,
+      birthday: birthday ?? this.birthday,
+      zodiacSign: zodiacSign ?? this.zodiacSign,
+      mbtiType: mbtiType ?? this.mbtiType,
       bio: bio ?? this.bio,
       tags: tags ?? this.tags,
       lat: lat ?? this.lat,

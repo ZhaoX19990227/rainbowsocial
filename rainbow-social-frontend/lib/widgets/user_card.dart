@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../models/app_user.dart';
 import '../theme/app_theme.dart';
+import 'mbti_badge.dart';
 import 'tag_chip.dart';
+import 'zodiac_badge.dart';
 
 class UserCard extends StatelessWidget {
   const UserCard({
@@ -103,13 +105,27 @@ class UserCard extends StatelessWidget {
                       const SizedBox(height: 6),
                       Text(
                         user.distanceKm == null
-                            ? '附近'
-                            : '${user.distanceKm!.toStringAsFixed(1)} km',
+                            ? user.basicsLine
+                            : '${user.basicsLine} · ${user.distanceKm!.toStringAsFixed(1)} km',
                         style:
                             Theme.of(context).textTheme.labelMedium?.copyWith(
                                   color: AppTheme.textSecondary,
-                                ),
+                              ),
                       ),
+                      if (user.mbtiType.trim().isNotEmpty ||
+                          user.zodiacSign.trim().isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            if (user.mbtiType.trim().isNotEmpty)
+                              MbtiBadge(type: user.mbtiType, compact: true),
+                            if (user.zodiacSign.trim().isNotEmpty)
+                              ZodiacBadge(sign: user.zodiacSign, compact: true),
+                          ],
+                        ),
+                      ],
                       const SizedBox(height: 12),
                       Text(
                         user.bio,

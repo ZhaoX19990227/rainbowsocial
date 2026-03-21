@@ -76,6 +76,10 @@ class UserService {
           'max_age': '${filter.maxAge}',
           'online_only': '${filter.onlineOnly}',
           if (filter.tag.trim().isNotEmpty) 'tag': filter.tag.trim(),
+          if (filter.mbtiType.trim().isNotEmpty)
+            'mbti_type': filter.mbtiType.trim(),
+          if (filter.zodiacSign.trim().isNotEmpty)
+            'zodiac_sign': filter.zodiacSign.trim(),
         },
       );
       final items = response['data'] as List<dynamic>;
