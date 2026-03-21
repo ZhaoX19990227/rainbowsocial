@@ -514,12 +514,12 @@ class _PickerHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'XiongHou Duo',
+                    'Tatan Duo',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '圆脸小熊攻与机灵小猴受的暧昧动作库。',
+                    '胖乎乎、圆滚滚、带点淘气感的 Q 版互动动作库。',
                     style: Theme.of(context).textTheme.labelMedium,
                   ),
                 ],
@@ -585,7 +585,7 @@ class _SignatureDuoPanel extends StatelessWidget {
                       ),
                 ),
               ),
-              Text('深色氛围 / 柔和电影光', style: labelStyle),
+              Text('Q 版胖团子 / 柔和电影光', style: labelStyle),
             ],
           ),
           const SizedBox(height: 12),
@@ -671,12 +671,12 @@ class _SignatureDuoStage extends StatelessWidget {
           const Positioned(
             left: 30,
             top: 12,
-            child: _StageNameTag(label: 'Bear Boy'),
+            child: _StageNameTag(label: 'Tatan Vibe'),
           ),
           const Positioned(
             right: 30,
             top: 12,
-            child: _StageNameTag(label: 'Monkey Boy'),
+            child: _StageNameTag(label: 'Bestie'),
           ),
           const Positioned(
             left: 28,
@@ -736,17 +736,17 @@ class _CharacterStandPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Transform.scale(
-      scale: proactive ? 0.82 : 0.76,
+      scale: proactive ? 0.9 : 0.86,
       child: _ChibiBoy(
         proactive: proactive,
         faceRight: proactive,
         expression: expression,
-        headTilt: proactive ? -0.04 : 0.05,
-        bodyLean: proactive ? 0.04 : -0.02,
-        frontArmReach: 0.14,
-        frontArmLift: 0.12,
-        backArmLift: 0.12,
-        blush: proactive ? 0.1 : 0.18,
+        headTilt: proactive ? -0.02 : 0.04,
+        bodyLean: proactive ? 0.03 : -0.01,
+        frontArmReach: 0.1,
+        frontArmLift: 0.1,
+        backArmLift: 0.1,
+        blush: proactive ? 0.18 : 0.24,
       ),
     );
   }
@@ -2018,29 +2018,29 @@ class _ChibiBoy extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = proactive
         ? const _CharacterPalette(
-            skin: Color(0xFFF0D3BF),
-            hairTop: Color(0xFF5A453D),
-            hairBase: Color(0xFF261E1B),
-            shirtTop: Color(0xFFF6F2ED),
-            shirtBase: Color(0xFFD3CDC8),
-            shortsTop: Color(0xFF25272D),
-            shortsBase: Color(0xFF121317),
+            skin: Color(0xFFF3D4BF),
+            hairTop: Color(0xFF5B4033),
+            hairBase: Color(0xFF2E1E19),
+            shirtTop: Color(0xFFFFF2D9),
+            shirtBase: Color(0xFFE7C78E),
+            shortsTop: Color(0xFF9A5B3E),
+            shortsBase: Color(0xFF723926),
             sneakerTop: Color(0xFFF8F7F5),
             sneakerBase: Color(0xFFA8A7A5),
-            accent: Color(0xFFD6A47B),
+            accent: Color(0xFFFFB978),
             shadow: Color(0xFF1C120F),
           )
         : const _CharacterPalette(
-            skin: Color(0xFFF4D7C5),
-            hairTop: Color(0xFF43474F),
-            hairBase: Color(0xFF20232A),
-            shirtTop: Color(0xFFF7F4F0),
-            shirtBase: Color(0xFFD8D4CF),
-            shortsTop: Color(0xFF20242C),
-            shortsBase: Color(0xFF0F1218),
+            skin: Color(0xFFF6D9C7),
+            hairTop: Color(0xFF453A34),
+            hairBase: Color(0xFF241B18),
+            shirtTop: Color(0xFFF7F8FF),
+            shirtBase: Color(0xFFC9D7F2),
+            shortsTop: Color(0xFF6885A2),
+            shortsBase: Color(0xFF46617A),
             sneakerTop: Color(0xFFF9F8F6),
             sneakerBase: Color(0xFFBAB8B4),
-            accent: Color(0xFF6F889A),
+            accent: Color(0xFF90B8D9),
             shadow: Color(0xFF11141B),
           );
 
@@ -2053,16 +2053,16 @@ class _ChibiBoy extends StatelessWidget {
       alignment: Alignment.center,
       transform: Matrix4.identity()..scale(faceRight ? 1.0 : -1.0, 1.0),
       child: SizedBox(
-        width: 132,
-        height: 176,
+        width: 144,
+        height: 184,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
             Positioned(
-              left: 24,
-              right: 24,
+              left: 22,
+              right: 22,
               bottom: 8,
-              height: 16,
+              height: 18,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(999),
@@ -2071,27 +2071,27 @@ class _ChibiBoy extends StatelessWidget {
               ),
             ),
             Positioned(
-              left: 34,
-              bottom: 18,
+              left: 38,
+              bottom: 20,
               child: _Limb(
-                angle: -0.10,
-                color: const Color(0xFFD6BEAE),
-                height: 40,
-                width: 16,
+                angle: -0.08,
+                color: palette.skin,
+                height: 34,
+                width: 18,
               ),
             ),
             Positioned(
-              right: 32,
-              bottom: 18,
+              right: 34,
+              bottom: 20,
               child: _Limb(
-                angle: 0.1,
-                color: const Color(0xFFD6BEAE),
-                height: 40,
-                width: 16,
+                angle: 0.08,
+                color: palette.skin,
+                height: 34,
+                width: 18,
               ),
             ),
             Positioned(
-              left: 26,
+              left: 28,
               bottom: 10,
               child: _Sneaker(
                 colorTop: palette.sneakerTop,
@@ -2099,7 +2099,7 @@ class _ChibiBoy extends StatelessWidget {
               ),
             ),
             Positioned(
-              right: 22,
+              right: 24,
               bottom: 10,
               child: _Sneaker(
                 colorTop: palette.sneakerTop,
@@ -2107,28 +2107,28 @@ class _ChibiBoy extends StatelessWidget {
               ),
             ),
             Positioned(
-              left: 14,
-              top: 78,
+              left: 18,
+              top: 88,
               child: _Limb(
                 angle: backArmAngle + bodyLean * 0.1,
                 color: palette.skin,
-                height: 44,
-                width: 15,
+                height: 42,
+                width: 18,
               ),
             ),
             Positioned(
-              right: 20 - frontArmReach * 12,
-              top: 78 - frontArmLift * 10,
+              right: 24 - frontArmReach * 12,
+              top: 88 - frontArmLift * 10,
               child: _Limb(
                 angle: frontArmAngle,
                 color: palette.skin,
-                height: 50,
-                width: 15,
+                height: 46,
+                width: 18,
               ),
             ),
             Positioned(
               left: 30,
-              top: 74,
+              top: 88,
               child: Transform.rotate(
                 angle: bodyRotation,
                 child: _ChibiBody(
@@ -2138,8 +2138,8 @@ class _ChibiBoy extends StatelessWidget {
               ),
             ),
             Positioned(
-              left: 22,
-              top: 8,
+              left: 16,
+              top: 4,
               child: Transform.rotate(
                 angle: headTilt,
                 child: _ChibiHead(
@@ -2196,17 +2196,17 @@ class _ChibiBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bodyWidth = proactive ? 84.0 : 72.0;
-    final bodyRadius = proactive ? 32.0 : 28.0;
+    final bodyWidth = proactive ? 78.0 : 72.0;
+    final bodyRadius = proactive ? 34.0 : 32.0;
     return SizedBox(
-      width: proactive ? 86 : 78,
-      height: 90,
+      width: proactive ? 84 : 78,
+      height: 82,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Container(
             width: bodyWidth,
-            height: 52,
+            height: 48,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(bodyRadius),
               gradient: LinearGradient(
@@ -2226,7 +2226,7 @@ class _ChibiBody extends StatelessWidget {
             left: 14,
             right: proactive ? 14 : 10,
             top: 10,
-            height: 12,
+            height: 10,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(999),
@@ -2235,10 +2235,10 @@ class _ChibiBody extends StatelessWidget {
             ),
           ),
           Positioned(
-            left: proactive ? 26 : 22,
-            right: proactive ? 26 : 22,
-            top: -6,
-            height: 24,
+            left: proactive ? 24 : 22,
+            right: proactive ? 24 : 22,
+            top: -8,
+            height: 22,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(999),
@@ -2247,13 +2247,13 @@ class _ChibiBody extends StatelessWidget {
             ),
           ),
           Positioned(
-            left: proactive ? 20 : 18,
-            right: proactive ? 20 : 18,
-            top: 48,
-            height: 32,
+            left: proactive ? 16 : 14,
+            right: proactive ? 16 : 14,
+            top: 42,
+            height: 28,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(20),
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
@@ -2263,11 +2263,11 @@ class _ChibiBody extends StatelessWidget {
             ),
           ),
           Positioned(
-            left: proactive ? 22 : 18,
-            top: 56,
+            left: proactive ? 20 : 18,
+            top: 48,
             child: Container(
-              width: proactive ? 10 : 8,
-              height: 22,
+              width: proactive ? 12 : 10,
+              height: 20,
               decoration: BoxDecoration(
                 color: palette.skin,
                 borderRadius: BorderRadius.circular(999),
@@ -2275,11 +2275,11 @@ class _ChibiBody extends StatelessWidget {
             ),
           ),
           Positioned(
-            right: proactive ? 22 : 18,
-            top: 56,
+            right: proactive ? 20 : 18,
+            top: 48,
             child: Container(
-              width: proactive ? 10 : 8,
-              height: 22,
+              width: proactive ? 12 : 10,
+              height: 20,
               decoration: BoxDecoration(
                 color: palette.skin,
                 borderRadius: BorderRadius.circular(999),
@@ -2287,10 +2287,10 @@ class _ChibiBody extends StatelessWidget {
             ),
           ),
           Positioned(
-            left: proactive ? 10 : 14,
-            right: proactive ? 10 : 14,
-            top: 36,
-            height: 16,
+            left: proactive ? 12 : 14,
+            right: proactive ? 12 : 14,
+            top: 32,
+            height: 14,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(999),
@@ -2319,22 +2319,22 @@ class _ChibiHead extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final faceWidth = proactive ? 78.0 : 68.0;
-    final faceHeight = proactive ? 72.0 : 70.0;
+    final faceWidth = proactive ? 86.0 : 80.0;
+    final faceHeight = proactive ? 80.0 : 78.0;
     return SizedBox(
-      width: proactive ? 96 : 88,
-      height: 90,
+      width: proactive ? 104 : 98,
+      height: 98,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
           Positioned(
-            left: proactive ? 8 : 12,
+            left: proactive ? 8 : 10,
             top: 14,
             child: Container(
               width: faceWidth,
               height: faceHeight,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(proactive ? 36 : 28),
+                borderRadius: BorderRadius.circular(40),
                 color: palette.skin,
               ),
             ),
@@ -2358,11 +2358,11 @@ class _ChibiHead extends StatelessWidget {
               ),
             ),
           Positioned(
-            left: proactive ? 10 : 15,
-            top: proactive ? 20 : 18,
+            left: proactive ? 14 : 16,
+            top: proactive ? 22 : 20,
             child: Container(
-              width: proactive ? 58 : 44,
-              height: proactive ? 16 : 14,
+              width: proactive ? 54 : 48,
+              height: proactive ? 14 : 12,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(18),
                 color: palette.hairBase.withValues(alpha: 0.94),
@@ -2370,10 +2370,10 @@ class _ChibiHead extends StatelessWidget {
             ),
           ),
           Positioned(
-            left: 20,
-            top: 34,
+            left: 24,
+            top: 40,
             child: CustomPaint(
-              size: const Size(48, 28),
+              size: const Size(42, 26),
               painter: _FacePainter(
                 expression: expression,
                 blush: blush,
@@ -2429,14 +2429,14 @@ class _Sneaker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 22,
-      height: 12,
+      width: 24,
+      height: 14,
       child: Stack(
         children: [
           Positioned(
             left: 1,
             right: 0,
-            top: 2,
+            top: 3,
             bottom: 0,
             child: DecoratedBox(
               decoration: BoxDecoration(
@@ -2482,7 +2482,7 @@ class _FacePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final stroke = Paint()
       ..color = const Color(0xFF2A202D)
-      ..strokeWidth = 2.8
+      ..strokeWidth = 2.4
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
     final fill = Paint()
@@ -2490,65 +2490,49 @@ class _FacePainter extends CustomPainter {
       ..style = PaintingStyle.fill;
     final mouth = Paint()
       ..color = proactive ? const Color(0xFF7A3F49) : const Color(0xFF734B5E)
-      ..strokeWidth = 2.1
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    final stubble = Paint()
-      ..color = const Color(0xFF5A4A46).withValues(alpha: 0.28)
-      ..strokeWidth = 1.1
+      ..strokeWidth = 1.9
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
     final blushPaint = Paint()
-      ..color = const Color(0xFFF1A7AB).withValues(alpha: 0.22 + blush * 0.36);
+      ..color = const Color(0xFFF7AAB0).withValues(alpha: 0.28 + blush * 0.3);
+    final eyeHighlight = Paint()
+      ..color = Colors.white.withValues(alpha: 0.95)
+      ..style = PaintingStyle.fill;
 
-    final leftEye = Offset(size.width * 0.28, size.height * 0.42);
-    final rightEye = Offset(size.width * 0.70, size.height * 0.42);
+    final leftEye = Offset(size.width * 0.3, size.height * 0.4);
+    final rightEye = Offset(size.width * 0.7, size.height * 0.4);
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset(size.width * 0.14, size.height * 0.6),
-        width: 10,
-        height: 7,
+        width: 12,
+        height: 8,
       ),
       blushPaint,
     );
     canvas.drawOval(
       Rect.fromCenter(
-        center: Offset(size.width * 0.84, size.height * 0.6),
-        width: 10,
-        height: 7,
+        center: Offset(size.width * 0.86, size.height * 0.6),
+        width: 12,
+        height: 8,
       ),
       blushPaint,
     );
 
     switch (expression) {
       case _ChibiExpression.neutral:
-        canvas.drawLine(
-          leftEye + const Offset(-3, 0.2),
-          leftEye + const Offset(3, -0.2),
-          stroke,
-        );
-        canvas.drawLine(
-          rightEye + const Offset(-3, -0.2),
-          rightEye + const Offset(3, 0.2),
-          stroke,
-        );
+        canvas.drawCircle(leftEye, 2.6, fill);
+        canvas.drawCircle(rightEye, 2.6, fill);
+        canvas.drawCircle(leftEye + const Offset(-0.6, -0.8), 0.8, eyeHighlight);
+        canvas.drawCircle(rightEye + const Offset(-0.6, -0.8), 0.8, eyeHighlight);
         canvas.drawLine(
           Offset(size.width * 0.44, size.height * 0.72),
-          Offset(size.width * 0.6, size.height * 0.72),
+          Offset(size.width * 0.58, size.height * 0.72),
           mouth,
         );
         break;
       case _ChibiExpression.mischief:
-        canvas.drawLine(
-          leftEye + const Offset(-3, 0.4),
-          leftEye + const Offset(3, -1.2),
-          stroke,
-        );
-        canvas.drawLine(
-          rightEye + const Offset(-3, -1.2),
-          rightEye + const Offset(3, 0.6),
-          stroke,
-        );
+        canvas.drawCircle(leftEye, 2.5, fill);
+        canvas.drawCircle(rightEye, 2.5, fill);
         final path = Path()
           ..moveTo(size.width * 0.42, size.height * 0.72)
           ..quadraticBezierTo(
@@ -2560,14 +2544,20 @@ class _FacePainter extends CustomPainter {
         canvas.drawPath(path, mouth);
         break;
       case _ChibiExpression.naughtySmile:
-        canvas.drawLine(
-          leftEye + const Offset(-3, -0.2),
-          leftEye + const Offset(3, -1.4),
+        canvas.drawCircle(leftEye, 2.5, fill);
+        canvas.drawCircle(rightEye, 2.5, fill);
+        canvas.drawArc(
+          Rect.fromCenter(center: leftEye, width: 10, height: 6),
+          math.pi,
+          math.pi,
+          false,
           stroke,
         );
-        canvas.drawLine(
-          rightEye + const Offset(-3, -0.8),
-          rightEye + const Offset(3, 0.4),
+        canvas.drawArc(
+          Rect.fromCenter(center: rightEye, width: 10, height: 6),
+          math.pi,
+          math.pi,
+          false,
           stroke,
         );
         final path = Path()
@@ -2581,14 +2571,18 @@ class _FacePainter extends CustomPainter {
         canvas.drawPath(path, mouth);
         break;
       case _ChibiExpression.shy:
-        canvas.drawLine(
-          leftEye + const Offset(-3, 0),
-          leftEye + const Offset(3, 0),
+        canvas.drawArc(
+          Rect.fromCenter(center: leftEye, width: 9, height: 5),
+          0,
+          math.pi,
+          false,
           stroke,
         );
-        canvas.drawLine(
-          rightEye + const Offset(-3, 0),
-          rightEye + const Offset(3, 0),
+        canvas.drawArc(
+          Rect.fromCenter(center: rightEye, width: 9, height: 5),
+          0,
+          math.pi,
+          false,
           stroke,
         );
         final shy = Path()
@@ -2604,16 +2598,10 @@ class _FacePainter extends CustomPainter {
       case _ChibiExpression.softSmile:
       case _ChibiExpression.gentle:
       case _ChibiExpression.comforted:
-        canvas.drawLine(
-          leftEye + const Offset(-3, 0),
-          leftEye + const Offset(3, -0.8),
-          stroke,
-        );
-        canvas.drawLine(
-          rightEye + const Offset(-3, -0.8),
-          rightEye + const Offset(3, 0),
-          stroke,
-        );
+        canvas.drawCircle(leftEye, 2.4, fill);
+        canvas.drawCircle(rightEye, 2.4, fill);
+        canvas.drawCircle(leftEye + const Offset(-0.6, -0.8), 0.75, eyeHighlight);
+        canvas.drawCircle(rightEye + const Offset(-0.6, -0.8), 0.75, eyeHighlight);
         final smile = Path()
           ..moveTo(size.width * 0.42, size.height * 0.72)
           ..quadraticBezierTo(
@@ -2625,8 +2613,10 @@ class _FacePainter extends CustomPainter {
         canvas.drawPath(smile, mouth);
         break;
       case _ChibiExpression.surprised:
-        canvas.drawCircle(leftEye, 2.4, fill);
-        canvas.drawCircle(rightEye, 2.4, fill);
+        canvas.drawCircle(leftEye, 2.8, fill);
+        canvas.drawCircle(rightEye, 2.8, fill);
+        canvas.drawCircle(leftEye + const Offset(-0.5, -0.8), 0.8, eyeHighlight);
+        canvas.drawCircle(rightEye + const Offset(-0.5, -0.8), 0.8, eyeHighlight);
         canvas.drawCircle(
           Offset(size.width * 0.52, size.height * 0.73),
           3.4,
@@ -2634,16 +2624,8 @@ class _FacePainter extends CustomPainter {
         );
         break;
       case _ChibiExpression.glance:
-        canvas.drawLine(
-          leftEye + const Offset(-4, 0.2),
-          leftEye + const Offset(2, -1.0),
-          stroke,
-        );
-        canvas.drawLine(
-          rightEye + const Offset(-1, 0.6),
-          rightEye + const Offset(4, -0.8),
-          stroke,
-        );
+        canvas.drawCircle(leftEye, 2.4, fill);
+        canvas.drawCircle(rightEye + const Offset(0.8, 0), 2.4, fill);
         canvas.drawLine(
           Offset(size.width * 0.44, size.height * 0.72),
           Offset(size.width * 0.6, size.height * 0.7),
@@ -2651,14 +2633,18 @@ class _FacePainter extends CustomPainter {
         );
         break;
       case _ChibiExpression.flustered:
-        canvas.drawLine(
-          leftEye + const Offset(-3, -0.6),
-          leftEye + const Offset(3, 0.4),
+        canvas.drawArc(
+          Rect.fromCenter(center: leftEye, width: 10, height: 6),
+          math.pi,
+          math.pi,
+          false,
           stroke,
         );
-        canvas.drawLine(
-          rightEye + const Offset(-3, 0.4),
-          rightEye + const Offset(3, -0.6),
+        canvas.drawArc(
+          Rect.fromCenter(center: rightEye, width: 10, height: 6),
+          math.pi,
+          math.pi,
+          false,
           stroke,
         );
         final path = Path()
@@ -2671,32 +2657,6 @@ class _FacePainter extends CustomPainter {
         );
         canvas.drawPath(path, mouth);
         break;
-    }
-
-    if (proactive) {
-      final beard = Path()
-        ..moveTo(size.width * 0.36, size.height * 0.78)
-        ..quadraticBezierTo(
-          size.width * 0.52,
-          size.height * 0.88,
-          size.width * 0.68,
-          size.height * 0.78,
-        );
-      canvas.drawPath(beard, stubble);
-      canvas.drawPoints(
-        PointMode.points,
-        [
-          Offset(size.width * 0.38, size.height * 0.76),
-          Offset(size.width * 0.45, size.height * 0.82),
-          Offset(size.width * 0.52, size.height * 0.84),
-          Offset(size.width * 0.59, size.height * 0.82),
-          Offset(size.width * 0.66, size.height * 0.76),
-        ],
-        Paint()
-          ..color = const Color(0xFF4B3A36).withValues(alpha: 0.34)
-          ..strokeWidth = 1.3
-          ..strokeCap = StrokeCap.round,
-      );
     }
   }
 
@@ -2722,16 +2682,14 @@ class _ProactiveHairPainter extends CustomPainter {
         colors: [palette.hairTop, palette.hairBase],
       ).createShader(Offset.zero & size);
     final path = Path()
-      ..moveTo(4, 32)
-      ..quadraticBezierTo(6, 8, 32, 3)
-      ..quadraticBezierTo(60, -1, 80, 12)
-      ..quadraticBezierTo(86, 26, 78, 40)
-      ..lineTo(68, 36)
-      ..lineTo(58, 48)
-      ..lineTo(50, 36)
-      ..lineTo(36, 48)
-      ..lineTo(24, 34)
-      ..lineTo(12, 44)
+      ..moveTo(8, 30)
+      ..quadraticBezierTo(10, 10, 30, 6)
+      ..quadraticBezierTo(54, 0, 74, 10)
+      ..quadraticBezierTo(84, 18, 80, 34)
+      ..quadraticBezierTo(72, 28, 64, 36)
+      ..quadraticBezierTo(58, 44, 50, 38)
+      ..quadraticBezierTo(40, 46, 30, 38)
+      ..quadraticBezierTo(22, 44, 14, 38)
       ..close();
     canvas.drawPath(path, paint);
   }
@@ -2755,14 +2713,13 @@ class _ShyHairPainter extends CustomPainter {
       ).createShader(Offset.zero & size);
     final path = Path()
       ..moveTo(10, 18)
-      ..quadraticBezierTo(20, 0, 42, 0)
-      ..quadraticBezierTo(68, -1, 80, 18)
-      ..quadraticBezierTo(82, 34, 74, 46)
-      ..lineTo(64, 50)
-      ..quadraticBezierTo(54, 56, 44, 54)
-      ..quadraticBezierTo(34, 58, 22, 52)
-      ..lineTo(12, 42)
-      ..quadraticBezierTo(6, 30, 10, 18)
+      ..quadraticBezierTo(20, 2, 42, 2)
+      ..quadraticBezierTo(66, 1, 78, 16)
+      ..quadraticBezierTo(82, 28, 76, 40)
+      ..quadraticBezierTo(70, 34, 62, 42)
+      ..quadraticBezierTo(54, 48, 44, 46)
+      ..quadraticBezierTo(34, 50, 24, 46)
+      ..quadraticBezierTo(12, 40, 10, 18)
       ..close();
     canvas.drawPath(path, paint);
   }

@@ -9,9 +9,7 @@ import '../controllers/nearby_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../models/app_user.dart';
 import '../models/match_summary.dart';
-import '../models/match_user.dart';
 import '../routes/app_router.dart';
-import '../services/relationship_copy.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/app_skeleton.dart';
@@ -26,7 +24,6 @@ class ProfilePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profile = ref.watch(profileControllerProvider);
     final session = ref.watch(authControllerProvider).valueOrNull;
-    final matches = ref.watch(matchesControllerProvider).valueOrNull ?? const [];
     final summary = ref.watch(matchSummaryControllerProvider);
 
     return SafeArea(
@@ -63,12 +60,6 @@ class ProfilePage extends ConsumerWidget {
                 _ProfileHero(
                   user: displayUser,
                   summary: summary.valueOrNull,
-                ),
-                const SizedBox(height: 18),
-                _RelationshipHeadlineCard(
-                  summary: summary.valueOrNull,
-                  matches: matches,
-                  displayUser: displayUser,
                 ),
                 if (displayUser.photos.isNotEmpty) ...[
                   const SizedBox(height: 18),
@@ -358,7 +349,7 @@ class _ProfileHero extends StatelessWidget {
                           (tag) => TagChip(
                             label: tag,
                             icon: Icons.bolt_rounded,
-                            maxWidth: 120,
+                            maxWidth: 168,
                           ),
                         )
                         .toList(),
@@ -391,74 +382,6 @@ class _AmbientOrb extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           gradient: RadialGradient(colors: colors),
-        ),
-      ),
-    );
-  }
-}
-
-class _RelationshipHeadlineCard extends StatelessWidget {
-  const _RelationshipHeadlineCard({
-    required this.summary,
-    required this.matches,
-    required this.displayUser,
-  });
-
-  final MatchSummary? summary;
-  final List<MatchUser> matches;
-  final AppUser displayUser;
-
-  @override
-  Widget build(BuildContext context) {
-    final target = _headlineActionTarget(summary, matches);
-    final headlineUser = _headlineUser(summary, matches, displayUser);
-    final isMutual = target != null && _canChatNow(summary, target.id);
-
-    return Container(
-      padding: const EdgeInsets.all(1.2),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: isMutual
-              ? const [
-                  Color(0x66FF9A63),
-                  Color(0x55916DFF),
-                  Color(0x55EA87FF),
-                ]
-              : const [
-                  Color(0x44FF9B68),
-                  Color(0x224ED7FF),
-                ],
-        ),
-      ),
-      child: GlassCard(
-        borderRadius: BorderRadius.circular(27),
-        child: ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: AvatarWidget(
-            imageUrl: headlineUser.avatar,
-            isOnline: headlineUser.onlineStatus,
-          ),
-          title: Text(_headlineTitle(summary, matches.isNotEmpty)),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Text(_headlineSubtitle(summary, matches, displayUser)),
-          ),
-          trailing: FilledButton(
-            onPressed: () {
-              if (target == null) {
-                Navigator.of(context).pushNamed(AppRouter.editProfile);
-                return;
-              }
-              Navigator.of(context).pushNamed(
-                isMutual ? AppRouter.chat : AppRouter.detail,
-                arguments: target,
-              );
-            },
-            child: Text(_headlineActionLabel(summary, matches)),
-          ),
         ),
       ),
     );
@@ -522,7 +445,9 @@ class _LikeSummaryTabs extends StatelessWidget {
               border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
             ),
             child: TabBar(
+              isScrollable: true,
               dividerColor: Colors.transparent,
+              labelPadding: const EdgeInsets.symmetric(horizontal: 8),
               indicator: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
                 gradient: const LinearGradient(
@@ -942,90 +867,4 @@ int _initialRelationshipTab(MatchSummary? summary) {
   if (summary.mutual.isNotEmpty) return 2;
   if (summary.sent.isNotEmpty) return 1;
   return 0;
-}
-
-AppUser _headlineUser(
-  MatchSummary? summary,
-  List<MatchUser> matches,
-  AppUser displayUser,
-) {
-  if (summary != null && summary.mutual.isNotEmpty) {
-    return summary.mutual.first.user;
-  }
-  if (summary != null && summary.received.isNotEmpty) {
-    return summary.received.first.user;
-  }
-  if (summary != null && summary.sent.isNotEmpty) {
-    return summary.sent.first.user;
-  }
-  if (matches.isNotEmpty) {
-    return matches.first.user;
-  }
-  return displayUser;
-}
-
-String _headlineTitle(MatchSummary? summary, bool hasMatches) {
-  if (summary != null && summary.mutual.isNotEmpty) {
-    return RelationshipCopy.mutualLikeTitle;
-  }
-  if (summary != null && summary.received.isNotEmpty) {
-    return RelationshipCopy.receiveLikeTitle;
-  }
-  if (summary != null && summary.sent.isNotEmpty) {
-    return RelationshipCopy.waitingReplyTitle;
-  }
-  return hasMatches
-      ? RelationshipCopy.mutualLikeTitle
-      : RelationshipCopy.receiveLikeTitle;
-}
-
-String _headlineSubtitle(
-  MatchSummary? summary,
-  List<MatchUser> matches,
-  AppUser displayUser,
-) {
-  if (summary != null && summary.mutual.isNotEmpty) {
-    return '${summary.mutual.first.user.nickname} 和你互相关注了，去聊天吧。';
-  }
-  if (summary != null && summary.received.isNotEmpty) {
-    return '${summary.received.first.user.nickname} 喜欢了你，回个喜欢就能聊天。';
-  }
-  if (summary != null && summary.sent.isNotEmpty) {
-    return '你已喜欢 ${summary.sent.first.user.nickname}，对方收到提醒后就能回应。';
-  }
-  if (matches.isNotEmpty) {
-    return '${matches.first.user.nickname} 和你互相关注了，去聊天吧。';
-  }
-  return RelationshipCopy.receiveLikeSubtitle;
-}
-
-String _headlineActionLabel(MatchSummary? summary, List<MatchUser> matches) {
-  if (summary != null && summary.mutual.isNotEmpty) {
-    return '去聊天';
-  }
-  if (summary != null &&
-      (summary.received.isNotEmpty || summary.sent.isNotEmpty)) {
-    return '查看';
-  }
-  return matches.isNotEmpty ? '去聊天' : '编辑资料';
-}
-
-AppUser? _headlineActionTarget(MatchSummary? summary, List<MatchUser> matches) {
-  if (summary != null && summary.mutual.isNotEmpty) {
-    return summary.mutual.first.user;
-  }
-  if (summary != null && summary.received.isNotEmpty) {
-    return summary.received.first.user;
-  }
-  if (summary != null && summary.sent.isNotEmpty) {
-    return summary.sent.first.user;
-  }
-  if (matches.isNotEmpty) {
-    return matches.first.user;
-  }
-  return null;
-}
-
-bool _canChatNow(MatchSummary? summary, int userId) {
-  return summary?.mutual.any((item) => item.user.id == userId) ?? false;
 }
