@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../controllers/auth_controller.dart';
 import '../routes/app_router.dart';
+import '../services/app_feedback.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/luminous_background.dart';
@@ -36,9 +37,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           }
         },
         error: (error, _) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(error.toString())),
-          );
+          AppFeedback.showError(error.toString());
         },
       );
     });
@@ -91,12 +90,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   .sendCode(_emailController.text.trim());
                               if (!context.mounted) return;
                               setState(() => _codeSent = true);
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    '验证码已发送。开发模式下也可以直接查看后端日志中的 OTP。',
-                                  ),
-                                ),
+                              AppFeedback.showToast(
+                                '验证码已发送，开发模式下也可以查看后端日志中的 OTP。',
                               );
                             },
                     ),

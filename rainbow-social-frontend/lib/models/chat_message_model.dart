@@ -46,6 +46,7 @@ class ChatMessageModel {
   bool get isFailed => status == ChatMessageStatus.failed;
   bool get isAudio => type == 'audio';
   bool get isImage => type == 'image';
+  bool get isFlashImage => type == 'flash_image';
   bool get isFlirty => type == 'flirt';
   String get audioSource =>
       mediaUrl.isNotEmpty ? mediaUrl : (localFilePath ?? '');

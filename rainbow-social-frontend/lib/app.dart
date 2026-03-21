@@ -13,6 +13,7 @@ class RainbowSocialApp extends StatelessWidget {
     return MaterialApp(
       title: '熊猴',
       debugShowCheckedModeBanner: false,
+      navigatorKey: AppFeedback.navigatorKey,
       scaffoldMessengerKey: AppFeedback.messengerKey,
       locale: const Locale('zh', 'CN'),
       supportedLocales: const [

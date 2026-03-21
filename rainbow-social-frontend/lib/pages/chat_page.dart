@@ -252,7 +252,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                           ),
                         ),
                         IconButton(
-                          onPressed: _pickFromGallery,
+                          onPressed: _openMediaActions,
                           icon: const Icon(Icons.add_circle_outline_rounded),
                         ),
                         Expanded(
@@ -376,13 +376,34 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     setState(() {});
   }
 
-  Future<void> _pickFromGallery() async {
+  Future<void> _openMediaActions() async {
+    final mode = await showModalBottomSheet<String>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => const _MediaActionsSheet(),
+    );
+    if (mode == null || !mounted) return;
+    if (mode == 'flash') {
+      await _pickFromGallery(isFlash: true);
+      return;
+    }
+    await _pickFromGallery();
+  }
+
+  Future<void> _pickFromGallery({bool isFlash = false}) async {
     final picked = await _picker.pickImage(
       source: ImageSource.gallery,
       imageQuality: 90,
       maxWidth: 1800,
     );
     if (picked == null || !mounted) return;
+
+    if (isFlash) {
+      await ref
+          .read(chatControllerProvider(widget.peer).notifier)
+          .sendFlashImageMessage(file: picked);
+      return;
+    }
 
     await ref
         .read(chatControllerProvider(widget.peer).notifier)
@@ -885,6 +906,124 @@ class _FlirtyActionsSheet extends StatefulWidget {
 
   @override
   State<_FlirtyActionsSheet> createState() => _FlirtyActionsSheetState();
+}
+
+class _MediaActionsSheet extends StatelessWidget {
+  const _MediaActionsSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+      child: GlassCard(
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+        borderRadius: BorderRadius.circular(30),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('发送内容', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 6),
+            Text(
+              '普通图片会保留，闪照只能查看一次。',
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _MediaActionCard(
+                    icon: Icons.photo_library_rounded,
+                    title: '普通图片',
+                    subtitle: '正常发送，可反复查看',
+                    gradient: const [Color(0x444ED7FF), Color(0x44EA87FF)],
+                    onTap: () => Navigator.of(context).pop('normal'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _MediaActionCard(
+                    icon: Icons.local_fire_department_rounded,
+                    title: '闪照',
+                    subtitle: '长按查看，5 秒焚毁',
+                    gradient: const [Color(0x66FF9B68), Color(0x55FF5D7A)],
+                    onTap: () => Navigator.of(context).pop('flash'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MediaActionCard extends StatelessWidget {
+  const _MediaActionCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.gradient,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final List<Color> gradient;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: onTap,
+      child: Ink(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: gradient,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.12),
+                ),
+                child: Icon(icon, color: Colors.white),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                title,
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(color: Colors.white),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.78),
+                      letterSpacing: 0.15,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _FlirtyActionsSheetState extends State<_FlirtyActionsSheet>

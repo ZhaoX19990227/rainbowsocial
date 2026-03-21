@@ -5,6 +5,7 @@ import '../services/api_config.dart';
 import '../services/audio_recorder_service.dart';
 import '../services/auth_service.dart';
 import '../services/chat_service.dart';
+import '../services/flash_photo_state_service.dart';
 import '../services/match_service.dart';
 import '../services/safety_service.dart';
 import '../services/location_service.dart';
@@ -43,6 +44,10 @@ final uploadServiceProvider = Provider<UploadService>((ref) {
 
 final locationServiceProvider = Provider<LocationService>((ref) {
   return LocationService();
+});
+
+final flashPhotoStateServiceProvider = Provider<FlashPhotoStateService>((ref) {
+  return FlashPhotoStateService();
 });
 
 final swipeServiceProvider = Provider<SwipeService>((ref) {
