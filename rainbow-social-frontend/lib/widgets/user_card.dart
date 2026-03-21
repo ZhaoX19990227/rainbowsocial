@@ -95,7 +95,7 @@ class UserCard extends StatelessWidget {
                 right: 16,
                 bottom: 16,
                 child: Container(
-                  padding: const EdgeInsets.all(18),
+                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
                   decoration: BoxDecoration(
                     color: Colors.white.withValues(alpha: 0.74),
                     borderRadius: BorderRadius.circular(24),
@@ -112,14 +112,35 @@ class UserCard extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Expanded(
-                            child: Text(
-                              user.title,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineMedium
-                                  ?.copyWith(fontSize: 28, color: AppTheme.textPrimary),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  user.title,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .headlineMedium
+                                      ?.copyWith(
+                                        fontSize: 28,
+                                        color: AppTheme.textPrimary,
+                                      ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  user.locationLabel.trim().isNotEmpty
+                                      ? user.locationLabel.trim()
+                                      : '认真找感觉的人',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelMedium
+                                      ?.copyWith(color: AppTheme.textSecondary),
+                                ),
+                              ],
                             ),
                           ),
                           Container(
@@ -141,13 +162,13 @@ class UserCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        user.bio,
+                        user.bio.trim().isEmpty ? '慢慢靠近，也许今晚就能聊出一点感觉。' : user.bio,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style:
-                            Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  color: AppTheme.textSecondary,
-                              ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: AppTheme.textSecondary,
+                              height: 1.45,
+                            ),
                       ),
                       if (user.mbtiType.trim().isNotEmpty ||
                           user.zodiacSign.trim().isNotEmpty) ...[
@@ -163,14 +184,14 @@ class UserCard extends StatelessWidget {
                           ],
                         ),
                       ],
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 12),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
                         children: user.tags.take(3).map((tag) {
                           return TagChip(
-                            label: tag.toUpperCase(),
-                            maxWidth: 110,
+                            label: tag,
+                            maxWidth: 92,
                           );
                         }).toList(),
                       ),

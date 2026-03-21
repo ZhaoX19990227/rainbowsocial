@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../models/app_user.dart';
+import '../routes/app_router.dart';
 import '../services/api_config.dart';
 import '../services/app_feedback.dart';
 import '../services/tag_options.dart';
@@ -72,132 +73,313 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(profileControllerProvider).valueOrNull;
+    final zodiacSign = ZodiacUtils.zodiacFromBirthday(
+          ZodiacUtils.tryParseBirthday(_birthday.text.trim()),
+        ) ??
+        '';
 
     return Scaffold(
-      appBar: AppBar(title: const Text('编辑资料')),
+      appBar: AppBar(
+        title: const Text('编辑资料'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('预览'),
+          ),
+        ],
+      ),
       body: LuminousBackground(
         child: SafeArea(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
             children: [
-              TextField(
-                controller: _nickname,
-                decoration: const InputDecoration(hintText: '昵称'),
+              _SectionHeader(
+                title: '展示资料',
+                subtitle: '拖拽可排序',
+                trailing: IconButton(
+                  onPressed: _uploading ? null : () => _pickAndUploadImage(isAvatar: false),
+                  icon: const Icon(Icons.add_a_photo_rounded),
+                ),
               ),
               const SizedBox(height: 14),
-              Wrap(
-                spacing: 12,
-                runSpacing: 12,
-                children: [
-                  _ImageTile(
-                    label: '头像',
-                    imageUrl: _avatar.text.trim(),
-                    onTap: () => _pickAndUploadImage(isAvatar: true),
-                  ),
-                  ..._photos.map(
-                    (photo) => _ImageTile(
-                      imageUrl: photo,
-                      onDelete: () => setState(() {
-                        _photos =
-                            _photos.where((item) => item != photo).toList();
-                      }),
-                    ),
-                  ),
-                  if (_photos.length < 6)
-                    _AddImageTile(
-                      loading: _uploading,
-                      onTap: () => _pickAndUploadImage(isAvatar: false),
-                    ),
-                ],
+              _PhotoGridCard(
+                avatarUrl: _avatar.text.trim(),
+                photos: _photos,
+                uploading: _uploading,
+                onAvatarTap: () => _pickAndUploadImage(isAvatar: true),
+                onAddTap: () => _pickAndUploadImage(isAvatar: false),
+                onDeletePhoto: (photo) => setState(() {
+                  _photos = _photos.where((item) => item != photo).toList();
+                }),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _age,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(hintText: '年龄'),
-              ),
+              const SizedBox(height: 22),
+              const _SectionHeader(title: '基础信息'),
               const SizedBox(height: 14),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _heightCm,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(hintText: '身高(cm)'),
+              GlassCard(
+                borderRadius: BorderRadius.circular(30),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _LabeledField(
+                      label: '昵称',
+                      child: TextField(
+                        controller: _nickname,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                        decoration: const InputDecoration(hintText: '输入你的昵称'),
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _weightKg,
-                      keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(hintText: '体重(kg)'),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _LabeledField(
+                            label: '年龄',
+                            child: TextField(
+                              controller: _age,
+                              keyboardType: TextInputType.number,
+                              style: Theme.of(context).textTheme.bodyLarge,
+                              decoration: const InputDecoration(hintText: '26'),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _LabeledField(
+                            label: '身高 (CM)',
+                            child: TextField(
+                              controller: _heightCm,
+                              keyboardType: TextInputType.number,
+                              style: Theme.of(context).textTheme.bodyLarge,
+                              decoration: const InputDecoration(hintText: '182'),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: _birthday,
-                readOnly: true,
-                onTap: _pickBirthday,
-                decoration: InputDecoration(
-                  hintText: '生日',
-                  suffixIcon: _birthday.text.trim().isEmpty
-                      ? null
-                      : Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: Center(
-                            widthFactor: 1,
-                            child: Text(
-                              ZodiacUtils.displayName(
-                                ZodiacUtils.zodiacFromBirthday(
-                                      ZodiacUtils.tryParseBirthday(
-                                        _birthday.text.trim(),
-                                      ),
-                                    ) ??
-                                    '',
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _LabeledField(
+                            label: '体重 (KG)',
+                            child: TextField(
+                              controller: _weightKg,
+                              keyboardType: TextInputType.number,
+                              style: Theme.of(context).textTheme.bodyLarge,
+                              decoration: const InputDecoration(hintText: '75'),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _LabeledField(
+                            label: '城市 / 位置',
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 16,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(28),
+                                color: AppTheme.surfaceHighest,
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      (profile?.locationLabel.trim().isNotEmpty ??
+                                              false)
+                                          ? profile!.locationLabel.trim()
+                                          : '进入附近后自动更新',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            color: AppTheme.textSecondary,
+                                          ),
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.location_on_rounded,
+                                    color: AppTheme.primary,
+                                  ),
+                                ],
                               ),
                             ),
                           ),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _LabeledField(
+                      label: '生日',
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _birthday,
+                              readOnly: true,
+                              onTap: _pickBirthday,
+                              style: Theme.of(context).textTheme.bodyLarge,
+                              decoration: const InputDecoration(
+                                hintText: '选择生日',
+                                suffixIcon: Icon(Icons.calendar_month_rounded),
+                              ),
+                            ),
+                          ),
+                          if (zodiacSign.isNotEmpty) ...[
+                            const SizedBox(width: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(18),
+                                color: const Color(0xFFFFE2F1),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Icons.auto_awesome_rounded,
+                                    size: 16,
+                                    color: AppTheme.tertiary,
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    ZodiacUtils.displayName(zodiacSign),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelLarge
+                                        ?.copyWith(color: AppTheme.tertiary),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: _bio,
-                maxLines: 4,
-                decoration: const InputDecoration(hintText: '个人简介'),
-              ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: _tags,
-                decoration:
-                    const InputDecoration(hintText: '标签，使用逗号分隔，最多 5 个'),
-                onChanged: _syncTagsFromInput,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '已选择 ${_selectedTags.length}/$_maxTags',
-                style: Theme.of(context).textTheme.labelMedium,
-              ),
+              const SizedBox(height: 22),
+              const _SectionHeader(title: '身份档案'),
               const SizedBox(height: 14),
               GlassCard(
+                borderRadius: BorderRadius.circular(30),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('可选标签', style: Theme.of(context).textTheme.titleMedium),
+                    _LabeledField(
+                      label: '人格类型 (MBTI)',
+                      child: Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(22),
+                          color: const Color(0x1FD2E4FF),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 42,
+                              height: 42,
+                              decoration: const BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: AppTheme.secondary,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  profile?.mbtiType.trim().isEmpty ?? true
+                                      ? 'MB'
+                                      : profile!.mbtiType,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelMedium
+                                      ?.copyWith(color: Colors.white),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    profile?.mbtiType.trim().isEmpty ?? true
+                                        ? '还没有人格结果'
+                                        : profile!.mbtiType,
+                                    style: Theme.of(context).textTheme.titleMedium,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    profile?.mbtiType.trim().isEmpty ?? true
+                                        ? '完成测试后，会展示你的人格类型'
+                                        : '热情、有创意、自由的精神',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(color: AppTheme.textSecondary),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.of(context).pushNamed(AppRouter.mbtiTest),
+                              child: const Text('去测试'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: profileTagOptions.map((tag) {
-                        return FilterChip(
-                          selected: _selectedTags.contains(tag),
-                          label: Text(tag),
-                          onSelected: (_) => _toggleTag(tag),
-                        );
-                      }).toList(),
+                    _LabeledField(
+                      label: '个性标签',
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextField(
+                            controller: _tags,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                            decoration: const InputDecoration(
+                              hintText: '标签，使用逗号分隔，最多 5 个',
+                            ),
+                            onChanged: _syncTagsFromInput,
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            '已选择 ${_selectedTags.length}/$_maxTags',
+                            style: Theme.of(context).textTheme.labelMedium,
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: profileTagOptions.map((tag) {
+                              return FilterChip(
+                                selected: _selectedTags.contains(tag),
+                                label: Text(tag),
+                                onSelected: (_) => _toggleTag(tag),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _LabeledField(
+                      label: '简介',
+                      child: TextField(
+                        controller: _bio,
+                        maxLines: 4,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                        decoration: const InputDecoration(
+                          hintText: '介绍一下你自己，让更多人认识你...',
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -378,12 +560,14 @@ class _ImageTile extends StatelessWidget {
     required this.imageUrl,
     this.onTap,
     this.onDelete,
+    this.large = false,
   });
 
   final String? label;
   final String imageUrl;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
+  final bool large;
 
   @override
   Widget build(BuildContext context) {
@@ -392,11 +576,11 @@ class _ImageTile extends StatelessWidget {
       child: Stack(
         children: [
           Container(
-            width: 96,
-            height: 96,
+            width: double.infinity,
+            height: large ? 214 : 98,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
-              color: Colors.white.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(large ? 22 : 999),
+              color: AppTheme.surfaceHighest,
               image: imageUrl.trim().isEmpty
                   ? null
                   : DecorationImage(
@@ -415,10 +599,13 @@ class _ImageTile extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.45),
+                  color: AppTheme.primary.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: Text(label!, style: const TextStyle(fontSize: 12)),
+                child: Text(
+                  label!,
+                  style: const TextStyle(fontSize: 11, color: Colors.white),
+                ),
               ),
             ),
           if (onDelete != null)
@@ -431,10 +618,10 @@ class _ImageTile extends StatelessWidget {
                   width: 28,
                   height: 28,
                   decoration: BoxDecoration(
-                    color: Colors.black.withValues(alpha: 0.45),
+                    color: Colors.black.withValues(alpha: 0.36),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.close_rounded, size: 16),
+                  child: const Icon(Icons.close_rounded, size: 16, color: Colors.white),
                 ),
               ),
             ),
@@ -458,12 +645,12 @@ class _AddImageTile extends StatelessWidget {
     return GestureDetector(
       onTap: loading ? null : onTap,
       child: Container(
-        width: 96,
-        height: 96,
+        width: double.infinity,
+        height: 98,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
-          color: Colors.white.withValues(alpha: 0.04),
+          shape: BoxShape.circle,
+          border: Border.all(color: AppTheme.ghostBorder),
+          color: AppTheme.surfaceHighest,
         ),
         child: Center(
           child: loading
@@ -474,6 +661,162 @@ class _AddImageTile extends StatelessWidget {
                 )
               : const Icon(Icons.add_photo_alternate_outlined),
         ),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.title,
+    this.subtitle,
+    this.trailing,
+  });
+
+  final String title;
+  final String? subtitle;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title, style: Theme.of(context).textTheme.titleLarge),
+              if (subtitle != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle!,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: AppTheme.textSecondary,
+                      ),
+                ),
+              ],
+            ],
+          ),
+        ),
+        if (trailing != null) trailing!,
+      ],
+    );
+  }
+}
+
+class _LabeledField extends StatelessWidget {
+  const _LabeledField({
+    required this.label,
+    required this.child,
+  });
+
+  final String label;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppTheme.textSecondary,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.6,
+                ),
+          ),
+        ),
+        child,
+      ],
+    );
+  }
+}
+
+class _PhotoGridCard extends StatelessWidget {
+  const _PhotoGridCard({
+    required this.avatarUrl,
+    required this.photos,
+    required this.uploading,
+    required this.onAvatarTap,
+    required this.onAddTap,
+    required this.onDeletePhoto,
+  });
+
+  final String avatarUrl;
+  final List<String> photos;
+  final bool uploading;
+  final VoidCallback onAvatarTap;
+  final VoidCallback onAddTap;
+  final ValueChanged<String> onDeletePhoto;
+
+  @override
+  Widget build(BuildContext context) {
+    final extraPhotos = photos.take(5).toList();
+    return GlassCard(
+      borderRadius: BorderRadius.circular(30),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 2,
+                child: _ImageTile(
+                  label: '主头像',
+                  imageUrl: avatarUrl,
+                  onTap: onAvatarTap,
+                  large: true,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  children: [
+                    for (final photo in extraPhotos.take(2)) ...[
+                      _ImageTile(
+                        imageUrl: photo,
+                        onDelete: () => onDeletePhoto(photo),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    if (extraPhotos.length < 2)
+                      _AddImageTile(
+                        loading: uploading,
+                        onTap: onAddTap,
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: List.generate(3, (index) {
+              final photoIndex = index + 2;
+              return Expanded(
+                child: Padding(
+                  padding: EdgeInsets.only(right: index == 2 ? 0 : 12),
+                  child: AspectRatio(
+                    aspectRatio: 1,
+                    child: photoIndex < extraPhotos.length
+                        ? _ImageTile(
+                            imageUrl: extraPhotos[photoIndex],
+                            onDelete: () => onDeletePhoto(extraPhotos[photoIndex]),
+                          )
+                        : _AddImageTile(
+                            loading: uploading,
+                            onTap: onAddTap,
+                          ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
       ),
     );
   }

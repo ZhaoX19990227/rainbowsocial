@@ -254,57 +254,63 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   ),
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
-                    child: GlassCard(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 8,
+                    child: Container(
+                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.82),
+                        borderRadius: BorderRadius.circular(32),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primary.withValues(alpha: 0.08),
+                            blurRadius: 26,
+                            offset: const Offset(0, 14),
+                          ),
+                        ],
                       ),
-                      borderRadius: BorderRadius.circular(999),
                       child: Row(
                         children: [
-                          IconButton(
-                            onPressed: _openFlirtyActions,
-                            icon: Container(
-                              width: 34,
-                              height: 34,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: const LinearGradient(
-                                  colors: [
-                                    Color(0x44FF855F),
-                                    Color(0x44EA87FF),
-                                  ],
-                                ),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.08),
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.auto_awesome_rounded,
-                                size: 18,
-                                color: Colors.white,
-                              ),
-                            ),
+                          _ChatCircleButton(
+                            icon: Icons.auto_awesome_rounded,
+                            gradient: const [
+                              AppTheme.primary,
+                              AppTheme.primaryDark,
+                            ],
+                            onTap: _openFlirtyActions,
                           ),
-                          IconButton(
-                            onPressed: _openMediaActions,
-                            icon: const Icon(Icons.add_circle_outline_rounded),
+                          const SizedBox(width: 8),
+                          _ChatCircleButton(
+                            icon: Icons.add_rounded,
+                            backgroundColor: AppTheme.surfaceHighest,
+                            iconColor: AppTheme.textSecondary,
+                            onTap: _openMediaActions,
                           ),
+                          const SizedBox(width: 10),
                           Expanded(
-                            child: TextField(
-                              controller: _controller,
-                              minLines: 1,
-                              maxLines: 4,
-                              onChanged: (_) => setState(() {}),
-                              decoration: InputDecoration(
-                                hintText:
-                                    _isRecording ? '松开发送，向上取消' : '输入消息...',
-                                border: InputBorder.none,
-                                filled: false,
+                            child: Container(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 16),
+                              decoration: BoxDecoration(
+                                color: AppTheme.surfaceHighest,
+                                borderRadius: BorderRadius.circular(999),
                               ),
-                              onSubmitted: (_) => _sendCurrentMessage(),
+                              child: TextField(
+                                controller: _controller,
+                                minLines: 1,
+                                maxLines: 4,
+                                onChanged: (_) => setState(() {}),
+                                decoration: InputDecoration(
+                                  hintText: _isRecording
+                                      ? '松开发送，向上取消'
+                                      : '说点什么，让他更想靠近你',
+                                  border: InputBorder.none,
+                                  filled: false,
+                                  isDense: true,
+                                ),
+                                onSubmitted: (_) => _sendCurrentMessage(),
+                              ),
                             ),
                           ),
+                          const SizedBox(width: 10),
                           AnimatedSwitcher(
                             duration: const Duration(milliseconds: 220),
                             transitionBuilder: (child, animation) {
@@ -317,18 +323,26 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                               );
                             },
                             child: _controller.text.trim().isNotEmpty
-                                ? IconButton(
+                                ? _ChatCircleButton(
                                     key: const ValueKey('send-button'),
-                                    onPressed: _sendCurrentMessage,
                                     icon: roomState.isSending
+                                        ? null
+                                        : Icons.send_rounded,
+                                    gradient: const [
+                                      AppTheme.primary,
+                                      AppTheme.primaryDark,
+                                    ],
+                                    child: roomState.isSending
                                         ? const SizedBox(
                                             width: 18,
                                             height: 18,
                                             child: CircularProgressIndicator(
                                               strokeWidth: 2,
+                                              color: Colors.white,
                                             ),
                                           )
-                                        : const Icon(Icons.send_rounded),
+                                        : null,
+                                    onTap: _sendCurrentMessage,
                                   )
                                 : GestureDetector(
                                     key: const ValueKey('record-button'),
@@ -339,8 +353,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                                     child: AnimatedContainer(
                                       duration:
                                           const Duration(milliseconds: 180),
-                                      width: 46,
-                                      height: 46,
+                                      width: 48,
+                                      height: 48,
                                       decoration: BoxDecoration(
                                         shape: BoxShape.circle,
                                         gradient: LinearGradient(
@@ -351,20 +365,31 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                                                       Color(0xFFFF6E85),
                                                     ]
                                                   : const [
-                                                      Color(0xFF7CE8FF),
-                                                      Color(0xFFEA87FF),
+                                                      AppTheme.primary,
+                                                      AppTheme.primaryDark,
                                                     ]
                                               : const [
-                                                  Color(0x26FFFFFF),
-                                                  Color(0x18FFFFFF),
+                                                  Color(0xFFFFFFFF),
+                                                  Color(0xFFF4F1FF),
                                                 ],
                                         ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: AppTheme.primary.withValues(
+                                              alpha: _isRecording ? 0.24 : 0.08,
+                                            ),
+                                            blurRadius: 16,
+                                            offset: const Offset(0, 8),
+                                          ),
+                                        ],
                                       ),
                                       child: Icon(
                                         _isRecording
                                             ? Icons.mic_rounded
                                             : Icons.mic_none_rounded,
-                                        color: Colors.white,
+                                        color: _isRecording
+                                            ? Colors.white
+                                            : AppTheme.primary,
                                       ),
                                     ),
                                   ),
@@ -688,6 +713,56 @@ class _MediaActionsSheet extends StatelessWidget {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ChatCircleButton extends StatelessWidget {
+  const _ChatCircleButton({
+    super.key,
+    this.icon,
+    this.gradient,
+    this.backgroundColor,
+    this.iconColor,
+    this.child,
+    required this.onTap,
+  });
+
+  final IconData? icon;
+  final List<Color>? gradient;
+  final Color? backgroundColor;
+  final Color? iconColor;
+  final Widget? child;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: gradient == null ? backgroundColor ?? Colors.white : null,
+          gradient: gradient == null ? null : LinearGradient(colors: gradient!),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primary.withValues(alpha: 0.08),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Center(
+          child: child ??
+              Icon(
+                icon,
+                size: 20,
+                color: iconColor ?? Colors.white,
+              ),
         ),
       ),
     );

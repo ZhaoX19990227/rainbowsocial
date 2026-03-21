@@ -10,7 +10,6 @@ import '../widgets/app_empty_state.dart';
 import '../widgets/app_skeleton.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/luminous_background.dart';
-import '../widgets/zodiac_badge.dart';
 
 class HoroscopeDetailPage extends ConsumerWidget {
   const HoroscopeDetailPage({super.key});
@@ -89,20 +88,80 @@ class _HoroscopeHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final zodiacLabel = _displayZodiac(data.zodiacSign);
     return GlassCard(
-      borderRadius: BorderRadius.circular(32),
-      padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
+      borderRadius: BorderRadius.circular(36),
+      padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          ZodiacBadge(sign: data.zodiacSign),
-          const SizedBox(height: 14),
-          Text(data.title, style: Theme.of(context).textTheme.headlineMedium),
+          Container(
+            width: 188,
+            height: 188,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(36),
+              color: Colors.white.withValues(alpha: 0.85),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primary.withValues(alpha: 0.08),
+                  blurRadius: 30,
+                  offset: const Offset(0, 18),
+                ),
+              ],
+            ),
+            child: const Center(
+              child: Icon(
+                Icons.star_rounded,
+                size: 94,
+                color: AppTheme.primary,
+              ),
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            '你的星座是',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: AppTheme.textSecondary,
+                ),
+          ),
           const SizedBox(height: 8),
           Text(
+            zodiacLabel,
+            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                  fontSize: 44,
+                ),
+          ),
+          const SizedBox(height: 10),
+          if (data.date.trim().isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                color: AppTheme.surfaceHighest,
+              ),
+              child: Text(
+                data.date,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: AppTheme.primary,
+                    ),
+              ),
+            ),
+          const SizedBox(height: 20),
+          Text(
+            '“${data.title}”',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: AppTheme.textSecondary,
+                  fontStyle: FontStyle.italic,
+                ),
+          ),
+          const SizedBox(height: 18),
+          Text(
             data.summary,
+            textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.textSecondary,
+                  height: 1.6,
                 ),
           ),
           const SizedBox(height: 18),
@@ -156,6 +215,37 @@ class _HoroscopeHero extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _displayZodiac(String sign) {
+    switch (sign) {
+      case 'Aries':
+        return '白羊座';
+      case 'Taurus':
+        return '金牛座';
+      case 'Gemini':
+        return '双子座';
+      case 'Cancer':
+        return '巨蟹座';
+      case 'Leo':
+        return '狮子座';
+      case 'Virgo':
+        return '处女座';
+      case 'Libra':
+        return '天秤座';
+      case 'Scorpio':
+        return '天蝎座';
+      case 'Sagittarius':
+        return '射手座';
+      case 'Capricorn':
+        return '摩羯座';
+      case 'Aquarius':
+        return '水瓶座';
+      case 'Pisces':
+        return '双鱼座';
+      default:
+        return sign;
+    }
   }
 }
 

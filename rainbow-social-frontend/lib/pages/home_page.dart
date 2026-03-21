@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -43,8 +41,22 @@ class _HomePageState extends ConsumerState<HomePage> {
               children: [
                 Row(
                   children: [
-                    Text('推荐',
-                        style: Theme.of(context).textTheme.headlineMedium),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '推荐',
+                          style: Theme.of(context).textTheme.headlineMedium,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '往下翻，看看今天会和谁对上眼',
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                color: AppTheme.textSecondary,
+                              ),
+                        ),
+                      ],
+                    ),
                     const Spacer(),
                     AnimatedOpacity(
                       opacity: controller.canUndo ? 1 : 0.45,
@@ -70,10 +82,17 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
                 const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.all(4),
+                  padding: const EdgeInsets.all(5),
                   decoration: BoxDecoration(
-                    color: AppTheme.surfaceHighest.withValues(alpha: 0.6),
+                    color: Colors.white.withValues(alpha: 0.9),
                     borderRadius: BorderRadius.circular(999),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primary.withValues(alpha: 0.08),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
                   ),
                   child: Row(
                     children: [
@@ -87,23 +106,36 @@ class _HomePageState extends ConsumerState<HomePage> {
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(999),
                               gradient: const LinearGradient(
-                                colors: [Color(0x22EA87FF), Color(0x22FF6E85)],
+                                colors: [
+                                  Color(0x33F2D8FF),
+                                  Color(0x33FFD9E6),
+                                ],
                               ),
                             ),
-                            child: const Center(child: Text('推荐')),
+                            child: Center(
+                              child: Text(
+                                '推荐',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(color: AppTheme.textPrimary),
+                              ),
+                            ),
                           ),
                         ),
                       ),
                       Expanded(
                         child: GestureDetector(
                           onTap: widget.onSwitchToNearby,
-                          child: const Padding(
+                          child: Padding(
                             padding: EdgeInsets.symmetric(vertical: 12),
                             child: Center(
                               child: Text(
                                 '附近',
-                                style:
-                                    TextStyle(color: AppTheme.textSecondary),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(color: AppTheme.textSecondary),
                               ),
                             ),
                           ),
@@ -112,17 +144,25 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 18),
-                _MbtiEntryCard(
-                  onTap: () =>
-                      Navigator.of(context).pushNamed(AppRouter.mbtiTest),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _MbtiEntryCard(
+                        onTap: () =>
+                            Navigator.of(context).pushNamed(AppRouter.mbtiTest),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _HoroscopeEntryCard(
+                        onTap: () => Navigator.of(context)
+                            .pushNamed(AppRouter.birthdaySetup),
+                      ),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 12),
-                _HoroscopeEntryCard(
-                  onTap: () =>
-                      Navigator.of(context).pushNamed(AppRouter.birthdaySetup),
-                ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 16),
                 Expanded(
                   child: state.when(
                     data: (users) {
@@ -159,7 +199,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -279,21 +319,22 @@ class _MbtiEntryCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(32),
       child: Ink(
         width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(28),
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF7B36C2),
-              Color(0xFF9552DD),
+              Color(0xFFFFFFFF),
+              Color(0xFFF8F0FF),
             ],
           ),
+          border: Border.all(color: AppTheme.ghostBorder),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.primary.withValues(alpha: 0.16),
-              blurRadius: 32,
+              color: AppTheme.primary.withValues(alpha: 0.08),
+              blurRadius: 28,
               offset: const Offset(0, 16),
             ),
           ],
@@ -301,14 +342,16 @@ class _MbtiEntryCard extends StatelessWidget {
         child: Stack(
           children: [
             Positioned(
-              top: -30,
-              right: -18,
+              top: -20,
+              right: -14,
               child: Container(
-                width: 132,
-                height: 132,
+                width: 96,
+                height: 96,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.14),
+                  gradient: const RadialGradient(
+                    colors: [Color(0x22B47BFF), Color(0x00B47BFF)],
+                  ),
                 ),
               ),
             ),
@@ -316,30 +359,35 @@ class _MbtiEntryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 54,
-                  height: 54,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.16),
+                    gradient: const LinearGradient(
+                      colors: [AppTheme.primary, AppTheme.primaryDark],
+                    ),
                   ),
                   child: const Icon(
                     Icons.psychology_alt_rounded,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 14),
                 Text(
                   '发现你的隐藏人格',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: Colors.white,
-                        height: 1.15,
+                  maxLines: 2,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: AppTheme.textPrimary,
+                        height: 1.18,
                       ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
-                  '完善人格档案，提升匹配成功率 +30%',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.84),
+                  '完善人格档案',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: AppTheme.textSecondary,
                       ),
                 ),
               ],
@@ -349,7 +397,7 @@ class _MbtiEntryCard extends StatelessWidget {
               bottom: 0,
               child: Icon(
                 Icons.chevron_right_rounded,
-                color: Colors.white.withValues(alpha: 0.9),
+                color: AppTheme.primary,
               ),
             ),
           ],
@@ -371,21 +419,22 @@ class _HoroscopeEntryCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(32),
       child: Ink(
         width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
+        padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(32),
+          borderRadius: BorderRadius.circular(28),
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF4AA5FD),
-              Color(0xFF6E7CFF),
+              Color(0xFFFFFFFF),
+              Color(0xFFF3F7FF),
             ],
           ),
+          border: Border.all(color: AppTheme.ghostBorder),
           boxShadow: [
             BoxShadow(
-              color: AppTheme.secondary.withValues(alpha: 0.18),
-              blurRadius: 32,
+              color: AppTheme.secondary.withValues(alpha: 0.08),
+              blurRadius: 28,
               offset: const Offset(0, 16),
             ),
           ],
@@ -393,14 +442,16 @@ class _HoroscopeEntryCard extends StatelessWidget {
         child: Stack(
           children: [
             Positioned(
-              top: -28,
-              left: -18,
+              top: -18,
+              left: -12,
               child: Container(
-                width: 132,
-                height: 132,
+                width: 96,
+                height: 96,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withValues(alpha: 0.12),
+                  gradient: const RadialGradient(
+                    colors: [Color(0x227DDCFF), Color(0x007DDCFF)],
+                  ),
                 ),
               ),
             ),
@@ -408,30 +459,35 @@ class _HoroscopeEntryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 54,
-                  height: 54,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: Colors.white.withValues(alpha: 0.16),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF4AA5FD), Color(0xFF6E7CFF)],
+                    ),
                   ),
                   child: const Icon(
                     Icons.auto_awesome_rounded,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 18),
+                const SizedBox(height: 14),
                 Text(
                   '查看今日运势',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        color: Colors.white,
-                        height: 1.15,
+                  maxLines: 2,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: AppTheme.textPrimary,
+                        height: 1.18,
                       ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
-                  '输入生日，解锁你的星座档案和今日气场',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.84),
+                  '解锁星座档案',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: AppTheme.textSecondary,
                       ),
                 ),
               ],
@@ -441,7 +497,7 @@ class _HoroscopeEntryCard extends StatelessWidget {
               bottom: 0,
               child: Icon(
                 Icons.chevron_right_rounded,
-                color: Colors.white.withValues(alpha: 0.9),
+                color: AppTheme.secondary,
               ),
             ),
           ],
@@ -795,7 +851,7 @@ class _ActionCircle extends StatelessWidget {
             color: filled
                 ? null
                 : AppTheme.surfaceHighest.withValues(
-                    alpha: onTap == null ? 0.22 : 0.68,
+                    alpha: onTap == null ? 0.34 : 0.96,
                   ),
             border: Border.all(color: color.withValues(alpha: 0.22)),
             boxShadow: [
@@ -856,78 +912,37 @@ class _MatchOverlayState extends State<_MatchOverlay>
         : widget.user.avatarOrFallback;
 
     return Material(
-      color: Colors.black.withValues(alpha: 0.82),
+      color: Colors.white.withValues(alpha: 0.92),
       child: Stack(
         fit: StackFit.expand,
         children: [
           DecoratedBox(
             decoration: BoxDecoration(
               gradient: RadialGradient(
-                center: Alignment.topCenter,
-                radius: 1.4,
+                center: const Alignment(-0.1, -0.28),
+                radius: 1.08,
                 colors: [
-                  AppTheme.primary.withValues(alpha: 0.36),
-                  AppTheme.secondary.withValues(alpha: 0.2),
-                  const Color(0xFF090914),
+                  AppTheme.primary.withValues(alpha: 0.12),
+                  AppTheme.secondary.withValues(alpha: 0.08),
+                  const Color(0xFFF8F9FE),
                 ],
               ),
             ),
           ),
-          ...List.generate(14, (index) {
-            final angle = (math.pi * 2 / 14) * index;
-            return Positioned(
-              left: 0,
-              right: 0,
-              top: 0,
-              bottom: 0,
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, child) {
-                  final distance =
-                      120 + (index * 10.0) + (_controller.value * 26);
-                  return Transform.translate(
-                    offset: Offset(
-                      math.cos(angle) * distance,
-                      math.sin(angle) * distance - 40,
-                    ),
-                    child: Opacity(
-                      opacity: (1 - _controller.value) * 0.65,
-                      child: child,
-                    ),
-                  );
-                },
-                child: const Center(
-                  child: Icon(
-                    Icons.favorite_rounded,
-                    color: Color(0x55FFFFFF),
-                    size: 22,
-                  ),
-                ),
-              ),
-            );
-          }),
-          Positioned.fill(
-            child: IgnorePointer(
-              child: AnimatedBuilder(
-                animation: _controller,
-                builder: (context, _) {
-                  return Opacity(
-                    opacity: (1 - _controller.value) * 0.4,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: RadialGradient(
-                          center: Alignment.center,
-                          radius: 0.55 + (_controller.value * 0.2),
-                          colors: [
-                            const Color(0x33FFFFFF),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
+          Positioned(
+            top: 104,
+            left: -32,
+            child: _SoftGlow(
+              size: 220,
+              color: AppTheme.primary.withValues(alpha: 0.12),
+            ),
+          ),
+          Positioned(
+            bottom: 120,
+            right: -24,
+            child: _SoftGlow(
+              size: 200,
+              color: AppTheme.secondary.withValues(alpha: 0.1),
             ),
           ),
           Center(
@@ -937,93 +952,111 @@ class _MatchOverlayState extends State<_MatchOverlay>
                 curve: Curves.elasticOut,
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 28),
+                padding: const EdgeInsets.symmetric(horizontal: 30),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(999),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.08),
-                        ),
-                      ),
-                      child: Text(
-                        '关系升级',
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              color: const Color(0xFFF4D7C7),
-                              letterSpacing: 0.8,
-                            ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
                     Text(
                       '互相喜欢',
                       style:
                           Theme.of(context).textTheme.headlineLarge?.copyWith(
-                                fontSize: 42,
+                                fontSize: 40,
+                                color: AppTheme.textPrimary,
                               ),
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      RelationshipCopy.mutualLike(widget.user.nickname),
+                      '现在你们可以开始聊天了',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                             color: AppTheme.textSecondary,
                           ),
                     ),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 34),
                     Stack(
                       alignment: Alignment.center,
                       children: [
+                        AnimatedBuilder(
+                          animation: _controller,
+                          builder: (context, child) {
+                            return Container(
+                              width: 220 + (_controller.value * 12),
+                              height: 220 + (_controller.value * 12),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppTheme.primary.withValues(alpha: 0.1),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
                         Container(
-                          width: 220,
-                          height: 220,
+                          width: 150,
+                          height: 150,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             gradient: RadialGradient(
                               colors: [
-                                AppTheme.tertiary.withValues(alpha: 0.18),
-                                AppTheme.primary.withValues(alpha: 0.08),
+                                AppTheme.primary.withValues(alpha: 0.16),
                                 Colors.transparent,
                               ],
                             ),
                           ),
                         ),
                         Transform.translate(
-                          offset: const Offset(-48, 8),
-                          child: CircleAvatar(
-                            radius: 38,
-                            backgroundColor:
-                                Colors.white.withValues(alpha: 0.08),
-                            child: Text(
-                              '你',
-                              style: Theme.of(context).textTheme.titleMedium,
+                          offset: const Offset(-44, 0),
+                          child: Container(
+                            width: 112,
+                            height: 112,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 4),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppTheme.primary.withValues(alpha: 0.12),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color(0xFFFFF2C8),
+                                  Color(0xFFFFE0B5),
+                                ],
+                              ),
+                            ),
+                            child: Center(
+                              child: Text(
+                                '你',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(color: AppTheme.textPrimary),
+                              ),
                             ),
                           ),
                         ),
                         Transform.translate(
-                          offset: const Offset(40, -4),
+                          offset: const Offset(44, 0),
                           child: Hero(
                             tag: 'match-avatar-${widget.user.id}',
                             child: Container(
-                              width: 126,
-                              height: 126,
+                              width: 112,
+                              height: 112,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.26),
-                                  width: 3,
+                                  color: Colors.white,
+                                  width: 4,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.primary.withValues(alpha: 0.32),
-                                    blurRadius: 42,
+                                    color: AppTheme.primary.withValues(alpha: 0.12),
+                                    blurRadius: 20,
+                                    offset: const Offset(0, 8),
                                   ),
                                 ],
                                 image: DecorationImage(
@@ -1034,71 +1067,92 @@ class _MatchOverlayState extends State<_MatchOverlay>
                             ),
                           ),
                         ),
-                        const Icon(
-                          Icons.favorite_rounded,
-                          color: Color(0xFFF6C5B8),
-                          size: 30,
+                        Container(
+                          width: 54,
+                          height: 54,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white.withValues(alpha: 0.88),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.primary.withValues(alpha: 0.14),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.favorite_rounded,
+                            color: AppTheme.primary,
+                            size: 28,
+                          ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 34),
                     Container(
-                      padding: const EdgeInsets.all(1.2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
+                      ),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(26),
+                        color: AppTheme.primary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        '缘分在此刻开启',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: AppTheme.primary,
+                            ),
+                      ),
+                    ),
+                    const SizedBox(height: 26),
+                    Container(
+                      width: double.infinity,
+                      height: 58,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(999),
                         gradient: const LinearGradient(
-                          colors: [
-                            Color(0x66FFB178),
-                            Color(0x55EA87FF),
-                            Color(0x554ED7FF),
-                          ],
+                          colors: [AppTheme.primary, AppTheme.primaryDark],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primary.withValues(alpha: 0.24),
+                            blurRadius: 24,
+                            offset: const Offset(0, 12),
+                          ),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(999),
+                          onTap: widget.onChat,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                '去聊天',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(color: Colors.white),
+                              ),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.send_rounded, color: Colors.white),
+                            ],
+                          ),
                         ),
                       ),
-                      child: Container(
-                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(25),
-                          color: const Color(0xCC141522),
-                        ),
-                        child: Column(
-                          children: [
-                            Text(
-                              '聊天已经解锁',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(color: const Color(0xFFFFD4C0)),
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: widget.onClose,
+                      child: Text(
+                        '稍后再说',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              color: AppTheme.textSecondary,
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              '现在是最适合打招呼的时候，别把这股心动晾太久。',
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(color: AppTheme.textSecondary),
-                            ),
-                            const SizedBox(height: 16),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: OutlinedButton(
-                                    onPressed: widget.onClose,
-                                    child: const Text('稍后再说'),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: FilledButton.icon(
-                                    onPressed: widget.onChat,
-                                    icon: const Icon(Icons.chat_bubble_rounded),
-                                    label: const Text('去聊天'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
                       ),
                     ),
                   ],
@@ -1107,6 +1161,30 @@ class _MatchOverlayState extends State<_MatchOverlay>
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SoftGlow extends StatelessWidget {
+  const _SoftGlow({
+    required this.size,
+    required this.color,
+  });
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: color,
+        ),
       ),
     );
   }
