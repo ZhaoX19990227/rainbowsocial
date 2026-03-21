@@ -31,6 +31,8 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isMediaFrame = message.isImage || message.isFlashImage || message.isAudio;
+    final isCustomCard = message.isFlirty;
     final radius = BorderRadius.only(
       topLeft: const Radius.circular(24),
       topRight: const Radius.circular(24),
@@ -65,11 +67,22 @@ class MessageBubble extends StatelessWidget {
               AnimatedContainer(
                 duration: const Duration(milliseconds: 220),
                 curve: Curves.easeOutCubic,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                padding: isCustomCard
+                    ? EdgeInsets.zero
+                    : isMediaFrame
+                        ? const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 6,
+                          )
+                        : const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 14,
+                          ),
                 decoration: BoxDecoration(
                   borderRadius: radius,
-                  gradient: isMine
+                  gradient: isCustomCard || isMediaFrame
+                      ? null
+                      : isMine
                       ? LinearGradient(
                           colors: message.isFailed
                               ? const [Color(0x33FF9A9A), Color(0x22FF6E85)]
@@ -78,24 +91,38 @@ class MessageBubble extends StatelessWidget {
                           end: Alignment.bottomRight,
                         )
                       : null,
-                  color: isMine
-                      ? null
-                      : AppTheme.surfaceHighest.withValues(alpha: 0.72),
+                  color: isCustomCard
+                      ? Colors.transparent
+                      : isMediaFrame
+                          ? (isMine
+                              ? const Color(0xFF151923).withValues(alpha: 0.96)
+                              : AppTheme.surfaceHighest.withValues(alpha: 0.56))
+                          : isMine
+                              ? null
+                              : AppTheme.surfaceHighest.withValues(alpha: 0.72),
                   border: Border.all(
-                    color: isMine
-                        ? (message.isFailed
-                            ? AppTheme.error.withValues(alpha: 0.35)
-                            : AppTheme.primary.withValues(alpha: 0.18))
-                        : Colors.white.withValues(alpha: 0.06),
+                    color: isCustomCard
+                        ? Colors.transparent
+                        : isMediaFrame
+                            ? Colors.white.withValues(alpha: isMine ? 0.08 : 0.06)
+                            : isMine
+                                ? (message.isFailed
+                                    ? AppTheme.error.withValues(alpha: 0.35)
+                                    : AppTheme.primary.withValues(alpha: 0.18))
+                                : Colors.white.withValues(alpha: 0.06),
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: isMine
-                          ? (message.isFailed
-                              ? AppTheme.error.withValues(alpha: 0.12)
-                              : AppTheme.primary.withValues(alpha: 0.12))
-                          : Colors.black.withValues(alpha: 0.06),
-                      blurRadius: 18,
+                      color: isCustomCard
+                          ? Colors.transparent
+                          : isMediaFrame
+                              ? Colors.black.withValues(alpha: 0.08)
+                              : isMine
+                                  ? (message.isFailed
+                                      ? AppTheme.error.withValues(alpha: 0.12)
+                                      : AppTheme.primary.withValues(alpha: 0.12))
+                                  : Colors.black.withValues(alpha: 0.06),
+                      blurRadius: isMediaFrame ? 10 : 18,
                     ),
                   ],
                 ),

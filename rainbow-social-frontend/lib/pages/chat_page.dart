@@ -39,6 +39,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   Timer? _recordingTicker;
   String? _activeFlirtyClientId;
   FlirtyReplayData? _activeBurst;
+  bool _hasHydratedHistory = false;
 
   bool _isRecording = false;
   bool _willCancelRecording = false;
@@ -58,6 +59,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     final session = ref.watch(authControllerProvider).valueOrNull;
     final roomState = ref.watch(chatControllerProvider(widget.peer));
     ref.listen(chatControllerProvider(widget.peer), (previous, next) {
+      final shouldAllowAutoReplay = _hasHydratedHistory;
+      if (!_hasHydratedHistory && !next.isLoading) {
+        _hasHydratedHistory = true;
+      }
       if ((previous?.messages.length ?? 0) != next.messages.length) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!_scrollController.hasClients) return;
@@ -75,7 +80,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           final latestKey = latest.clientMessageId.isNotEmpty
               ? latest.clientMessageId
               : '${latest.id}_${latest.timestamp.microsecondsSinceEpoch}';
-          if (latest.isFlirty &&
+          if (shouldAllowAutoReplay &&
+              latest.isFlirty &&
               latestKey != previousId &&
               latestKey != _activeFlirtyClientId) {
             _playFlirtyBurst(latest);

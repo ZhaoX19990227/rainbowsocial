@@ -32,7 +32,7 @@ class UserDetailPage extends ConsumerWidget {
         slivers: [
           SliverAppBar(
             pinned: true,
-            expandedHeight: 420,
+            expandedHeight: 252,
             actions: [
               PopupMenuButton<String>(
                 onSelected: (value) async {
@@ -76,11 +76,64 @@ class UserDetailPage extends ConsumerWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          Colors.transparent,
-                          Colors.black.withValues(alpha: 0.1),
+                          Colors.black.withValues(alpha: 0.04),
+                          Colors.black.withValues(alpha: 0.16),
                           const Color(0xFF0D0D18),
                         ],
                       ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 20,
+                    right: 20,
+                    bottom: 18,
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(999),
+                            color: Colors.black.withValues(alpha: 0.24),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.08),
+                            ),
+                          ),
+                          child: Text(
+                            user.locationLabel.trim().isNotEmpty
+                                ? user.locationLabel.trim()
+                                : user.distanceKm == null
+                                    ? '就在附近'
+                                    : '距离 ${user.distanceKm!.toStringAsFixed(1)} km',
+                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.92),
+                                ),
+                          ),
+                        ),
+                        const Spacer(),
+                        if (user.onlineStatus)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(999),
+                              color: Colors.black.withValues(alpha: 0.24),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.08),
+                              ),
+                            ),
+                            child: Text(
+                              '当前在线',
+                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.92),
+                                  ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ],
@@ -94,30 +147,70 @@ class UserDetailPage extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Transform.translate(
-                    offset: const Offset(0, -40),
+                    offset: const Offset(0, -20),
                     child: GlassCard(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: Text(
-                                  user.title,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineMedium
-                                      ?.copyWith(fontSize: 44),
+                              Container(
+                                padding: const EdgeInsets.all(3),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0x88FFAA7A),
+                                      Color(0x66945CFF),
+                                    ],
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppTheme.primary.withValues(alpha: 0.16),
+                                      blurRadius: 22,
+                                    ),
+                                  ],
+                                ),
+                                child: AvatarWidget(
+                                  imageUrl: user.avatar,
+                                  radius: 34,
+                                  isOnline: user.onlineStatus,
                                 ),
                               ),
-                              if (user.onlineStatus) const Text('当前在线'),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      user.title,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineMedium
+                                          ?.copyWith(fontSize: 30, height: 1.08),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    Text(
+                                      user.bio.trim().isEmpty
+                                          ? '慢慢靠近，才知道他会怎么回应你。'
+                                          : user.bio.trim(),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                            color: const Color(0xFFD9D2E8),
+                                            height: 1.45,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            user.distanceKm == null
-                                ? '就在附近'
-                                : '距离 ${user.distanceKm!.toStringAsFixed(1)} km',
                           ),
                           const SizedBox(height: 18),
                           Wrap(
@@ -132,11 +225,38 @@ class UserDetailPage extends ConsumerWidget {
                                 .toList(),
                           ),
                           const SizedBox(height: 22),
-                          Text('简介',
-                              style: Theme.of(context).textTheme.labelMedium),
-                          const SizedBox(height: 10),
-                          Text(user.bio,
-                              style: Theme.of(context).textTheme.bodyLarge),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 14,
+                            ),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(22),
+                              color: Colors.white.withValues(alpha: 0.04),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.06),
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('更多介绍',
+                                    style:
+                                        Theme.of(context).textTheme.labelMedium),
+                                const SizedBox(height: 10),
+                                Text(
+                                  user.bio.trim().isEmpty
+                                      ? '他还没有写更多介绍，不如主动打个招呼试试看。'
+                                      : user.bio.trim(),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge
+                                      ?.copyWith(height: 1.55),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),

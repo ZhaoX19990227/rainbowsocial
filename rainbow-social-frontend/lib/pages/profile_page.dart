@@ -179,7 +179,7 @@ class _ProfileHero extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            height: 248,
+            height: 214,
             decoration: BoxDecoration(
               borderRadius: const BorderRadius.vertical(top: Radius.circular(34)),
               gradient: const LinearGradient(
@@ -264,22 +264,22 @@ class _ProfileHero extends StatelessWidget {
                         ),
                         child: AvatarWidget(
                           imageUrl: user.avatar,
-                          radius: 54,
+                          radius: 48,
                           isOnline: user.onlineStatus,
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 12),
                       Text(
                         user.nickname,
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         textAlign: TextAlign.center,
                         style: Theme.of(context)
                             .textTheme
                             .headlineLarge
-                            ?.copyWith(fontSize: 30, height: 1.05),
+                            ?.copyWith(fontSize: 26, height: 1.08),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 8),
                       Wrap(
                         alignment: WrapAlignment.center,
                         spacing: 8,
@@ -290,7 +290,7 @@ class _ProfileHero extends StatelessWidget {
                           _InfoPill(label: '$relationshipCount 段关系动态'),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
                     ],
                   ),
                 ),
@@ -340,6 +340,8 @@ class _ProfileHero extends StatelessWidget {
                 const SizedBox(height: 14),
                 Text(
                   bio,
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                         color: const Color(0xFFE0DBEF),
                         height: 1.5,
