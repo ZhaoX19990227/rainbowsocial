@@ -255,7 +255,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
                     child: Container(
-                      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+                      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
                       decoration: BoxDecoration(
                         color: Colors.white.withValues(alpha: 0.82),
                         borderRadius: BorderRadius.circular(32),
@@ -287,6 +287,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Container(
+                              height: 44,
                               padding:
                                   const EdgeInsets.symmetric(horizontal: 16),
                               decoration: BoxDecoration(
@@ -303,8 +304,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                                       ? '松开发送，向上取消'
                                       : '说点什么，让他更想靠近你',
                                   border: InputBorder.none,
+                                  enabledBorder: InputBorder.none,
+                                  focusedBorder: InputBorder.none,
+                                  disabledBorder: InputBorder.none,
                                   filled: false,
                                   isDense: true,
+                                  contentPadding:
+                                      const EdgeInsets.symmetric(vertical: 12),
                                 ),
                                 onSubmitted: (_) => _sendCurrentMessage(),
                               ),
@@ -741,9 +747,9 @@ class _ChatCircleButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        width: 44,
-        height: 44,
+        child: Container(
+        width: 42,
+        height: 42,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: gradient == null ? backgroundColor ?? Colors.white : null,

@@ -19,13 +19,48 @@ import '../widgets/glass_card.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/tag_chip.dart';
 
-class UserDetailPage extends ConsumerWidget {
+class UserDetailPage extends ConsumerStatefulWidget {
   const UserDetailPage({super.key, required this.user});
 
   final AppUser user;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<UserDetailPage> createState() => _UserDetailPageState();
+}
+
+class _UserDetailPageState extends ConsumerState<UserDetailPage> {
+  late final PageController _photoController;
+  int _selectedPhotoIndex = 0;
+
+  List<String> get _galleryPhotos {
+    final result = <String>[];
+    final seen = <String>{};
+    for (final photo in [widget.user.avatarOrFallback, ...widget.user.photos]) {
+      final normalized = photo.trim();
+      if (normalized.isEmpty || seen.contains(normalized)) {
+        continue;
+      }
+      seen.add(normalized);
+      result.add(normalized);
+    }
+    return result;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _photoController = PageController();
+  }
+
+  @override
+  void dispose() {
+    _photoController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final user = widget.user;
     final summary = ref.watch(matchSummaryControllerProvider).valueOrNull;
     final relation = _UserRelation.fromSummary(summary, user.id);
     final blockStatus = ref.watch(blockStatusProvider(user.id));
@@ -43,7 +78,7 @@ class UserDetailPage extends ConsumerWidget {
         slivers: [
           SliverAppBar(
             pinned: true,
-            expandedHeight: 356,
+            expandedHeight: 420,
             actions: [
               PopupMenuButton<String>(
                 onSelected: (value) async {
@@ -80,7 +115,27 @@ class UserDetailPage extends ConsumerWidget {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.network(user.avatarOrFallback, fit: BoxFit.cover),
+                  PageView.builder(
+                    controller: _photoController,
+                    itemCount: _galleryPhotos.length,
+                    onPageChanged: (index) {
+                      setState(() => _selectedPhotoIndex = index);
+                    },
+                    itemBuilder: (context, index) {
+                      return Hero(
+                        tag: index == 0
+                            ? 'match-avatar-${user.id}'
+                            : 'match-avatar-${user.id}-$index',
+                        child: GestureDetector(
+                          onTap: () => _openFullScreenGallery(index),
+                          child: Image.network(
+                            _galleryPhotos[index],
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                   DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -107,25 +162,75 @@ class UserDetailPage extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  if (_galleryPhotos.length > 1)
+                    Positioned(
+                      top: MediaQuery.of(context).padding.top + 18,
+                      right: 20,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 7,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.24),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.16),
+                          ),
+                        ),
+                        child: Text(
+                          '${_selectedPhotoIndex + 1}/${_galleryPhotos.length}',
+                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ),
+                    ),
                   Positioned(
                     left: 20,
                     right: 20,
                     bottom: 28,
-                    child: Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      alignment: WrapAlignment.center,
+                    child: Column(
                       children: [
-                        _DetailHeroPill(
-                          icon: Icons.place_rounded,
-                          label: locationText,
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          alignment: WrapAlignment.center,
+                          children: [
+                            _DetailHeroPill(
+                              icon: Icons.place_rounded,
+                              label: locationText,
+                            ),
+                            if (user.onlineStatus)
+                              const _DetailHeroPill(
+                                icon: Icons.circle_rounded,
+                                label: '在线',
+                                accent: AppTheme.secondary,
+                              ),
+                          ],
                         ),
-                        if (user.onlineStatus)
-                          const _DetailHeroPill(
-                            icon: Icons.circle_rounded,
-                            label: '在线',
-                            accent: AppTheme.secondary,
+                        if (_galleryPhotos.length > 1) ...[
+                          const SizedBox(height: 12),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: List.generate(_galleryPhotos.length, (index) {
+                              final active = index == _selectedPhotoIndex;
+                              return AnimatedContainer(
+                                duration: const Duration(milliseconds: 180),
+                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                width: active ? 18 : 7,
+                                height: 7,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(999),
+                                  color: active
+                                      ? Colors.white
+                                      : Colors.white.withValues(alpha: 0.42),
+                                ),
+                              );
+                            }),
                           ),
+                        ],
                       ],
                     ),
                   ),
@@ -154,12 +259,10 @@ class UserDetailPage extends ConsumerWidget {
                                     Text(
                                       user.title,
                                       textAlign: TextAlign.center,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
                                       style: Theme.of(context)
                                           .textTheme
                                           .headlineMedium
-                                          ?.copyWith(fontSize: 32, height: 1.05),
+                                          ?.copyWith(fontSize: 32, height: 1.08),
                                     ),
                                     const SizedBox(height: 8),
                                     Text(
@@ -323,25 +426,62 @@ class UserDetailPage extends ConsumerWidget {
                       ),
                     ),
                   ),
-                  if (user.photos.isNotEmpty) ...[
+                  if (_galleryPhotos.length > 1) ...[
                     const SizedBox(height: 18),
                     Text('更多照片', style: Theme.of(context).textTheme.titleLarge),
                     const SizedBox(height: 12),
                     SizedBox(
-                      height: 180,
+                      height: 92,
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
-                        itemCount: user.photos.length,
+                        itemCount: _galleryPhotos.length,
                         separatorBuilder: (_, __) => const SizedBox(width: 12),
                         itemBuilder: (context, index) {
-                          final photo = user.photos[index];
-                          return ClipRRect(
-                            borderRadius: BorderRadius.circular(24),
-                            child: Image.network(
-                              photo,
-                              width: 150,
-                              height: 180,
-                              fit: BoxFit.cover,
+                          final photo = _galleryPhotos[index];
+                          final active = index == _selectedPhotoIndex;
+                          return GestureDetector(
+                            onTap: () {
+                              _photoController.animateToPage(
+                                index,
+                                duration: const Duration(milliseconds: 260),
+                                curve: Curves.easeOutCubic,
+                              );
+                              setState(() => _selectedPhotoIndex = index);
+                            },
+                            onLongPress: () => _openFullScreenGallery(index),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              width: 78,
+                              height: 92,
+                              padding: const EdgeInsets.all(3),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(24),
+                                gradient: active
+                                    ? const LinearGradient(
+                                        colors: [
+                                          AppTheme.primary,
+                                          AppTheme.primaryDark,
+                                        ],
+                                      )
+                                    : null,
+                                color: active ? null : Colors.white,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.primary.withValues(
+                                      alpha: active ? 0.18 : 0.06,
+                                    ),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                ],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(21),
+                                child: Image.network(
+                                  photo,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
                             ),
                           );
                         },
@@ -466,6 +606,124 @@ class UserDetailPage extends ConsumerWidget {
     if (context.mounted) {
       AppFeedback.showToast('已屏蔽该用户');
     }
+  }
+
+  Future<void> _openFullScreenGallery(int initialIndex) {
+    return showGeneralDialog<void>(
+      context: context,
+      barrierLabel: 'photo-gallery',
+      barrierDismissible: true,
+      barrierColor: Colors.black.withValues(alpha: 0.92),
+      transitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (context, _, __) => _PhotoGalleryViewer(
+        photos: _galleryPhotos,
+        initialIndex: initialIndex,
+        heroUserId: widget.user.id,
+      ),
+      transitionBuilder: (context, animation, _, child) {
+        return FadeTransition(
+          opacity: CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          ),
+          child: child,
+        );
+      },
+    );
+  }
+}
+
+class _PhotoGalleryViewer extends StatefulWidget {
+  const _PhotoGalleryViewer({
+    required this.photos,
+    required this.initialIndex,
+    required this.heroUserId,
+  });
+
+  final List<String> photos;
+  final int initialIndex;
+  final int heroUserId;
+
+  @override
+  State<_PhotoGalleryViewer> createState() => _PhotoGalleryViewerState();
+}
+
+class _PhotoGalleryViewerState extends State<_PhotoGalleryViewer> {
+  late final PageController _controller;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _controller = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          PageView.builder(
+            controller: _controller,
+            itemCount: widget.photos.length,
+            onPageChanged: (index) => setState(() => _currentIndex = index),
+            itemBuilder: (context, index) {
+              return InteractiveViewer(
+                minScale: 1,
+                maxScale: 3.2,
+                child: Center(
+                  child: Hero(
+                    tag: index == 0
+                        ? 'match-avatar-${widget.heroUserId}'
+                        : 'match-avatar-${widget.heroUserId}-$index',
+                    child: Image.network(widget.photos[index], fit: BoxFit.contain),
+                  ),
+                ),
+              );
+            },
+          ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 12,
+            left: 16,
+            child: IconButton.filledTonal(
+              onPressed: () => Navigator.of(context).pop(),
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.white.withValues(alpha: 0.16),
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.close_rounded),
+            ),
+          ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 18,
+            right: 20,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                '${_currentIndex + 1}/${widget.photos.length}',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

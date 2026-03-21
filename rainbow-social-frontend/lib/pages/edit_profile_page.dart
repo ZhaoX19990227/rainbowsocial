@@ -10,6 +10,7 @@ import '../services/api_config.dart';
 import '../services/app_feedback.dart';
 import '../services/tag_options.dart';
 import '../services/zodiac_utils.dart';
+import '../theme/app_theme.dart';
 import '../usecases/upload_usecases.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/gradient_button.dart';
@@ -38,6 +39,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   List<String> _photos = const [];
   List<String> _selectedTags = const [];
   bool _uploading = false;
+  int? _hydratedUserId;
 
   @override
   void dispose() {
@@ -56,23 +58,20 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     final user = ref.read(profileControllerProvider).valueOrNull;
-    if (user != null && _nickname.text.isEmpty) {
-      _nickname.text = user.nickname;
-      _avatar.text = user.avatar;
-      _age.text = '${user.age}';
-      _heightCm.text = '${user.heightCm}';
-      _weightKg.text = '${user.weightKg}';
-      _birthday.text = user.birthday;
-      _bio.text = user.bio;
-      _tags.text = user.tags.join(', ');
-      _selectedTags = [...user.tags];
-      _photos = user.photos;
+    if (user != null) {
+      _hydrateFromUser(user);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(profileControllerProvider).valueOrNull;
+    if (profile != null && _hydratedUserId != profile.id) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() => _hydrateFromUser(profile));
+      });
+    }
     final zodiacSign = ZodiacUtils.zodiacFromBirthday(
           ZodiacUtils.tryParseBirthday(_birthday.text.trim()),
         ) ??
@@ -95,7 +94,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             children: [
               _SectionHeader(
                 title: '展示资料',
-                subtitle: '拖拽可排序',
+                subtitle: '长按下方照片可调整顺序',
                 trailing: IconButton(
                   onPressed: _uploading ? null : () => _pickAndUploadImage(isAvatar: false),
                   icon: const Icon(Icons.add_a_photo_rounded),
@@ -104,12 +103,19 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
               const SizedBox(height: 14),
               _PhotoGridCard(
                 avatarUrl: _avatar.text.trim(),
-                photos: _photos,
+                photos: _normalizePhotos(
+                  _photos,
+                  avatarUrl: _avatar.text.trim(),
+                ),
                 uploading: _uploading,
                 onAvatarTap: () => _pickAndUploadImage(isAvatar: true),
                 onAddTap: () => _pickAndUploadImage(isAvatar: false),
+                onReorderPhotos: _reorderPhotos,
                 onDeletePhoto: (photo) => setState(() {
-                  _photos = _photos.where((item) => item != photo).toList();
+                  _photos = _normalizePhotos(
+                    _photos.where((item) => item != photo).toList(),
+                    avatarUrl: _avatar.text.trim(),
+                  );
                 }),
               ),
               const SizedBox(height: 22),
@@ -396,7 +402,10 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                           email: profile.email,
                           nickname: _nickname.text.trim(),
                           avatar: _avatar.text.trim(),
-                          photos: _photos,
+                          photos: _normalizePhotos(
+                            _photos,
+                            avatarUrl: _avatar.text.trim(),
+                          ),
                           age: int.tryParse(_age.text.trim()) ?? profile.age,
                           heightCm: int.tryParse(_heightCm.text.trim()) ??
                               profile.heightCm,
@@ -493,8 +502,12 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       setState(() {
         if (isAvatar) {
           _avatar.text = uploadedUrl;
+          _photos = _normalizePhotos(_photos, avatarUrl: uploadedUrl);
         } else {
-          _photos = [..._photos, uploadedUrl];
+          _photos = _normalizePhotos(
+            [..._photos, uploadedUrl],
+            avatarUrl: _avatar.text.trim(),
+          );
         }
       });
       AppFeedback.showToast(isAvatar ? '头像上传成功' : '照片上传成功');
@@ -551,6 +564,49 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
       result.add(tag);
     }
     return result;
+  }
+
+  void _hydrateFromUser(AppUser user) {
+    _hydratedUserId = user.id;
+    _nickname.text = user.nickname;
+    _avatar.text = user.avatar;
+    _age.text = '${user.age}';
+    _heightCm.text = '${user.heightCm}';
+    _weightKg.text = '${user.weightKg}';
+    _birthday.text = user.birthday;
+    _bio.text = user.bio;
+    _tags.text = user.tags.join(', ');
+    _selectedTags = [...user.tags];
+    _photos = _normalizePhotos(user.photos, avatarUrl: user.avatar);
+  }
+
+  List<String> _normalizePhotos(List<String> photos, {required String avatarUrl}) {
+    final seen = <String>{};
+    final result = <String>[];
+    for (final photo in photos) {
+      final normalized = photo.trim();
+      if (normalized.isEmpty || normalized == avatarUrl.trim() || seen.contains(normalized)) {
+        continue;
+      }
+      seen.add(normalized);
+      result.add(normalized);
+    }
+    return result;
+  }
+
+  void _reorderPhotos(int oldIndex, int newIndex) {
+    setState(() {
+      final updated = [..._normalizePhotos(_photos, avatarUrl: _avatar.text.trim())];
+      if (oldIndex < 0 ||
+          oldIndex >= updated.length ||
+          newIndex < 0 ||
+          newIndex >= updated.length) {
+        return;
+      }
+      final item = updated.removeAt(oldIndex);
+      updated.insert(newIndex, item);
+      _photos = updated;
+    });
   }
 }
 
@@ -743,6 +799,7 @@ class _PhotoGridCard extends StatelessWidget {
     required this.uploading,
     required this.onAvatarTap,
     required this.onAddTap,
+    required this.onReorderPhotos,
     required this.onDeletePhoto,
   });
 
@@ -751,6 +808,7 @@ class _PhotoGridCard extends StatelessWidget {
   final bool uploading;
   final VoidCallback onAvatarTap;
   final VoidCallback onAddTap;
+  final void Function(int oldIndex, int newIndex) onReorderPhotos;
   final ValueChanged<String> onDeletePhoto;
 
   @override
@@ -816,6 +874,124 @@ class _PhotoGridCard extends StatelessWidget {
               );
             }),
           ),
+          if (extraPhotos.length > 1) ...[
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceHighest.withValues(alpha: 0.7),
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '拖动排序',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: AppTheme.textSecondary,
+                        ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 92,
+                    child: ReorderableListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      buildDefaultDragHandles: false,
+                      itemCount: extraPhotos.length,
+                      onReorder: (oldIndex, newIndex) {
+                        final target =
+                            oldIndex < newIndex ? newIndex - 1 : newIndex;
+                        onReorderPhotos(oldIndex, target);
+                      },
+                      proxyDecorator: (child, index, animation) {
+                        return AnimatedBuilder(
+                          animation: animation,
+                          builder: (context, _) {
+                            final lift = Tween<double>(begin: 1, end: 1.04)
+                                .animate(CurvedAnimation(
+                              parent: animation,
+                              curve: Curves.easeOutCubic,
+                            ))
+                                .value;
+                            return Transform.scale(
+                              scale: lift,
+                              child: Material(
+                                color: Colors.transparent,
+                                child: child,
+                              ),
+                            );
+                          },
+                        );
+                      },
+                      itemBuilder: (context, index) {
+                        final photo = extraPhotos[index];
+                        return Container(
+                          key: ValueKey(photo),
+                          width: 78,
+                          margin: EdgeInsets.only(
+                            right: index == extraPhotos.length - 1 ? 0 : 12,
+                          ),
+                          child: Stack(
+                            children: [
+                              Positioned.fill(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(24),
+                                  child: Image.network(photo, fit: BoxFit.cover),
+                                ),
+                              ),
+                              Positioned(
+                                left: 6,
+                                top: 6,
+                                child: Container(
+                                  width: 24,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.28),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '${index + 1}',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Positioned(
+                                right: 6,
+                                bottom: 6,
+                                child: ReorderableDragStartListener(
+                                  index: index,
+                                  child: Container(
+                                    width: 28,
+                                    height: 28,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withValues(alpha: 0.88),
+                                      borderRadius: BorderRadius.circular(999),
+                                    ),
+                                    child: const Icon(
+                                      Icons.drag_handle_rounded,
+                                      size: 18,
+                                      color: AppTheme.primary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -144,8 +144,9 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
                       child: _MbtiEntryCard(
@@ -162,7 +163,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
                 Expanded(
                   child: state.when(
                     data: (users) {
@@ -230,7 +231,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     const SizedBox(width: 14),
                     _ActionCircle(
                       icon: Icons.favorite_rounded,
-                      color: AppTheme.primary,
+                      color: const Color(0xFFB874F6),
                       size: 60,
                       filled: true,
                       onTap: () => _deckKey.currentState?.triggerSwipe(
@@ -319,7 +320,7 @@ class _MbtiEntryCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(32),
       child: Ink(
         width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),
           gradient: const LinearGradient(
@@ -345,8 +346,8 @@ class _MbtiEntryCard extends StatelessWidget {
               top: -20,
               right: -14,
               child: Container(
-                width: 96,
-                height: 96,
+                width: 78,
+                height: 78,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: const RadialGradient(
@@ -359,8 +360,8 @@ class _MbtiEntryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 42,
-                  height: 42,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: const LinearGradient(
@@ -372,16 +373,16 @@ class _MbtiEntryCard extends StatelessWidget {
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
                 Text(
                   '发现你的隐藏人格',
                   maxLines: 2,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: AppTheme.textPrimary,
-                        height: 1.18,
+                        height: 1.2,
                       ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
                   '完善人格档案',
                   maxLines: 1,
@@ -419,7 +420,7 @@ class _HoroscopeEntryCard extends StatelessWidget {
       borderRadius: BorderRadius.circular(32),
       child: Ink(
         width: double.infinity,
-        padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),
           gradient: const LinearGradient(
@@ -445,8 +446,8 @@ class _HoroscopeEntryCard extends StatelessWidget {
               top: -18,
               left: -12,
               child: Container(
-                width: 96,
-                height: 96,
+                width: 78,
+                height: 78,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: const RadialGradient(
@@ -459,8 +460,8 @@ class _HoroscopeEntryCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 42,
-                  height: 42,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     gradient: const LinearGradient(
@@ -472,16 +473,16 @@ class _HoroscopeEntryCard extends StatelessWidget {
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 10),
                 Text(
                   '查看今日运势',
                   maxLines: 2,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: AppTheme.textPrimary,
-                        height: 1.18,
+                        height: 1.2,
                       ),
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
                   '解锁星座档案',
                   maxLines: 1,
@@ -641,8 +642,8 @@ class _SwipeDeckState extends State<_SwipeDeck>
   }) {
     final isTop = index == 0;
     final depth = index.toDouble();
-    final scale = isTop ? 1.0 : 1.0 - (depth * 0.05);
-    final topOffset = isTop ? 0.0 : 18 + (depth * 8);
+    final scale = isTop ? 1.0 : 1.0 - (depth * 0.035);
+    final topOffset = isTop ? 0.0 : 10 + (depth * 6);
 
     Widget child = Positioned.fill(
       top: topOffset,
@@ -650,7 +651,7 @@ class _SwipeDeckState extends State<_SwipeDeck>
         scale: scale,
         alignment: Alignment.topCenter,
         child: Opacity(
-          opacity: isTop ? 1 : 0.72 - (depth * 0.12),
+          opacity: isTop ? 1 : 0.5 - (depth * 0.08),
           child: UserCard(
             user: user,
             onTap: () => widget.onCardTap(user),
@@ -845,7 +846,10 @@ class _ActionCircle extends StatelessWidget {
             shape: BoxShape.circle,
             gradient: filled
                 ? LinearGradient(
-                    colors: [color, color.withValues(alpha: 0.72)],
+                    colors: [
+                      color.withValues(alpha: 0.94),
+                      const Color(0xFFE7C5FF),
+                    ],
                   )
                 : null,
             color: filled
@@ -863,7 +867,7 @@ class _ActionCircle extends StatelessWidget {
           ),
           child: Icon(
             icon,
-            color: filled ? const Color(0xFF3C1238) : color,
+            color: filled ? const Color(0xFF7F2ED1) : color,
           ),
         ),
       ),

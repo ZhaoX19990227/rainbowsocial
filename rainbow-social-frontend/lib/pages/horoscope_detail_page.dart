@@ -89,6 +89,7 @@ class _HoroscopeHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final zodiacLabel = _displayZodiac(data.zodiacSign);
+    final dateLabel = _formatDate(data.date);
     return GlassCard(
       borderRadius: BorderRadius.circular(36),
       padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
@@ -132,7 +133,7 @@ class _HoroscopeHero extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 10),
-          if (data.date.trim().isNotEmpty)
+          if (dateLabel.isNotEmpty)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
@@ -140,7 +141,7 @@ class _HoroscopeHero extends StatelessWidget {
                 color: AppTheme.surfaceHighest,
               ),
               child: Text(
-                data.date,
+                dateLabel,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: AppTheme.primary,
                     ),
@@ -246,6 +247,10 @@ class _HoroscopeHero extends StatelessWidget {
       default:
         return sign;
     }
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year}年${date.month.toString().padLeft(2, '0')}月${date.day.toString().padLeft(2, '0')}日';
   }
 }
 

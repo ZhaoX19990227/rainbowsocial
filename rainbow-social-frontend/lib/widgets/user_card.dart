@@ -51,8 +51,8 @@ class UserCard extends StatelessWidget {
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      Colors.black.withValues(alpha: 0.18),
-                      Colors.black.withValues(alpha: 0.84),
+                      Colors.black.withValues(alpha: 0.12),
+                      Colors.black.withValues(alpha: 0.64),
                     ],
                   ),
                 ),
@@ -95,9 +95,9 @@ class UserCard extends StatelessWidget {
                 right: 16,
                 bottom: 16,
                 child: Container(
-                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 16),
+                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.74),
+                    color: Colors.white.withValues(alpha: 0.88),
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
@@ -120,6 +120,8 @@ class UserCard extends StatelessWidget {
                               children: [
                                 Text(
                                   user.title,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                   style: Theme.of(context)
                                       .textTheme
                                       .headlineMedium
@@ -185,16 +187,17 @@ class UserCard extends StatelessWidget {
                         ),
                       ],
                       const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: user.tags.take(3).map((tag) {
-                          return TagChip(
-                            label: tag,
-                            maxWidth: 92,
-                          );
-                        }).toList(),
-                      ),
+                      if (user.tags.isNotEmpty)
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: user.tags.take(3).map((tag) {
+                            return TagChip(
+                              label: tag,
+                              maxWidth: 92,
+                            );
+                          }).toList(),
+                        ),
                     ],
                   ),
                 ),

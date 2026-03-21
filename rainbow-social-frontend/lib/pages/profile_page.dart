@@ -20,7 +20,6 @@ import '../widgets/app_skeleton.dart';
 import '../widgets/avatar_widget.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/mbti_badge.dart';
-import '../widgets/tag_chip.dart';
 import '../widgets/zodiac_badge.dart';
 
 class ProfilePage extends ConsumerWidget {
@@ -190,27 +189,6 @@ class _ProfileHero extends StatelessWidget {
                       colors: const [Color(0x44FFFFFF), Color(0x00FFFFFF)],
                     ),
                   ),
-                  Positioned(
-                    left: 18,
-                    top: 16,
-                    child: const _HeroTopPill(
-                      icon: Icons.auto_awesome_rounded,
-                      label: '熊猴主场',
-                    ),
-                  ),
-                  Positioned(
-                    right: 18,
-                    top: 16,
-                    child: _HeroTopPill(
-                      icon: user.onlineStatus
-                          ? Icons.circle_rounded
-                          : Icons.schedule_rounded,
-                      label: user.onlineStatus ? '在线' : '稍后回来',
-                      accent: user.onlineStatus
-                          ? AppTheme.secondary
-                          : const Color(0xFFFFBE8D),
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -243,9 +221,9 @@ class _ProfileHero extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                '${user.nickname} Luminous',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                user.nickname,
+                maxLines: 2,
+                textAlign: TextAlign.center,
                 style: Theme.of(context)
                     .textTheme
                     .headlineMedium
@@ -267,14 +245,15 @@ class _ProfileHero extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _HeroMetaPill(
-                    icon: Icons.circle_rounded,
-                    label: user.onlineStatus ? '在线' : '离线',
-                    accent: user.onlineStatus
-                        ? AppTheme.secondary
-                        : const Color(0xFFFFBE8D),
-                  ),
                   _HeroMetaPill(icon: Icons.cake_rounded, label: '${user.age} 岁'),
+                  _HeroMetaPill(
+                    icon: Icons.height_rounded,
+                    label: '${user.heightCm}cm',
+                  ),
+                  _HeroMetaPill(
+                    icon: Icons.monitor_weight_rounded,
+                    label: '${user.weightKg}kg',
+                  ),
                   _HeroMetaPill(icon: Icons.place_rounded, label: locationText),
                 ],
               ),
@@ -283,22 +262,6 @@ class _ProfileHero extends StatelessWidget {
         ),
         const SizedBox(height: 18),
         _RelationshipQuickStats(summary: summary),
-        const SizedBox(height: 16),
-        if (user.tags.isNotEmpty)
-          Wrap(
-            spacing: 10,
-            runSpacing: 10,
-            children: user.tags
-                .take(5)
-                .map(
-                  (tag) => TagChip(
-                    label: tag,
-                    icon: Icons.bolt_rounded,
-                    maxWidth: 168,
-                  ),
-                )
-                .toList(),
-          ),
         const SizedBox(height: 16),
         _MbtiProfileCard(user: user),
         const SizedBox(height: 14),
@@ -583,16 +546,22 @@ class _RelationshipQuickStats extends StatelessWidget {
         label: '喜欢我的',
         count: summary?.received.length ?? 0,
         type: LikeOverviewType.received,
+        icon: Icons.favorite_border_rounded,
+        gradient: const [Color(0xFFFFC2DB), Color(0xFFFFE3EF)],
       ),
       (
         label: '我喜欢的',
         count: summary?.sent.length ?? 0,
         type: LikeOverviewType.sent,
+        icon: Icons.outgoing_mail_rounded,
+        gradient: const [Color(0xFFD9D6FF), Color(0xFFF1EEFF)],
       ),
       (
         label: '互相喜欢',
         count: summary?.mutual.length ?? 0,
         type: LikeOverviewType.mutual,
+        icon: Icons.favorite_rounded,
+        gradient: const [Color(0xFFE6D2FF), Color(0xFFFFD9ED)],
       ),
     ];
 
@@ -607,6 +576,8 @@ class _RelationshipQuickStats extends StatelessWidget {
                 child: _QuickStatButton(
                   label: item.label,
                   count: item.count,
+                  icon: item.icon,
+                  gradient: item.gradient,
                   onTap: summary == null
                       ? null
                       : () => Navigator.of(context).pushNamed(
@@ -629,11 +600,15 @@ class _QuickStatButton extends StatelessWidget {
   const _QuickStatButton({
     required this.label,
     required this.count,
+    required this.icon,
+    required this.gradient,
     required this.onTap,
   });
 
   final String label;
   final int count;
+  final IconData icon;
+  final List<Color> gradient;
   final VoidCallback? onTap;
 
   @override
@@ -642,11 +617,11 @@ class _QuickStatButton extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(18),
         child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(20),
             color: Colors.white.withValues(alpha: 0.9),
             border: Border.all(color: AppTheme.ghostBorder),
             boxShadow: [
@@ -660,14 +635,28 @@ class _QuickStatButton extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(colors: gradient),
+                ),
+                child: Icon(
+                  icon,
+                  size: 18,
+                  color: AppTheme.primaryDark,
+                ),
+              ),
+              const SizedBox(height: 8),
               Text(
                 '$count',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontSize: 24,
+                      fontSize: 21,
                       color: AppTheme.primary,
                     ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 4),
               Text(
                 label,
                 textAlign: TextAlign.center,

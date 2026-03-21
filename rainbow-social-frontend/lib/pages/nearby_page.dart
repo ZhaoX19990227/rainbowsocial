@@ -64,45 +64,7 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
                 ),
               ],
             ),
-            const SizedBox(height: 14),
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceHighest.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: GestureDetector(
-                      onTap: widget.onSwitchToRecommendations,
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Center(
-                          child: Text(
-                            '推荐',
-                            style: TextStyle(color: AppTheme.textSecondary),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(999),
-                        gradient: const LinearGradient(
-                          colors: [Color(0x22EA87FF), Color(0x22FF6E85)],
-                        ),
-                      ),
-                      child: const Center(child: Text('附近')),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
             TextField(
               controller: _searchController,
               onChanged: (value) => setState(() => _keyword = value.trim()),
@@ -208,6 +170,7 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
     final result = await showModalBottomSheet<NearbyFilter>(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
         return StatefulBuilder(
