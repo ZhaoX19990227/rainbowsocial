@@ -516,7 +516,7 @@ class _PickerHeader extends StatelessWidget {
               ),
               const SizedBox(height: 3),
               Text(
-                '按情绪升温，不按功能分类。',
+                'Aru 与 Noel 的秘密情绪菜单。',
                 style: Theme.of(context).textTheme.labelMedium,
               ),
             ],
@@ -542,13 +542,27 @@ class _MoodSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final groupTint = switch (group) {
+      FlirtyMoodGroup.tease => const Color(0xFFCF866A),
+      FlirtyMoodGroup.closer => const Color(0xFFB8897A),
+      FlirtyMoodGroup.cute => const Color(0xFF8EA0E6),
+      FlirtyMoodGroup.stir => const Color(0xFF6F8FB7),
+    };
+
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(26),
-        color: Colors.white.withValues(alpha: 0.035),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            groupTint.withValues(alpha: 0.09),
+            Colors.white.withValues(alpha: 0.03),
+          ],
+        ),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.06),
+          color: groupTint.withValues(alpha: 0.16),
         ),
       ),
       child: Column(
@@ -563,15 +577,40 @@ class _MoodSection extends StatelessWidget {
                   group.title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: Colors.white,
+                        letterSpacing: -0.1,
                       ),
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  group.subtitle,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: AppTheme.textSecondary.withValues(alpha: 0.9),
-                        letterSpacing: 0.15,
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        group.subtitle,
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: AppTheme.textSecondary.withValues(alpha: 0.9),
+                              letterSpacing: 0.15,
+                            ),
                       ),
+                    ),
+                    const SizedBox(width: 10),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(999),
+                        color: groupTint.withValues(alpha: 0.14),
+                      ),
+                      child: Text(
+                        '${actions.length} 款',
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.76),
+                              letterSpacing: 0.12,
+                            ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -636,7 +675,7 @@ class _RelationshipActionCell extends StatelessWidget {
             color: const Color(0xE511141C),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(13),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -656,23 +695,104 @@ class _RelationshipActionCell extends StatelessWidget {
                       ),
                     ),
                     const Spacer(),
-                    Text(
-                      action.moodTag,
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.7),
-                            letterSpacing: 0.2,
-                          ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(999),
+                        color: Colors.white.withValues(alpha: 0.05),
+                      ),
+                      child: Text(
+                        action.moodTag,
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.74),
+                              letterSpacing: 0.18,
+                            ),
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 10),
                 Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: _CompactSceneFrame(
-                      action: action,
-                      progress: progress,
-                    ),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: _CompactSceneFrame(
+                            action: action,
+                            progress: progress,
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        left: 10,
+                        right: 10,
+                        bottom: 10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(16),
+                            color: Colors.black.withValues(alpha: 0.34),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.06),
+                            ),
+                          ),
+                          child: Text(
+                            action.sceneMoment,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.8),
+                                  letterSpacing: 0.05,
+                                ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        right: 10,
+                        top: 10,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(999),
+                            color: Colors.black.withValues(alpha: 0.3),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.play_circle_fill_rounded,
+                                size: 12,
+                                color: Colors.white70,
+                              ),
+                              const SizedBox(width: 5),
+                              Text(
+                                '点开',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelMedium
+                                    ?.copyWith(
+                                      color: Colors.white.withValues(alpha: 0.76),
+                                      letterSpacing: 0.12,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -683,15 +803,37 @@ class _RelationshipActionCell extends StatelessWidget {
                         fontSize: 15,
                       ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 3),
                 Text(
-                  action.hint,
-                  maxLines: 2,
+                  action.stageTitle,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: AppTheme.textSecondary.withValues(alpha: 0.9),
-                        letterSpacing: 0.15,
+                        color: Colors.white.withValues(alpha: 0.62),
+                        letterSpacing: 0.18,
                       ),
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        action.hint,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: AppTheme.textSecondary.withValues(alpha: 0.9),
+                              letterSpacing: 0.15,
+                            ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(
+                      Icons.arrow_outward_rounded,
+                      size: 14,
+                      color: Colors.white.withValues(alpha: 0.44),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -926,6 +1068,29 @@ class _CinematicStage extends StatelessWidget {
               ),
             ),
           ),
+          Positioned(
+            left: 18,
+            top: 18,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                color: Colors.black.withValues(alpha: 0.22),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.06),
+                ),
+              ),
+              child: const Text(
+                'Aru x Noel',
+                style: TextStyle(
+                  color: Colors.white70,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ),
+          ),
           _FlirtyDuoScene(
             action: action,
             progress: progress,
@@ -1084,9 +1249,10 @@ class _FlirtyDuoScene extends StatelessWidget {
         final windUp = _segment(t, 0.0, 0.16, Curves.easeOut);
         final jab = _segment(t, 0.16, 0.34, Curves.easeIn);
         final bounce = _dampedWave(t, start: 0.34, speed: 18, decay: 5.2);
+        final hairFlick = _segment(t, 0.34, 0.5, Curves.easeOut);
         return _SceneMotion(
-          left: Offset(56 + windUp * 10 + jab * 36, 120 + drift),
-          right: Offset(212 - jab * 4, 92 - bounce * 18 + breathe),
+          left: Offset(52 + windUp * 12 + jab * 38, 120 + drift),
+          right: Offset(212 - jab * 2, 90 - bounce * 24 + breathe),
           leftPose: _ActorPose(
             scale: 1.02,
             rotation: -0.08 + jab * 0.08,
@@ -1106,25 +1272,31 @@ class _FlirtyDuoScene extends StatelessWidget {
             expression: bounce.abs() > 0.14
                 ? _ChibiExpression.surprised
                 : _ChibiExpression.flustered,
-            headTilt: 0.12 + bounce * 0.08,
-            bodyLean: -0.14 - bounce * 0.16,
+            headTilt: 0.12 + bounce * 0.12,
+            bodyLean: -0.12 - bounce * 0.24,
             frontArmReach: 0.12,
-            frontArmLift: 0.54 + bounce.abs() * 0.12,
+            frontArmLift: 0.54 + bounce.abs() * 0.16,
             backArmLift: 0.26,
-            blush: 0.34,
+            blush: 0.38,
           ),
           accents: [
             _SceneAccent(
               child: const _ImpactBurst(),
-              offset: Offset(190 + jab * 18, 158 - bounce * 10),
-              opacity: 0.2 + jab * 0.6,
-              scale: 0.72 + jab * 0.4,
+              offset: Offset(194 + jab * 18, 160 - bounce * 12),
+              opacity: 0.16 + jab * 0.68,
+              scale: 0.66 + jab * 0.46,
             ),
             _SceneAccent(
               child: const _BounceRing(),
-              offset: Offset(214, 208 - bounce * 14),
-              opacity: 0.16 + bounce.abs() * 0.28,
-              scale: 0.9 + bounce.abs() * 0.26,
+              offset: Offset(214, 208 - bounce * 18),
+              opacity: 0.14 + bounce.abs() * 0.32,
+              scale: 0.88 + bounce.abs() * 0.32,
+            ),
+            _SceneAccent(
+              child: const _HairFlickAccent(),
+              offset: Offset(234, 98 - bounce * 10),
+              opacity: 0.08 + hairFlick * 0.3,
+              scale: 0.92 + hairFlick * 0.18,
             ),
           ],
         );
@@ -1132,9 +1304,10 @@ class _FlirtyDuoScene extends StatelessWidget {
         final reach = _segment(t, 0.0, 0.22, Curves.easeOut);
         final pull = _segment(t, 0.22, 0.52, Curves.easeInOut);
         final settle = _segment(t, 0.52, 0.84, Curves.easeOut);
+        final shyDip = _segment(t, 0.12, 0.34, Curves.easeInOut);
         return _SceneMotion(
           left: Offset(74 + pull * 14, 118 + drift * 0.5),
-          right: Offset(214 - pull * 10, 114 - settle * 10),
+          right: Offset(214 - pull * 12, 114 - settle * 12),
           leftPose: _ActorPose(
             scale: 1.0,
             rotation: -0.03,
@@ -1152,10 +1325,10 @@ class _FlirtyDuoScene extends StatelessWidget {
             expression: pull > 0.18
                 ? _ChibiExpression.shy
                 : _ChibiExpression.softSmile,
-            headTilt: 0.16 + pull * 0.06,
-            bodyLean: -0.04 - pull * 0.12,
+            headTilt: 0.18 + shyDip * 0.08,
+            bodyLean: -0.04 - pull * 0.14,
             frontArmReach: 0.24,
-            frontArmLift: 0.22,
+            frontArmLift: 0.22 + shyDip * 0.06,
             backArmLift: 0.16 + settle * 0.14,
             blush: 0.42,
           ),
@@ -1164,6 +1337,12 @@ class _FlirtyDuoScene extends StatelessWidget {
               child: const _SleeveRibbon(),
               offset: Offset(164 + pull * 8, 156),
               opacity: 0.18 + pull * 0.56,
+              scale: 1.0,
+            ),
+            _SceneAccent(
+              child: const _ClothTensionAccent(),
+              offset: Offset(178 + pull * 5, 150),
+              opacity: 0.1 + pull * 0.34,
               scale: 1.0,
             ),
             _SceneAccent(
@@ -1219,6 +1398,7 @@ class _FlirtyDuoScene extends StatelessWidget {
         final approach2 = _segment(t, 0.28, 0.44, Curves.easeOut);
         final lock = _segment(t, 0.44, 0.62, Curves.easeInOut);
         final sway = math.sin(math.max(0.0, t - 0.62) * math.pi * 4) * 0.5;
+        final pause = _segment(t, 0.22, 0.3, Curves.linear);
         return _SceneMotion(
           left: Offset(88 + approach1 * 12 + approach2 * 8, 118 + drift * 0.6),
           right: Offset(196 - approach1 * 10 - approach2 * 12, 118 - drift * 0.2),
@@ -1228,7 +1408,7 @@ class _FlirtyDuoScene extends StatelessWidget {
             expression: lock > 0.1
                 ? _ChibiExpression.naughtySmile
                 : _ChibiExpression.mischief,
-            headTilt: -0.12,
+            headTilt: -0.12 + pause * 0.03,
             bodyLean: 0.08 + lock * 0.08,
             frontArmReach: 0.46 + approach1 * 0.16 + approach2 * 0.18,
             frontArmLift: 0.18,
@@ -1241,7 +1421,7 @@ class _FlirtyDuoScene extends StatelessWidget {
             expression: lock > 0.2
                 ? _ChibiExpression.shy
                 : _ChibiExpression.flustered,
-            headTilt: 0.12,
+            headTilt: 0.14 + pause * 0.05,
             bodyLean: -0.02 + lock * 0.02,
             frontArmReach: 0.38 + approach2 * 0.18,
             frontArmLift: 0.16,
@@ -1256,6 +1436,12 @@ class _FlirtyDuoScene extends StatelessWidget {
               scale: 1.0,
             ),
             _SceneAccent(
+              child: const _EyeContactAccent(),
+              offset: const Offset(142, 104),
+              opacity: 0.08 + pause * 0.2 + lock * 0.12,
+              scale: 1.0,
+            ),
+            _SceneAccent(
               child: const _HeartDustCluster(),
               offset: const Offset(164, 116),
               opacity: 0.08 + lock * 0.34,
@@ -1266,6 +1452,7 @@ class _FlirtyDuoScene extends StatelessWidget {
       case 'lean_closer':
         final push = _segment(t, 0.06, 0.46, Curves.easeOutCubic);
         final hover = _segment(t, 0.46, 0.76, Curves.linear);
+        final eyeLock = _segment(t, 0.3, 0.72, Curves.easeInOut);
         return _SceneMotion(
           left: Offset(96 + push * 22, 110 + drift),
           right: Offset(210 - push * 18, 114 - drift * 0.4),
@@ -1275,7 +1462,7 @@ class _FlirtyDuoScene extends StatelessWidget {
             expression: hover > 0.1
                 ? _ChibiExpression.naughtySmile
                 : _ChibiExpression.mischief,
-            headTilt: -0.08,
+            headTilt: -0.08 - eyeLock * 0.03,
             bodyLean: 0.12 + push * 0.18,
             frontArmReach: 0.3 + push * 0.12,
             frontArmLift: 0.14,
@@ -1288,7 +1475,7 @@ class _FlirtyDuoScene extends StatelessWidget {
             expression: hover > 0.16
                 ? _ChibiExpression.flustered
                 : _ChibiExpression.shy,
-            headTilt: 0.12,
+            headTilt: 0.12 + eyeLock * 0.02,
             bodyLean: -0.08 - push * 0.08,
             frontArmReach: 0.18,
             frontArmLift: 0.22,
@@ -1301,6 +1488,12 @@ class _FlirtyDuoScene extends StatelessWidget {
               offset: const Offset(142, 84),
               opacity: 0.12 + push * 0.36,
               scale: 0.94 + push * 0.22,
+            ),
+            _SceneAccent(
+              child: const _EyeContactAccent(),
+              offset: const Offset(148, 108),
+              opacity: 0.06 + eyeLock * 0.18,
+              scale: 0.94 + eyeLock * 0.08,
             ),
           ],
         );
@@ -2336,6 +2529,45 @@ class _HeartDustCluster extends StatelessWidget {
   }
 }
 
+class _ClothTensionAccent extends StatelessWidget {
+  const _ClothTensionAccent();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: const Size(34, 14),
+      painter: _TensionPainter(color: const Color(0xFFF0D3AD)),
+    );
+  }
+}
+
+class _EyeContactAccent extends StatelessWidget {
+  const _EyeContactAccent();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 56,
+      height: 12,
+      child: CustomPaint(
+        painter: _EyeLinePainter(color: const Color(0x88FFFFFF)),
+      ),
+    );
+  }
+}
+
+class _HairFlickAccent extends StatelessWidget {
+  const _HairFlickAccent();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: const Size(22, 18),
+      painter: _HairFlickPainter(color: const Color(0x99FFD5B2)),
+    );
+  }
+}
+
 class _BurstPainter extends CustomPainter {
   const _BurstPainter({
     required this.color,
@@ -2427,6 +2659,90 @@ class _BridgePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _BridgePainter oldDelegate) => false;
+}
+
+class _TensionPainter extends CustomPainter {
+  const _TensionPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.7
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    for (var i = 0; i < 3; i++) {
+      final y = 2.0 + i * 4.0;
+      canvas.drawLine(
+        Offset(0, y),
+        Offset(size.width - i * 4.0, y + 1.5),
+        paint..color = color.withValues(alpha: 0.56 - i * 0.12),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _TensionPainter oldDelegate) => false;
+}
+
+class _EyeLinePainter extends CustomPainter {
+  const _EyeLinePainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          color.withValues(alpha: 0),
+          color,
+          color.withValues(alpha: 0),
+        ],
+      ).createShader(Offset.zero & size)
+      ..strokeWidth = 1.4
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      Offset(0, size.height / 2),
+      Offset(size.width, size.height / 2),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _EyeLinePainter oldDelegate) => false;
+}
+
+class _HairFlickPainter extends CustomPainter {
+  const _HairFlickPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..shader = LinearGradient(
+        colors: [color.withValues(alpha: 0), color],
+      ).createShader(Offset.zero & size)
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    final path = Path()
+      ..moveTo(0, size.height)
+      ..quadraticBezierTo(
+        size.width * 0.42,
+        size.height * 0.1,
+        size.width,
+        0,
+      );
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _HairFlickPainter oldDelegate) => false;
 }
 
 class _BeamPainter extends CustomPainter {
