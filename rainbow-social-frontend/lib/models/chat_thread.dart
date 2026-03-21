@@ -34,21 +34,31 @@ class ChatThread {
       lastMessage: ChatMessageModel(
         id: 0,
         clientMessageId: '${json['client_message_id'] ?? ''}',
-        fromUser: ((json['peer_user'] as Map<String, dynamic>)['id'] as num?)
-                ?.toInt() ??
-            0,
-        toUser: 0,
+        fromUser: ((json['last_from_user'] ?? 0) as num).toInt(),
+        toUser: ((json['last_to_user'] ?? 0) as num).toInt(),
         content: '${json['last_message'] ?? ''}'.isEmpty
             ? '已匹配，打个招呼吧'
             : ('${json['last_type'] ?? 'text'}' == 'audio'
                 ? '语音消息'
                 : '${json['last_message'] ?? ''}'),
         type: '${json['last_type'] ?? 'text'}',
+        deliveryStatus: _deliveryStatusFromJson('${json['delivery_status'] ?? ''}'),
         timestamp: DateTime.tryParse('${json['last_message_at'] ?? ''}') ??
             DateTime.now(),
       ),
       unreadCount: ((json['unread_count'] ?? 0) as num).toInt(),
       isPinned: json['is_pinned'] == true || json['is_pinned'] == 1,
     );
+  }
+
+  static ChatDeliveryStatus _deliveryStatusFromJson(String value) {
+    switch (value) {
+      case 'read':
+        return ChatDeliveryStatus.read;
+      case 'delivered':
+        return ChatDeliveryStatus.delivered;
+      default:
+        return ChatDeliveryStatus.none;
+    }
   }
 }

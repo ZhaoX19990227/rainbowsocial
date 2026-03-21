@@ -44,6 +44,17 @@ func (r *ChatRepository) ListConversationSummaries(userID int64) ([]model.Conver
 				ELSE msg.content
 			END, '') AS last_message,
 			COALESCE(msg.type, 'text') AS last_type,
+			COALESCE(msg.from_user_id, 0) AS last_from_user,
+			COALESCE(msg.to_user_id, 0) AS last_to_user,
+			CASE
+				WHEN msg.from_user_id = ? AND unixepoch(msg.timestamp) <= unixepoch(COALESCE((
+					SELECT state.last_read_at
+					FROM conversation_states state
+					WHERE state.user_id = u.id AND state.peer_user_id = ?
+				), '1970-01-01T00:00:00Z')) THEN 'read'
+				WHEN msg.from_user_id = ? THEN 'delivered'
+				ELSE ''
+			END AS delivery_status,
 			COALESCE(msg.timestamp, m.created_at) AS last_message_at,
 			m.created_at AS matched_at,
 			COALESCE(unread.unread_count, 0) AS unread_count,
@@ -76,7 +87,7 @@ func (r *ChatRepository) ListConversationSummaries(userID int64) ([]model.Conver
 		) unread ON unread.peer_user_id = u.id
 		WHERE m.user1_id = ? OR m.user2_id = ?
 		ORDER BY COALESCE(cs.is_pinned, 0) DESC, unixepoch(COALESCE(msg.timestamp, m.created_at)) DESC, unixepoch(m.created_at) DESC
-	`, userID, userID, userID, userID, userID, userID, userID, userID)
+	`, userID, userID, userID, userID, userID, userID, userID, userID, userID, userID, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -106,6 +117,9 @@ func (r *ChatRepository) ListConversationSummaries(userID int64) ([]model.Conver
 			&item.PeerUser.LastActiveAt,
 			&item.LastMessage,
 			&item.LastType,
+			&item.LastFromUser,
+			&item.LastToUser,
+			&item.DeliveryStatus,
 			&lastMessageAt,
 			&matchedAt,
 			&unreadCount,

@@ -2,6 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../controllers/auth_controller.dart';
+import '../controllers/chat_controller.dart';
+import '../controllers/home_controller.dart';
+import '../controllers/match_controller.dart';
+import '../controllers/nearby_controller.dart';
+import '../controllers/profile_controller.dart';
 import '../routes/app_router.dart';
 import '../services/app_feedback.dart';
 import '../widgets/glass_card.dart';
@@ -37,6 +42,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       next.whenOrNull(
         data: (session) {
           if (session != null) {
+            _refreshUserScopedState();
             Navigator.of(context).pushReplacementNamed(AppRouter.main);
           }
         },
@@ -220,6 +226,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     }
 
     await ref.read(authControllerProvider.notifier).login(account, password);
+  }
+
+  void _refreshUserScopedState() {
+    ref.invalidate(profileControllerProvider);
+    ref.invalidate(matchesControllerProvider);
+    ref.invalidate(matchSummaryControllerProvider);
+    ref.invalidate(homeControllerProvider);
+    ref.invalidate(nearbyControllerProvider);
+    ref.invalidate(chatThreadsControllerProvider);
   }
 }
 

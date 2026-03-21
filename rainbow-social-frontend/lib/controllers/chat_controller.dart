@@ -31,10 +31,13 @@ final chatControllerProvider = StateNotifierProvider.autoDispose
 class ChatThreadsController extends StateNotifier<ChatListState> {
   ChatThreadsController(this._ref)
       : super(const ChatListState(isLoading: true)) {
+    _connectSocket();
     loadThreads();
   }
 
   final Ref _ref;
+  WebSocketChannel? _channel;
+  StreamSubscription? _subscription;
 
   Future<void> loadThreads() async {
     final session = _ref.read(authControllerProvider).valueOrNull;
@@ -54,6 +57,76 @@ class ChatThreadsController extends StateNotifier<ChatListState> {
         errorMessage: '会话列表加载失败：$error',
       );
     }
+  }
+
+  void _connectSocket() {
+    final session = _ref.read(authControllerProvider).valueOrNull;
+    if (session == null) return;
+
+    try {
+      _channel = _ref.read(chatServiceProvider).connect(
+            wsBaseUrl: ApiConfig.wsBaseUrl,
+            userId: session.user.id,
+            token: session.token,
+          );
+      _subscription = _channel!.stream.listen(
+        _handleSocketEvent,
+        onDone: _handleSocketDone,
+        onError: (_) => _handleSocketDone(),
+      );
+    } catch (_) {
+      // Keep polling/manual refresh behavior when websocket is unavailable.
+    }
+  }
+
+  void _handleSocketEvent(dynamic event) {
+    final payload = jsonDecode(event as String) as Map<String, dynamic>;
+    final eventName = '${payload['event'] ?? ''}';
+    final data = payload['data'];
+    if (data is! Map<String, dynamic>) return;
+
+    switch (eventName) {
+      case 'message':
+        _handleThreadMessage(ChatMessageModel.fromJson(data));
+        break;
+      case 'conversation_read':
+        final readAt = DateTime.tryParse('${data['read_at'] ?? ''}');
+        if (readAt == null) return;
+        markPeerMessagesRead(
+          peerId: ((data['user_id'] ?? 0) as num).toInt(),
+          readAt: readAt,
+        );
+        break;
+    }
+  }
+
+  void _handleThreadMessage(ChatMessageModel message) {
+    final session = _ref.read(authControllerProvider).valueOrNull;
+    if (session == null) return;
+    final currentUserId = session.user.id;
+    final peerId = message.fromUser == currentUserId ? message.toUser : message.fromUser;
+    if (peerId <= 0) return;
+
+    final index = state.threads.indexWhere((item) => item.peer.id == peerId);
+    if (index < 0) {
+      loadThreads();
+      return;
+    }
+    final existing = state.threads[index];
+
+    final isIncoming = message.toUser == currentUserId;
+    upsertThreadPreview(
+      existing.peer,
+      message,
+      resetUnread: !isIncoming,
+      incrementUnread: isIncoming,
+    );
+  }
+
+  void _handleSocketDone() {
+    _subscription?.cancel();
+    _subscription = null;
+    _channel = null;
   }
 
   Future<void> togglePinned(ChatThread thread) async {
@@ -131,13 +204,15 @@ class ChatThreadsController extends StateNotifier<ChatListState> {
     required int peerId,
     required DateTime readAt,
   }) {
+    final currentUserId =
+        _ref.read(authControllerProvider).valueOrNull?.user.id ?? -1;
     final updated = state.threads
         .map((item) {
           if (item.peer.id != peerId) {
             return item;
           }
           final lastMessage = item.lastMessage;
-          if (lastMessage.fromUser != 0 &&
+          if (lastMessage.fromUser == currentUserId &&
               lastMessage.toUser == peerId &&
               !lastMessage.timestamp.isAfter(readAt)) {
             return item.copyWith(
@@ -161,6 +236,13 @@ class ChatThreadsController extends StateNotifier<ChatListState> {
       return right.lastMessage.timestamp.compareTo(left.lastMessage.timestamp);
     });
     return sorted;
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    _channel?.sink.close();
+    super.dispose();
   }
 }
 

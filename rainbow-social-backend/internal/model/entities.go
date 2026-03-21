@@ -114,13 +114,16 @@ type ConversationReadEvent struct {
 }
 
 type ConversationSummary struct {
-	PeerUser      User      `json:"peer_user"`
-	LastMessage   string    `json:"last_message"`
-	LastMessageAt time.Time `json:"last_message_at"`
-	LastType      string    `json:"last_type"`
-	UnreadCount   int       `json:"unread_count"`
-	IsPinned      bool      `json:"is_pinned"`
-	MatchedAt     time.Time `json:"matched_at,omitempty"`
+	PeerUser       User      `json:"peer_user"`
+	LastMessage    string    `json:"last_message"`
+	LastMessageAt  time.Time `json:"last_message_at"`
+	LastType       string    `json:"last_type"`
+	LastFromUser   int64     `json:"last_from_user"`
+	LastToUser     int64     `json:"last_to_user"`
+	DeliveryStatus string    `json:"delivery_status,omitempty"`
+	UnreadCount    int       `json:"unread_count"`
+	IsPinned       bool      `json:"is_pinned"`
+	MatchedAt      time.Time `json:"matched_at,omitempty"`
 }
 
 type DeviceToken struct {

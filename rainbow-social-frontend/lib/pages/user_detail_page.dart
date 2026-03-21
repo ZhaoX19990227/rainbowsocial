@@ -388,7 +388,7 @@ class _RelationshipUpgradeOverlay extends StatelessWidget {
                   ),
                 ),
               ),
-            ),
+            );
           }),
           Center(
             child: Padding(

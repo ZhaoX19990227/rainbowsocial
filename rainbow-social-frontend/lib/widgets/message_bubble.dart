@@ -13,6 +13,7 @@ import '../providers/app_providers.dart';
 import '../services/app_feedback.dart';
 import '../services/secure_screen_service.dart';
 import '../theme/app_theme.dart';
+import 'flirty_action_system.dart';
 
 class MessageBubble extends StatelessWidget {
   const MessageBubble({
@@ -20,11 +21,13 @@ class MessageBubble extends StatelessWidget {
     required this.message,
     required this.isMine,
     this.onRetry,
+    this.onFlirtyTap,
   });
 
   final ChatMessageModel message;
   final bool isMine;
   final VoidCallback? onRetry;
+  final VoidCallback? onFlirtyTap;
 
   @override
   Widget build(BuildContext context) {
@@ -102,6 +105,7 @@ class MessageBubble extends StatelessWidget {
                         ? _FlirtyActionContent(
                             message: message,
                             isMine: isMine,
+                            onTap: onFlirtyTap,
                           )
                     : message.isFlashImage
                         ? _FlashImageContent(
@@ -186,6 +190,14 @@ class _FlashImageContentState extends ConsumerState<_FlashImageContent> {
   }
 
   Future<void> _loadBurnState() async {
+    if (widget.isMine) {
+      if (!mounted) return;
+      setState(() {
+        _isBurned = false;
+        _isLoading = false;
+      });
+      return;
+    }
     final burned = await ref
         .read(flashPhotoStateServiceProvider)
         .isBurned(_flashId);
@@ -208,6 +220,7 @@ class _FlashImageContentState extends ConsumerState<_FlashImageContent> {
         return _FlashPhotoViewer(
           imageUrl: widget.message.imageSource,
           flashId: _flashId,
+          burnAfterViewing: !widget.isMine,
         );
       },
       transitionBuilder: (context, animation, _, child) {
@@ -222,10 +235,14 @@ class _FlashImageContentState extends ConsumerState<_FlashImageContent> {
 
   @override
   Widget build(BuildContext context) {
-    final burned = _isBurned;
+    final burned = !widget.isMine && _isBurned;
 
     return GestureDetector(
-      onTap: burned ? null : () => AppFeedback.showToast('长按查看，5 秒后焚毁'),
+      onTap: burned
+          ? null
+          : () => AppFeedback.showToast(
+                widget.isMine ? '这是你发出的闪照，对方只能查看一次' : '长按查看，5 秒后焚毁',
+              ),
       onLongPress: burned ? null : _openViewer,
       child: Container(
         width: 220,
@@ -279,7 +296,7 @@ class _FlashImageContentState extends ConsumerState<_FlashImageContent> {
                         : const Color(0xAAFF835E),
                   ),
                   child: Text(
-                    burned ? '已焚毁' : '闪照',
+                    burned ? '已焚毁' : (widget.isMine ? '已发出' : '闪照'),
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                           color: Colors.white,
                           letterSpacing: 0.3,
@@ -314,7 +331,11 @@ class _FlashImageContentState extends ConsumerState<_FlashImageContent> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    burned ? '这张闪照已经焚毁' : '这是一张闪照',
+                    burned
+                        ? '这张闪照已经焚毁'
+                        : widget.isMine
+                            ? '这是你发出的闪照'
+                            : '这是一张闪照',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: Colors.white,
                         ),
@@ -323,7 +344,9 @@ class _FlashImageContentState extends ConsumerState<_FlashImageContent> {
                   Text(
                     burned
                         ? '已无法再次查看'
-                        : '点击会提示，长按进入查看，5 秒后自动销毁',
+                        : widget.isMine
+                            ? '你可以随时长按查看原图，对方只能查看一次'
+                            : '点击会提示，长按进入查看，5 秒后自动销毁',
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                           color: Colors.white.withValues(alpha: 0.78),
                           letterSpacing: 0.15,
@@ -343,10 +366,12 @@ class _FlashPhotoViewer extends ConsumerStatefulWidget {
   const _FlashPhotoViewer({
     required this.imageUrl,
     required this.flashId,
+    required this.burnAfterViewing,
   });
 
   final String imageUrl;
   final String flashId;
+  final bool burnAfterViewing;
 
   @override
   ConsumerState<_FlashPhotoViewer> createState() => _FlashPhotoViewerState();
@@ -360,6 +385,9 @@ class _FlashPhotoViewerState extends ConsumerState<_FlashPhotoViewer> {
   void initState() {
     super.initState();
     SecureScreenService.setProtected(true);
+    if (!widget.burnAfterViewing) {
+      return;
+    }
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) async {
       if (_secondsLeft <= 1) {
         timer.cancel();
@@ -372,11 +400,13 @@ class _FlashPhotoViewerState extends ConsumerState<_FlashPhotoViewer> {
   }
 
   Future<void> _burnAndClose() async {
-    await ref.read(flashPhotoStateServiceProvider).markBurned(widget.flashId);
+    if (widget.burnAfterViewing) {
+      await ref.read(flashPhotoStateServiceProvider).markBurned(widget.flashId);
+    }
     await SecureScreenService.setProtected(false);
     if (!mounted) return;
     Navigator.of(context).pop();
-    AppFeedback.showToast('闪照已焚毁');
+    AppFeedback.showToast(widget.burnAfterViewing ? '闪照已焚毁' : '已关闭闪照');
   }
 
   @override
@@ -389,7 +419,7 @@ class _FlashPhotoViewerState extends ConsumerState<_FlashPhotoViewer> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: false,
+      canPop: !widget.burnAfterViewing,
       child: Material(
         color: Colors.black,
         child: Stack(
@@ -428,7 +458,9 @@ class _FlashPhotoViewerState extends ConsumerState<_FlashPhotoViewer> {
                         ),
                       ),
                       child: Text(
-                        '查看中，$_secondsLeft 秒后焚毁',
+                        widget.burnAfterViewing
+                            ? '查看中，$_secondsLeft 秒后焚毁'
+                            : '你发出的闪照',
                         textAlign: TextAlign.center,
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                               color: Colors.white,
@@ -443,13 +475,26 @@ class _FlashPhotoViewerState extends ConsumerState<_FlashPhotoViewer> {
               left: 24,
               right: 24,
               bottom: 42,
-              child: Text(
-                '已启用安全查看模式',
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.72),
-                      letterSpacing: 0.3,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (!widget.burnAfterViewing)
+                    FilledButton.tonal(
+                      onPressed: _burnAndClose,
+                      child: const Text('关闭'),
                     ),
+                  const SizedBox(height: 10),
+                  Text(
+                    widget.burnAfterViewing
+                        ? '已启用安全查看模式'
+                        : '仅对对方查看一次生效',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.72),
+                          letterSpacing: 0.3,
+                        ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -516,10 +561,12 @@ class _FlirtyActionContent extends StatefulWidget {
   const _FlirtyActionContent({
     required this.message,
     required this.isMine,
+    this.onTap,
   });
 
   final ChatMessageModel message;
   final bool isMine;
+  final VoidCallback? onTap;
 
   @override
   State<_FlirtyActionContent> createState() => _FlirtyActionContentState();
@@ -547,95 +594,22 @@ class _FlirtyActionContentState extends State<_FlirtyActionContent>
   @override
   Widget build(BuildContext context) {
     final action = FlirtyAction.byId(widget.message.flirtyActionId);
-    final textColor = widget.isMine ? Colors.white : AppTheme.textPrimary;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(22),
-      onTap: () {
-        _controller
-          ..reset()
-          ..forward();
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        return FlirtyActionMessageCard(
+          messagePreview: widget.message.content,
+          action: action,
+          isMine: widget.isMine,
+          onTap: () {
+            _controller
+              ..reset()
+              ..forward();
+            widget.onTap?.call();
+          },
+        );
       },
-      child: AnimatedBuilder(
-        animation: _controller,
-        builder: (context, child) {
-          final pulse = 1 + math.sin(_controller.value * math.pi * 2) * 0.035;
-          return Transform.scale(scale: pulse, child: child);
-        },
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 248),
-          padding: const EdgeInsets.all(2),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            gradient: LinearGradient(
-              colors: [
-                action.gradient.first.withValues(alpha: 0.95),
-                action.gradient.last.withValues(alpha: 0.92),
-              ],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: action.gradient.first.withValues(alpha: 0.24),
-                blurRadius: 24,
-              ),
-            ],
-          ),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              color: const Color(0xB3151721),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.12),
-                      ),
-                      child: Icon(action.icon, color: Colors.white, size: 18),
-                    ),
-                    const SizedBox(width: 10),
-                    Flexible(
-                      child: Text(
-                        action.label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Colors.white,
-                              fontSize: 16,
-                            ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  widget.message.content,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: textColor.withValues(alpha: 0.92),
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  action.hint,
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.68),
-                        letterSpacing: 0.2,
-                      ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

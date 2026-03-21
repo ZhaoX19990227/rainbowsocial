@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../controllers/auth_controller.dart';
+import '../controllers/chat_controller.dart';
+import '../controllers/home_controller.dart';
 import '../controllers/match_controller.dart';
+import '../controllers/nearby_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../models/app_user.dart';
 import '../models/match_summary.dart';
@@ -114,6 +117,12 @@ class ProfilePage extends ConsumerWidget {
                 OutlinedButton.icon(
                   onPressed: () async {
                     await ref.read(authControllerProvider.notifier).signOut();
+                    ref.invalidate(profileControllerProvider);
+                    ref.invalidate(matchesControllerProvider);
+                    ref.invalidate(matchSummaryControllerProvider);
+                    ref.invalidate(homeControllerProvider);
+                    ref.invalidate(nearbyControllerProvider);
+                    ref.invalidate(chatThreadsControllerProvider);
                     if (!context.mounted) return;
                     Navigator.of(context).pushNamedAndRemoveUntil(
                       AppRouter.login,
@@ -156,212 +165,231 @@ class _ProfileHero extends StatelessWidget {
     final relationshipCount = summary == null
         ? 0
         : summary!.mutual.length + summary!.received.length + summary!.sent.length;
+    final locationText = user.locationLabel.trim().isNotEmpty
+        ? user.locationLabel.trim()
+        : user.distanceKm == null
+            ? '就在附近'
+            : '${user.distanceKm!.toStringAsFixed(1)} km';
+    final bio = user.bio.trim().isEmpty ? '留一点神秘感，等聊天时再慢慢展开。' : user.bio.trim();
 
-    return SizedBox(
-      height: 420,
-      child: Stack(
+    return GlassCard(
+      padding: EdgeInsets.zero,
+      borderRadius: BorderRadius.circular(34),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(34),
+          Container(
+            height: 248,
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(34)),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFF171A29),
+                  Color(0xFF241A2B),
+                  Color(0xFF131824),
+                ],
+              ),
+            ),
             child: Stack(
-              fit: StackFit.expand,
               children: [
-                Image.network(
-                  user.avatarOrFallback,
-                  fit: BoxFit.cover,
-                ),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.16),
-                        const Color(0xFF0E101A),
-                      ],
-                    ),
+                Positioned(
+                  left: -22,
+                  top: -18,
+                  child: _AmbientOrb(
+                    size: 132,
+                    colors: const [Color(0x44FF9B68), Color(0x00FF9B68)],
                   ),
                 ),
                 Positioned(
-                  left: 20,
-                  right: 20,
-                  top: 18,
-                  child: Row(
+                  right: -18,
+                  top: 26,
+                  child: _AmbientOrb(
+                    size: 118,
+                    colors: const [Color(0x33945CFF), Color(0x00945CFF)],
+                  ),
+                ),
+                Positioned(
+                  right: 44,
+                  bottom: -10,
+                  child: _AmbientOrb(
+                    size: 140,
+                    colors: const [Color(0x22EA87FF), Color(0x00EA87FF)],
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+                  child: Column(
                     children: [
-                      _GlowPill(
-                        icon: Icons.auto_awesome_rounded,
-                        label: '熊猴主场',
+                      Row(
+                        children: [
+                          const _GlowPill(
+                            icon: Icons.auto_awesome_rounded,
+                            label: '熊猴主场',
+                          ),
+                          const Spacer(),
+                          _GlowPill(
+                            icon: user.onlineStatus
+                                ? Icons.circle_rounded
+                                : Icons.schedule_rounded,
+                            label: user.onlineStatus ? '在线' : '稍后回来',
+                            accent: user.onlineStatus
+                                ? AppTheme.secondary
+                                : const Color(0xFFF7B26C),
+                          ),
+                        ],
                       ),
                       const Spacer(),
-                      _GlowPill(
-                        icon: user.onlineStatus
-                            ? Icons.circle_rounded
-                            : Icons.schedule_rounded,
-                        label: user.onlineStatus ? '在线' : '稍后回来',
-                        accent: user.onlineStatus
-                            ? AppTheme.secondary
-                            : const Color(0xFFF7B26C),
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              Color(0xAAFFAA7A),
+                              Color(0x66865CFF),
+                              Color(0x88EA87FF),
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primary.withValues(alpha: 0.2),
+                              blurRadius: 30,
+                              spreadRadius: 2,
+                            ),
+                          ],
+                        ),
+                        child: AvatarWidget(
+                          imageUrl: user.avatar,
+                          radius: 54,
+                          isOnline: user.onlineStatus,
+                        ),
                       ),
+                      const SizedBox(height: 14),
+                      Text(
+                        user.nickname,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineLarge
+                            ?.copyWith(fontSize: 30, height: 1.05),
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _InfoPill(label: '${user.age} 岁'),
+                          _InfoPill(label: locationText),
+                          _InfoPill(label: '$relationshipCount 段关系动态'),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
                     ],
                   ),
                 ),
               ],
             ),
           ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: GlassCard(
-              padding: const EdgeInsets.fromLTRB(18, 88, 18, 18),
-              borderRadius: BorderRadius.circular(34),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(22),
+                    gradient: const LinearGradient(
+                      colors: [Color(0x16FF9B68), Color(0x12945CFF)],
+                    ),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.08),
+                    ),
+                  ),
+                  child: Row(
                     children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              user.nickname,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .headlineLarge
-                                  ?.copyWith(fontSize: 32, height: 1.05),
-                            ),
-                            const SizedBox(height: 8),
-                            Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                _InfoPill(label: '${user.age} 岁'),
-                                _InfoPill(
-                                  label: user.locationLabel.trim().isNotEmpty
-                                      ? user.locationLabel.trim()
-                                      : user.distanceKm == null
-                                          ? '就在附近'
-                                          : '${user.distanceKm!.toStringAsFixed(1)} km',
-                                ),
-                                _InfoPill(label: '$relationshipCount 段关系动态'),
-                              ],
-                            ),
-                          ],
-                        ),
+                      const Icon(
+                        Icons.place_rounded,
+                        size: 18,
+                        color: Color(0xFFFFB18A),
                       ),
-                      const SizedBox(width: 12),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 8,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          gradient: const LinearGradient(
-                            colors: [Color(0x22FF9B68), Color(0x22945CFF)],
-                          ),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.1),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '签名',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelMedium
-                                  ?.copyWith(letterSpacing: 0.5),
-                            ),
-                            const SizedBox(height: 3),
-                            Text(
-                              '慢热但会撩',
-                              style: Theme.of(context).textTheme.titleSmall,
-                            ),
-                          ],
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          user.locationLabel.trim().isNotEmpty
+                              ? '当前城市 ${user.locationLabel.trim()}'
+                              : '当前位置会在进入附近时自动更新',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: const Color(0xFFE7E0F3),
+                              ),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
-                  if (user.locationLabel.trim().isNotEmpty) ...[
-                    Text(
-                      '当前城市',
-                      style: Theme.of(context).textTheme.labelMedium,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      user.locationLabel.trim(),
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: const Color(0xFFE7E0F3),
-                          ),
-                    ),
-                    const SizedBox(height: 14),
-                  ],
-                  Text(
-                    user.bio,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          color: const Color(0xFFE0DBEF),
-                        ),
-                  ),
-                  if (user.tags.isNotEmpty) ...[
-                    const SizedBox(height: 14),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: user.tags
-                          .take(5)
-                          .map(
-                            (tag) => TagChip(
-                              label: tag,
-                              icon: Icons.bolt_rounded,
-                              maxWidth: 120,
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            left: 22,
-            bottom: 150,
-            child: Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0x99FFAA7A),
-                    Color(0x66865CFF),
-                    Color(0x88EA87FF),
-                  ],
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primary.withValues(alpha: 0.22),
-                    blurRadius: 28,
+                const SizedBox(height: 14),
+                Text(
+                  bio,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: const Color(0xFFE0DBEF),
+                        height: 1.5,
+                      ),
+                ),
+                if (user.tags.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: user.tags
+                        .take(5)
+                        .map(
+                          (tag) => TagChip(
+                            label: tag,
+                            icon: Icons.bolt_rounded,
+                            maxWidth: 120,
+                          ),
+                        )
+                        .toList(),
                   ),
                 ],
-              ),
-              child: AvatarWidget(
-                imageUrl: user.avatar,
-                radius: 44,
-                isOnline: user.onlineStatus,
-              ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AmbientOrb extends StatelessWidget {
+  const _AmbientOrb({
+    required this.size,
+    required this.colors,
+  });
+
+  final double size;
+  final List<Color> colors;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(colors: colors),
+        ),
       ),
     );
   }

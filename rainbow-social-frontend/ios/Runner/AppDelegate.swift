@@ -9,10 +9,10 @@ import UIKit
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    if let controller = window?.rootViewController as? FlutterViewController {
+    if let registrar = self.registrar(forPlugin: secureChannel) {
       let channel = FlutterMethodChannel(
         name: secureChannel,
-        binaryMessenger: controller.binaryMessenger
+        binaryMessenger: registrar.messenger()
       )
       channel.setMethodCallHandler { call, result in
         if call.method == "setProtected" {
