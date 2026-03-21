@@ -493,13 +493,11 @@ class _RelationshipUpgradeOverlay extends StatelessWidget {
                             ),
                           ),
                         ),
-                        Positioned(
-                          child: Text(
-                            isMutual ? '❤' : '✦',
-                            style: TextStyle(
-                              fontSize: isMutual ? 28 : 24,
-                              color: const Color(0xFFF6C5B8),
-                            ),
+                        Text(
+                          isMutual ? '❤' : '✦',
+                          style: TextStyle(
+                            fontSize: isMutual ? 28 : 24,
+                            color: const Color(0xFFF6C5B8),
                           ),
                         ),
                       ],

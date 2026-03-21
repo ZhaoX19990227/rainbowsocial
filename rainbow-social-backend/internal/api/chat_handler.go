@@ -7,19 +7,25 @@ import (
 	"github.com/gin-gonic/gin"
 
 	"rainbow-social-backend/internal/middleware"
+	"rainbow-social-backend/internal/model"
 	"rainbow-social-backend/internal/service"
+	"rainbow-social-backend/internal/ws"
 )
 
 type ChatHandler struct {
 	chatService *service.ChatService
+	hub         *ws.Hub
 }
 
 type pinConversationRequest struct {
 	IsPinned bool `json:"is_pinned"`
 }
 
-func NewChatHandler(chatService *service.ChatService) *ChatHandler {
-	return &ChatHandler{chatService: chatService}
+func NewChatHandler(chatService *service.ChatService, hub *ws.Hub) *ChatHandler {
+	return &ChatHandler{
+		chatService: chatService,
+		hub:         hub,
+	}
 }
 
 func (h *ChatHandler) ListConversations(c *gin.Context) {
@@ -38,9 +44,18 @@ func (h *ChatHandler) MarkRead(c *gin.Context) {
 		return
 	}
 
-	if err := h.chatService.MarkConversationRead(middleware.GetUserID(c), peerUserID); err != nil {
+	userID := middleware.GetUserID(c)
+	readAt, err := h.chatService.MarkConversationRead(userID, peerUserID)
+	if err != nil {
 		failure(c, http.StatusBadRequest, err.Error())
 		return
+	}
+	if h.hub != nil {
+		h.hub.SendConversationRead(model.ConversationReadEvent{
+			UserID:     userID,
+			PeerUserID: peerUserID,
+			ReadAt:     readAt,
+		})
 	}
 	success(c, gin.H{"message": "conversation marked as read"})
 }

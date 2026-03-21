@@ -17,6 +17,7 @@ type Hub struct {
 	register   chan *Client
 	unregister chan *Client
 	direct     chan model.ChatMessage
+	reads      chan model.ConversationReadEvent
 	presence   PresenceUpdater
 	mu         sync.RWMutex
 }
@@ -27,6 +28,7 @@ func NewHub(presence PresenceUpdater) *Hub {
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		direct:     make(chan model.ChatMessage),
+		reads:      make(chan model.ConversationReadEvent),
 		presence:   presence,
 	}
 }
@@ -41,6 +43,10 @@ func (h *Hub) UnregisterClient(client *Client) {
 
 func (h *Hub) SendDirect(message model.ChatMessage) {
 	h.direct <- message
+}
+
+func (h *Hub) SendConversationRead(event model.ConversationReadEvent) {
+	h.reads <- event
 }
 
 func (h *Hub) Run() {
@@ -82,6 +88,20 @@ func (h *Hub) Run() {
 			}
 			h.dispatch(message.ToUser, payload)
 			h.dispatch(message.FromUser, payload)
+		case event := <-h.reads:
+			payload, err := json.Marshal(struct {
+				Event string                      `json:"event"`
+				Data  model.ConversationReadEvent `json:"data"`
+			}{
+				Event: "conversation_read",
+				Data:  event,
+			})
+			if err != nil {
+				log.Printf("marshal ws read event: %v", err)
+				continue
+			}
+			h.dispatch(event.UserID, payload)
+			h.dispatch(event.PeerUserID, payload)
 		}
 	}
 }

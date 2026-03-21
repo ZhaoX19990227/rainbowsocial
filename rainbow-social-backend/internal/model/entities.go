@@ -105,6 +105,12 @@ type ConversationState struct {
 	UpdatedAt  time.Time  `json:"updated_at"`
 }
 
+type ConversationReadEvent struct {
+	UserID     int64     `json:"user_id"`
+	PeerUserID int64     `json:"peer_user_id"`
+	ReadAt     time.Time `json:"read_at"`
+}
+
 type ConversationSummary struct {
 	PeerUser      User      `json:"peer_user"`
 	LastMessage   string    `json:"last_message"`

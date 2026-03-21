@@ -127,6 +127,31 @@ class ChatThreadsController extends StateNotifier<ChatListState> {
     state = state.copyWith(threads: _sortThreads(items), clearError: true);
   }
 
+  void markPeerMessagesRead({
+    required int peerId,
+    required DateTime readAt,
+  }) {
+    final updated = state.threads
+        .map((item) {
+          if (item.peer.id != peerId) {
+            return item;
+          }
+          final lastMessage = item.lastMessage;
+          if (lastMessage.fromUser != 0 &&
+              lastMessage.toUser == peerId &&
+              !lastMessage.timestamp.isAfter(readAt)) {
+            return item.copyWith(
+              lastMessage: lastMessage.copyWith(
+                deliveryStatus: ChatDeliveryStatus.read,
+              ),
+            );
+          }
+          return item;
+        })
+        .toList();
+    state = state.copyWith(threads: updated, clearError: true);
+  }
+
   List<ChatThread> _sortThreads(List<ChatThread> items) {
     final sorted = [...items];
     sorted.sort((left, right) {
@@ -250,6 +275,9 @@ class ChatController extends StateNotifier<ChatRoomState> {
       case 'message':
         _handleIncomingMessage(ChatMessageModel.fromJson(data));
         break;
+      case 'conversation_read':
+        _handleConversationRead(data);
+        break;
       case 'message_error':
         _handleMessageError(
           clientMessageId: '${data['client_message_id'] ?? ''}',
@@ -257,6 +285,41 @@ class ChatController extends StateNotifier<ChatRoomState> {
         );
         break;
     }
+  }
+
+  void _handleConversationRead(Map<String, dynamic> data) {
+    final currentUserId =
+        _ref.read(authControllerProvider).valueOrNull?.user.id ?? -1;
+    final userId = ((data['user_id'] ?? 0) as num).toInt();
+    final peerUserId = ((data['peer_user_id'] ?? 0) as num).toInt();
+    final readAt = DateTime.tryParse('${data['read_at'] ?? ''}');
+    if (readAt == null) return;
+
+    if (userId != peer.id || peerUserId != currentUserId) {
+      return;
+    }
+
+    state = state.copyWith(
+      messages: state.messages
+          .map(
+            (item) => item.isMine(currentUserId) &&
+                    !item.timestamp.isAfter(readAt) &&
+                    item.toUser == peer.id
+                ? item.copyWith(
+                    deliveryStatus: ChatDeliveryStatus.read,
+                    status: item.isFailed
+                        ? ChatMessageStatus.failed
+                        : ChatMessageStatus.sent,
+                  )
+                : item,
+          )
+          .toList(),
+      clearError: true,
+    );
+    _ref.read(chatThreadsControllerProvider.notifier).markPeerMessagesRead(
+          peerId: peer.id,
+          readAt: readAt,
+        );
   }
 
   void _handleIncomingMessage(ChatMessageModel message) {

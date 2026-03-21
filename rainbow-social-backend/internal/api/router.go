@@ -51,7 +51,7 @@ func NewRouter(cfg *config.Config, deps Dependencies) *gin.Engine {
 	swipeHandler := NewSwipeHandler(deps.SwipeService)
 	matchHandler := NewMatchHandler(deps.MatchService)
 	safetyHandler := NewSafetyHandler(deps.SafetyService)
-	chatHandler := NewChatHandler(deps.ChatService)
+	chatHandler := NewChatHandler(deps.ChatService, deps.Hub)
 	wsHandler := NewWSHandler(deps.JWTManager, deps.ChatService, deps.Hub)
 	uploadHandler := NewUploadHandler(cfg)
 

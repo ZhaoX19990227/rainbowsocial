@@ -108,11 +108,12 @@ func (s *ChatService) ListMessages(userID, peerUserID int64, limit int, beforeID
 	return messages, nil
 }
 
-func (s *ChatService) MarkConversationRead(userID, peerUserID int64) error {
+func (s *ChatService) MarkConversationRead(userID, peerUserID int64) (time.Time, error) {
 	if err := s.validateConversationAccess(userID, peerUserID); err != nil {
-		return err
+		return time.Time{}, err
 	}
-	return s.chatRepo.MarkConversationRead(userID, peerUserID, time.Now().UTC())
+	readAt := time.Now().UTC()
+	return readAt, s.chatRepo.MarkConversationRead(userID, peerUserID, readAt)
 }
 
 func (s *ChatService) SetConversationPinned(userID, peerUserID int64, pinned bool) error {
