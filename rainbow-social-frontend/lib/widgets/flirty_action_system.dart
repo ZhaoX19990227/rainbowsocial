@@ -42,7 +42,7 @@ class _FlirtyActionOverlayState extends State<FlirtyActionOverlay>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2200),
+      duration: const Duration(milliseconds: 2550),
     )..forward();
   }
 
@@ -55,24 +55,24 @@ class _FlirtyActionOverlayState extends State<FlirtyActionOverlay>
   @override
   Widget build(BuildContext context) {
     final action = widget.data.action;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final stageWidth = math.min(screenWidth - 28, 380.0).toDouble();
+    final size = MediaQuery.of(context).size;
+    final stageWidth = math.min(size.width - 28, 392.0).toDouble();
 
     return AnimatedBuilder(
       animation: _controller,
-      builder: (context, child) {
+      builder: (context, _) {
         final entry = Curves.easeOutCubic.transform(
-          (_controller.value / 0.28).clamp(0.0, 1.0),
+          (_controller.value / 0.26).clamp(0.0, 1.0),
         );
         final exit = Curves.easeInCubic.transform(
-          ((_controller.value - 0.72) / 0.28).clamp(0.0, 1.0),
+          ((_controller.value - 0.78) / 0.22).clamp(0.0, 1.0),
         );
-        final sceneProgress = Curves.easeInOutSine.transform(
-          ((_controller.value - 0.08) / 0.72).clamp(0.0, 1.0),
+        final sceneProgress = Curves.easeInOutCubic.transform(
+          ((_controller.value - 0.06) / 0.72).clamp(0.0, 1.0),
         );
         final opacity = (entry * (1 - exit)).clamp(0.0, 1.0);
-        final stageLift = (1 - entry) * 34 - (exit * 10);
-        final stageScale = lerpDouble(0.94, 1.0, entry)! * (1 - exit * 0.04);
+        final lift = lerpDouble(28, -8, entry)! + exit * 18;
+        final scale = lerpDouble(0.95, 1.0, entry)! - exit * 0.03;
 
         return IgnorePointer(
           child: Opacity(
@@ -82,179 +82,77 @@ class _FlirtyActionOverlayState extends State<FlirtyActionOverlay>
               children: [
                 BackdropFilter(
                   filter: ImageFilter.blur(
-                    sigmaX: 22 * entry,
-                    sigmaY: 22 * entry,
+                    sigmaX: 18 * entry,
+                    sigmaY: 18 * entry,
                   ),
                   child: DecoratedBox(
                     decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.46 * opacity),
+                      color: Colors.black.withValues(alpha: 0.54 * opacity),
                       gradient: RadialGradient(
-                        center: const Alignment(0, -0.1),
-                        radius: 1.05,
+                        center: const Alignment(0, -0.14),
+                        radius: 1.12,
                         colors: [
-                          action.gradient.first.withValues(alpha: 0.20 * opacity),
-                          const Color(0xE7090B12).withValues(alpha: opacity),
+                          action.gradient.first.withValues(alpha: 0.18 * opacity),
+                          const Color(0xEF090B11).withValues(alpha: opacity),
                         ],
                       ),
                     ),
                   ),
                 ),
-                Positioned.fill(
-                  child: IgnorePointer(
-                    child: _SceneParticles(
-                      progress: sceneProgress,
-                      colors: action.gradient,
-                    ),
-                  ),
+                _AtmosphericParticles(
+                  progress: sceneProgress,
+                  colors: action.gradient,
                 ),
                 Center(
                   child: Transform.translate(
-                    offset: Offset(0, stageLift),
+                    offset: Offset(0, lift),
                     child: Transform.scale(
-                      scale: stageScale,
+                      scale: scale,
                       child: SizedBox(
                         width: stageWidth,
                         child: Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
-                          child: GlassCard(
-                            padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-                            borderRadius: BorderRadius.circular(34),
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 12,
-                                        vertical: 7,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(999),
-                                        color: Colors.white.withValues(alpha: 0.06),
-                                        border: Border.all(
-                                          color: action.gradient.first
-                                              .withValues(alpha: 0.24),
-                                        ),
-                                      ),
-                                      child: Text(
-                                        widget.data.isMine ? '你主动出招' : '对方先撩一步',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .labelMedium
-                                            ?.copyWith(
-                                              color: Colors.white
-                                                  .withValues(alpha: 0.80),
-                                              letterSpacing: 0.3,
-                                            ),
-                                      ),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              _OverlayTopLine(
+                                action: action,
+                                isMine: widget.data.isMine,
+                              ),
+                              const SizedBox(height: 14),
+                              _CinematicStage(
+                                action: action,
+                                progress: sceneProgress,
+                                overlayMode: true,
+                              ),
+                              const SizedBox(height: 18),
+                              Text(
+                                action.stageTitle,
+                                textAlign: TextAlign.center,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
+                                    ?.copyWith(
+                                      color: Colors.white,
+                                      fontSize: 30,
+                                      letterSpacing: -0.4,
                                     ),
-                                    const Spacer(),
-                                    Container(
-                                      width: 38,
-                                      height: 38,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        gradient: LinearGradient(
-                                          colors: [
-                                            action.gradient.first
-                                                .withValues(alpha: 0.85),
-                                            action.gradient.last
-                                                .withValues(alpha: 0.70),
-                                          ],
-                                        ),
-                                      ),
-                                      child: Icon(
-                                        action.icon,
-                                        size: 18,
-                                        color: Colors.white,
-                                      ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                action.sceneMoment,
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: Colors.white.withValues(alpha: 0.86),
+                                      height: 1.45,
                                     ),
-                                  ],
-                                ),
-                                const SizedBox(height: 18),
-                                _StageSpotlight(
-                                  colors: action.gradient,
-                                  child: _FlirtyDuoScene(
-                                    action: action,
-                                    progress: sceneProgress,
-                                    compact: false,
-                                  ),
-                                ),
-                                const SizedBox(height: 18),
-                                Text(
-                                  action.stageTitle,
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineMedium
-                                      ?.copyWith(
-                                        fontSize: 28,
-                                        color: Colors.white,
-                                      ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  widget.data.preview,
-                                  textAlign: TextAlign.center,
-                                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                        color: Colors.white
-                                            .withValues(alpha: 0.94),
-                                        height: 1.4,
-                                      ),
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  action.stageSubtitle,
-                                  textAlign: TextAlign.center,
-                                  style:
-                                      Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                            color: AppTheme.textSecondary
-                                                .withValues(alpha: 0.92),
-                                            height: 1.45,
-                                          ),
-                                ),
-                                const SizedBox(height: 14),
-                                Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 14,
-                                    vertical: 12,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(18),
-                                    color: Colors.white.withValues(alpha: 0.04),
-                                    border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.06),
-                                    ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          action.motionNotes,
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .labelMedium
-                                              ?.copyWith(
-                                                color: Colors.white
-                                                    .withValues(alpha: 0.82),
-                                                letterSpacing: 0.15,
-                                              ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Icon(
-                                        Icons.vibration_rounded,
-                                        size: 16,
-                                        color:
-                                            action.gradient.first.withValues(alpha: 0.9),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -297,7 +195,7 @@ class _FlirtyActionMessageCardState extends State<FlirtyActionMessageCard>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1600),
+      duration: const Duration(milliseconds: 2400),
     )..repeat();
   }
 
@@ -312,132 +210,170 @@ class _FlirtyActionMessageCardState extends State<FlirtyActionMessageCard>
     final action = widget.action;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(28),
       onTap: widget.onTap,
       child: AnimatedBuilder(
         animation: _controller,
         builder: (context, child) {
-          final pulse = 1 + math.sin(_controller.value * math.pi * 2) * 0.015;
-          return Transform.scale(scale: pulse, child: child);
+          final pulse = 1 + math.sin(_controller.value * math.pi * 2) * 0.01;
+          return Transform.scale(
+            scale: pulse,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: action.gradient.first.withValues(alpha: 0.18),
+                    blurRadius: 26,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: child!,
+            ),
+          );
         },
         child: Container(
-          constraints: const BoxConstraints(maxWidth: 274),
-          padding: const EdgeInsets.all(1.2),
+          constraints: const BoxConstraints(maxWidth: 286),
+          padding: const EdgeInsets.all(1),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(28),
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                action.gradient.first.withValues(alpha: 0.88),
-                action.gradient.last.withValues(alpha: 0.66),
+                action.gradient.first.withValues(alpha: 0.85),
+                action.gradient.last.withValues(alpha: 0.64),
               ],
             ),
-            boxShadow: [
-              BoxShadow(
-                color: action.gradient.first.withValues(alpha: 0.18),
-                blurRadius: 22,
-                spreadRadius: 1,
-              ),
-            ],
           ),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(21),
-              color: const Color(0xCC10131B),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(14, 14, 14, 13),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(999),
-                          color: Colors.white.withValues(alpha: 0.06),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(27),
+            child: Stack(
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: const Color(0xE910131A),
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.white.withValues(alpha: 0.05),
+                        const Color(0xE910131A),
+                      ],
+                    ),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Icon(
-                              action.icon,
-                              color: Colors.white,
-                              size: 14,
+                            _MoodChip(
+                              label: action.moodTag,
+                              colors: action.gradient,
+                              icon: action.icon,
                             ),
-                            const SizedBox(width: 6),
-                            Text(
-                              action.label,
-                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.90),
-                                    letterSpacing: 0.2,
-                                  ),
+                            const Spacer(),
+                            _ReplayBadge(isMine: widget.isMine),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        _CompactSceneFrame(
+                          action: action,
+                          progress: _controller.value,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          action.label,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge
+                              ?.copyWith(
+                                color: Colors.white,
+                                fontSize: 19,
+                              ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          widget.messagePreview,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(
+                                color: Colors.white.withValues(alpha: 0.9),
+                              ),
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                action.hint,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelMedium
+                                    ?.copyWith(
+                                      color: AppTheme.textSecondary
+                                          .withValues(alpha: 0.88),
+                                      letterSpacing: 0.15,
+                                    ),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 9,
+                                vertical: 7,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(999),
+                                color: Colors.white.withValues(alpha: 0.05),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.06),
+                                ),
+                              ),
+                              child: Text(
+                                '回放',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelMedium
+                                    ?.copyWith(
+                                      color: Colors.white.withValues(alpha: 0.82),
+                                      letterSpacing: 0.2,
+                                    ),
+                              ),
                             ),
                           ],
                         ),
-                      ),
-                      const Spacer(),
-                      Container(
-                        width: 30,
-                        height: 30,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withValues(alpha: 0.05),
-                        ),
-                        child: const Icon(
-                          Icons.play_arrow_rounded,
-                          size: 18,
-                          color: Colors.white70,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(18),
-                    child: Container(
-                      height: 104,
-                      width: double.infinity,
+                ),
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
+                          begin: const Alignment(-0.8, -1),
+                          end: const Alignment(0.3, 0.9),
                           colors: [
-                            action.gradient.first.withValues(alpha: 0.18),
-                            const Color(0x22141A26),
+                            Colors.white.withValues(alpha: 0.07),
+                            Colors.transparent,
                           ],
+                          stops: const [0, 0.54],
                         ),
-                      ),
-                      child: _FlirtyDuoScene(
-                        action: action,
-                        progress: _controller.value,
-                        compact: true,
                       ),
                     ),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    widget.messagePreview,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.94),
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    action.hint,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: AppTheme.textSecondary.withValues(alpha: 0.9),
-                          letterSpacing: 0.15,
-                        ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -462,7 +398,7 @@ class _FlirtyActionPickerSheetState extends State<FlirtyActionPickerSheet>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 700),
+      duration: const Duration(milliseconds: 720),
     )..forward();
   }
 
@@ -474,6 +410,8 @@ class _FlirtyActionPickerSheetState extends State<FlirtyActionPickerSheet>
 
   @override
   Widget build(BuildContext context) {
+    final groups = FlirtyMoodGroup.values;
+
     return Padding(
       padding: EdgeInsets.only(
         left: 14,
@@ -482,229 +420,488 @@ class _FlirtyActionPickerSheetState extends State<FlirtyActionPickerSheet>
       ),
       child: GlassCard(
         padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-        borderRadius: BorderRadius.circular(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [Color(0x44D56A55), Color(0x446278D8)],
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.auto_awesome_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'XiongHou 暧昧动作',
-                        style: Theme.of(context).textTheme.titleLarge,
+        borderRadius: BorderRadius.circular(34),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxHeight: 640),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _PickerHeader(controller: _controller),
+              const SizedBox(height: 18),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: groups.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 14),
+                  itemBuilder: (context, index) {
+                    final group = groups[index];
+                    final actions = FlirtyAction.all
+                        .where((item) => item.moodGroup == group)
+                        .toList();
+                    return AnimatedBuilder(
+                      animation: _controller,
+                      builder: (context, child) {
+                        final start = 0.08 * index;
+                        final progress = Curves.easeOutCubic.transform(
+                          ((_controller.value - start) / 0.45).clamp(0.0, 1.0),
+                        );
+                        return Transform.translate(
+                          offset: Offset(0, (1 - progress) * 16),
+                          child: Opacity(opacity: progress, child: child),
+                        );
+                      },
+                      child: _MoodSection(
+                        group: group,
+                        actions: actions,
+                        onTap: (action) => Navigator.of(context).pop(action),
+                        progress: _controller.value,
                       ),
-                      const SizedBox(height: 3),
-                      Text(
-                        '像一次关系升级，不像发了个表情。',
-                        style: Theme.of(context).textTheme.labelMedium,
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 428,
-              child: GridView.builder(
-                itemCount: FlirtyAction.all.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.78,
-                ),
-                itemBuilder: (context, index) {
-                  final action = FlirtyAction.all[index];
-                  return AnimatedBuilder(
-                    animation: _controller,
-                    builder: (context, child) {
-                      final start = 0.08 * index;
-                      final progress = Curves.easeOutCubic.transform(
-                        ((_controller.value - start) / 0.42).clamp(0.0, 1.0),
-                      );
-                      return Transform.translate(
-                        offset: Offset(0, (1 - progress) * 18),
-                        child: Opacity(opacity: progress, child: child),
-                      );
-                    },
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(24),
-                      onTap: () => Navigator.of(context).pop(action),
-                      child: Container(
-                        padding: const EdgeInsets.all(1),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(24),
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              action.gradient.first.withValues(alpha: 0.78),
-                              action.gradient.last.withValues(alpha: 0.54),
-                            ],
-                          ),
-                        ),
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(23),
-                            color: const Color(0xDA11141C),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Container(
-                                      width: 34,
-                                      height: 34,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: Colors.white.withValues(alpha: 0.06),
-                                      ),
-                                      child: Icon(
-                                        action.icon,
-                                        size: 16,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    const Spacer(),
-                                    Icon(
-                                      Icons.north_east_rounded,
-                                      size: 15,
-                                      color:
-                                          Colors.white.withValues(alpha: 0.42),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                ClipRRect(
-                                  borderRadius: BorderRadius.circular(16),
-                                  child: Container(
-                                    height: 82,
-                                    width: double.infinity,
-                                    color: Colors.white.withValues(alpha: 0.02),
-                                    child: _FlirtyDuoScene(
-                                      action: action,
-                                      progress: (_controller.value + index * 0.12) % 1,
-                                      compact: true,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  action.label,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        color: Colors.white,
-                                        fontSize: 15,
-                                      ),
-                                ),
-                                const SizedBox(height: 5),
-                                Text(
-                                  action.hint,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelMedium
-                                      ?.copyWith(
-                                        color: AppTheme.textSecondary
-                                            .withValues(alpha: 0.88),
-                                        letterSpacing: 0.15,
-                                      ),
-                                ),
-                                const Spacer(),
-                                Text(
-                                  action.motionNotes,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelMedium
-                                      ?.copyWith(
-                                        color: Colors.white.withValues(alpha: 0.72),
-                                        letterSpacing: 0.1,
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _StageSpotlight extends StatelessWidget {
-  const _StageSpotlight({
-    required this.colors,
-    required this.child,
+class _PickerHeader extends StatelessWidget {
+  const _PickerHeader({required this.controller});
+
+  final AnimationController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        AnimatedBuilder(
+          animation: controller,
+          builder: (context, _) {
+            final glow = 0.14 + controller.value * 0.16;
+            return Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  colors: [Color(0x55E2B17B), Color(0x447094C8)],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0x33E2B17B).withValues(alpha: glow),
+                    blurRadius: 24,
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.favorite_outline_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+            );
+          },
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Relationship Temperature',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 3),
+              Text(
+                '按情绪升温，不按功能分类。',
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MoodSection extends StatelessWidget {
+  const _MoodSection({
+    required this.group,
+    required this.actions,
+    required this.onTap,
+    required this.progress,
   });
 
-  final List<Color> colors;
-  final Widget child;
+  final FlirtyMoodGroup group;
+  final List<FlirtyAction> actions;
+  final ValueChanged<FlirtyAction> onTap;
+  final double progress;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 248,
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(26),
+        color: Colors.white.withValues(alpha: 0.035),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.06),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  group.title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  group.subtitle,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: AppTheme.textSecondary.withValues(alpha: 0.9),
+                        letterSpacing: 0.15,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: actions.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 0.9,
+            ),
+            itemBuilder: (context, index) {
+              final action = actions[index];
+              return _RelationshipActionCell(
+                action: action,
+                progress: (progress + index * 0.14) % 1,
+                onTap: () => onTap(action),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RelationshipActionCell extends StatelessWidget {
+  const _RelationshipActionCell({
+    required this.action,
+    required this.progress,
+    required this.onTap,
+  });
+
+  final FlirtyAction action;
+  final double progress;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(24),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(1),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              action.gradient.first.withValues(alpha: 0.78),
+              action.gradient.last.withValues(alpha: 0.56),
+            ],
+          ),
+        ),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(23),
+            color: const Color(0xE511141C),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.06),
+                      ),
+                      child: Icon(
+                        action.icon,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      action.moodTag,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.7),
+                            letterSpacing: 0.2,
+                          ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: _CompactSceneFrame(
+                      action: action,
+                      progress: progress,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  action.label,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontSize: 15,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  action.hint,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: AppTheme.textSecondary.withValues(alpha: 0.9),
+                        letterSpacing: 0.15,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CompactSceneFrame extends StatelessWidget {
+  const _CompactSceneFrame({
+    required this.action,
+    required this.progress,
+  });
+
+  final FlirtyAction action;
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 112,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
         gradient: RadialGradient(
-          center: const Alignment(0, -0.2),
-          radius: 1.1,
+          center: const Alignment(0, -0.3),
+          radius: 1.18,
           colors: [
-            colors.first.withValues(alpha: 0.18),
-            const Color(0xFF10131C),
+            action.gradient.first.withValues(alpha: 0.2),
+            const Color(0xFF0E1118),
           ],
         ),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+      ),
+      child: _FlirtyDuoScene(
+        action: action,
+        progress: progress,
+        compact: true,
+      ),
+    );
+  }
+}
+
+class _OverlayTopLine extends StatelessWidget {
+  const _OverlayTopLine({
+    required this.action,
+    required this.isMine,
+  });
+
+  final FlirtyAction action;
+  final bool isMine;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _MoodChip(
+          label: action.moodTag,
+          colors: action.gradient,
+          icon: action.icon,
+        ),
+        const Spacer(),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            color: Colors.white.withValues(alpha: 0.05),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.06),
+            ),
+          ),
+          child: Text(
+            isMine ? '你先伸手' : '他先靠近',
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.82),
+                  letterSpacing: 0.2,
+                ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MoodChip extends StatelessWidget {
+  const _MoodChip({
+    required this.label,
+    required this.colors,
+    required this.icon,
+  });
+
+  final String label;
+  final List<Color> colors;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        gradient: LinearGradient(
+          colors: [
+            colors.first.withValues(alpha: 0.22),
+            colors.last.withValues(alpha: 0.14),
+          ],
+        ),
+        border: Border.all(
+          color: colors.first.withValues(alpha: 0.34),
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.white),
+          const SizedBox(width: 7),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.92),
+                  letterSpacing: 0.2,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ReplayBadge extends StatelessWidget {
+  const _ReplayBadge({required this.isMine});
+
+  final bool isMine;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        color: Colors.white.withValues(alpha: 0.05),
+      ),
+      child: Text(
+        isMine ? '你发出的暧昧' : '对方向你靠近',
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: Colors.white.withValues(alpha: 0.72),
+              letterSpacing: 0.1,
+            ),
+      ),
+    );
+  }
+}
+
+class _CinematicStage extends StatelessWidget {
+  const _CinematicStage({
+    required this.action,
+    required this.progress,
+    required this.overlayMode,
+  });
+
+  final FlirtyAction action;
+  final double progress;
+  final bool overlayMode;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: overlayMode ? 320 : 248,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(34),
+        gradient: RadialGradient(
+          center: const Alignment(0, -0.28),
+          radius: 1.08,
+          colors: [
+            Colors.white.withValues(alpha: 0.05),
+            const Color(0xFF0C1016),
+          ],
+        ),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.06),
+        ),
       ),
       child: Stack(
         fit: StackFit.expand,
         children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    action.gradient.first.withValues(alpha: 0.18),
+                    Colors.transparent,
+                    const Color(0xFF091017).withValues(alpha: 0.84),
+                  ],
+                ),
+              ),
+            ),
+          ),
           Positioned(
-            left: 46,
-            right: 46,
+            left: 54,
+            right: 54,
             top: 18,
-            height: 88,
+            height: 132,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: RadialGradient(
                   colors: [
-                    Colors.white.withValues(alpha: 0.18),
+                    Colors.white.withValues(alpha: 0.2),
                     Colors.transparent,
                   ],
                 ),
@@ -712,32 +909,36 @@ class _StageSpotlight extends StatelessWidget {
             ),
           ),
           Positioned(
-            left: 18,
-            right: 18,
-            bottom: 18,
-            height: 42,
+            left: 24,
+            right: 24,
+            bottom: 26,
+            height: 54,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(999),
                 gradient: LinearGradient(
                   colors: [
-                    Colors.white.withValues(alpha: 0.05),
-                    colors.first.withValues(alpha: 0.18),
-                    Colors.white.withValues(alpha: 0.04),
+                    Colors.white.withValues(alpha: 0.03),
+                    action.gradient.first.withValues(alpha: 0.24),
+                    Colors.white.withValues(alpha: 0.03),
                   ],
                 ),
               ),
             ),
           ),
-          child,
+          _FlirtyDuoScene(
+            action: action,
+            progress: progress,
+            compact: false,
+          ),
         ],
       ),
     );
   }
 }
 
-class _SceneParticles extends StatelessWidget {
-  const _SceneParticles({
+class _AtmosphericParticles extends StatelessWidget {
+  const _AtmosphericParticles({
     required this.progress,
     required this.colors,
   });
@@ -748,38 +949,44 @@ class _SceneParticles extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
-    return Stack(
-      children: List.generate(12, (index) {
-        final seed = index / 12;
-        final radius = 110 + index * 18.0 + progress * 32;
-        final angle = seed * math.pi * 2 + progress * 0.8;
-        final dx = size.width / 2 + math.cos(angle) * radius;
-        final dy = size.height * 0.43 + math.sin(angle * 1.3) * radius * 0.28;
-        return Positioned(
-          left: dx,
-          top: dy,
-          child: Opacity(
-            opacity: (0.18 + math.sin(progress * math.pi * 2 + index) * 0.08)
-                .clamp(0.0, 0.28),
-            child: Container(
-              width: 6 + (index % 3) * 3,
-              height: 6 + (index % 3) * 3,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: (index.isEven ? colors.first : colors.last)
-                    .withValues(alpha: 0.65),
-                boxShadow: [
-                  BoxShadow(
-                    color: (index.isEven ? colors.first : colors.last)
-                        .withValues(alpha: 0.32),
-                    blurRadius: 14,
-                  ),
-                ],
+    return IgnorePointer(
+      child: Stack(
+        children: List.generate(14, (index) {
+          final seed = index / 14;
+          final orbit = 96 + index * 18;
+          final dx = size.width / 2 +
+              math.cos(seed * math.pi * 2 + progress * 1.2) * orbit;
+          final dy = size.height * 0.43 +
+              math.sin(seed * math.pi * 3 + progress) * 32 +
+              index * 10;
+          final diameter = 5.0 + (index % 4) * 2.0;
+          return Positioned(
+            left: dx,
+            top: dy,
+            child: Opacity(
+              opacity: (0.08 +
+                      (math.sin(progress * math.pi * 2 + index) + 1) * 0.07)
+                  .clamp(0.0, 0.24),
+              child: Container(
+                width: diameter,
+                height: diameter,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: (index.isEven ? colors.first : colors.last)
+                      .withValues(alpha: 0.74),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (index.isEven ? colors.first : colors.last)
+                          .withValues(alpha: 0.22),
+                      blurRadius: 18,
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      }),
+          );
+        }),
+      ),
     );
   }
 }
@@ -797,64 +1004,64 @@ class _FlirtyDuoScene extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final loop = compact
-        ? Curves.easeInOutSine.transform(progress)
-        : Curves.easeInOutCubic.transform(progress);
-    final motion = _buildMotion(action.id, loop);
-    final stageHeight = compact ? 104.0 : 248.0;
-    final chibiScale = compact ? 0.62 : 1.0;
+    final motion = _buildMotion(action.id, progress);
+    final scale = compact ? 0.66 : 1.0;
+    final stageHeight = compact ? 112.0 : 320.0;
 
     return SizedBox(
       height: stageHeight,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Positioned(
-            left: motion.accentOffset.dx,
-            top: motion.accentOffset.dy,
-            child: Opacity(
-              opacity: motion.accentOpacity,
-              child: Transform.scale(
-                scale: compact ? 0.74 : 1,
-                child: motion.accent,
+          for (final accent in motion.accents)
+            Positioned(
+              left: accent.offset.dx * scale,
+              top: accent.offset.dy * scale,
+              child: Opacity(
+                opacity: accent.opacity,
+                child: Transform.scale(
+                  scale: accent.scale * scale,
+                  child: accent.child,
+                ),
               ),
             ),
-          ),
           Positioned(
-            left: motion.left.dx,
-            top: motion.left.dy,
+            left: motion.left.dx * scale,
+            top: motion.left.dy * scale,
             child: Transform.rotate(
               angle: motion.leftPose.rotation,
               child: Transform.scale(
-                scale: motion.leftPose.scale * chibiScale,
+                scale: motion.leftPose.scale * scale,
                 child: _ChibiBoy(
                   proactive: true,
                   faceRight: true,
                   expression: motion.leftPose.expression,
-                  handReach: motion.leftPose.handReach,
-                  handLift: motion.leftPose.handLift,
                   headTilt: motion.leftPose.headTilt,
                   bodyLean: motion.leftPose.bodyLean,
+                  frontArmReach: motion.leftPose.frontArmReach,
+                  frontArmLift: motion.leftPose.frontArmLift,
+                  backArmLift: motion.leftPose.backArmLift,
                   blush: motion.leftPose.blush,
                 ),
               ),
             ),
           ),
           Positioned(
-            left: motion.right.dx,
-            top: motion.right.dy,
+            left: motion.right.dx * scale,
+            top: motion.right.dy * scale,
             child: Transform.rotate(
               angle: motion.rightPose.rotation,
               child: Transform.scale(
-                scale: motion.rightPose.scale * chibiScale,
+                scale: motion.rightPose.scale * scale,
                 child: _ChibiBoy(
                   proactive: false,
                   faceRight: false,
                   expression: motion.rightPose.expression,
-                  handReach: motion.rightPose.handReach,
-                  handLift: motion.rightPose.handLift,
                   headTilt: motion.rightPose.headTilt,
                   bodyLean: motion.rightPose.bodyLean,
+                  frontArmReach: motion.rightPose.frontArmReach,
+                  frontArmLift: motion.rightPose.frontArmLift,
+                  backArmLift: motion.rightPose.backArmLift,
                   blush: motion.rightPose.blush,
                 ),
               ),
@@ -865,304 +1072,389 @@ class _FlirtyDuoScene extends StatelessWidget {
     );
   }
 
-  _SceneMotion _buildMotion(String id, double t) {
-    final float = math.sin(t * math.pi * 2) * 4;
+  _SceneMotion _buildMotion(String id, double rawProgress) {
+    final t = compact
+        ? rawProgress
+        : Curves.easeInOutCubic.transform(rawProgress.clamp(0.0, 1.0));
+    final drift = math.sin(t * math.pi * 2) * 4;
+    final breathe = math.sin(t * math.pi * 2 + 0.7) * 2;
+
     switch (id) {
       case 'poke_butt':
-        final poke = Curves.easeOutBack.transform((t * 1.15).clamp(0.0, 1.0));
-        final bounce = math.sin(t * math.pi * 3).abs() * 12;
+        final windUp = _segment(t, 0.0, 0.16, Curves.easeOut);
+        final jab = _segment(t, 0.16, 0.34, Curves.easeIn);
+        final bounce = _dampedWave(t, start: 0.34, speed: 18, decay: 5.2);
         return _SceneMotion(
-          left: Offset(44 + poke * 24, 88 + float),
-          right: Offset(168, 70 - bounce),
+          left: Offset(56 + windUp * 10 + jab * 36, 120 + drift),
+          right: Offset(212 - jab * 4, 92 - bounce * 18 + breathe),
+          leftPose: _ActorPose(
+            scale: 1.02,
+            rotation: -0.08 + jab * 0.08,
+            expression: jab > 0.28
+                ? _ChibiExpression.naughtySmile
+                : _ChibiExpression.mischief,
+            headTilt: -0.18 + windUp * 0.07,
+            bodyLean: 0.16 + jab * 0.34,
+            frontArmReach: 0.34 + jab * 0.6,
+            frontArmLift: 0.18 + jab * 0.12,
+            backArmLift: 0.24,
+            blush: 0.14,
+          ),
+          rightPose: _ActorPose(
+            scale: 1.0,
+            rotation: 0.04 - bounce * 0.05,
+            expression: bounce.abs() > 0.14
+                ? _ChibiExpression.surprised
+                : _ChibiExpression.flustered,
+            headTilt: 0.12 + bounce * 0.08,
+            bodyLean: -0.14 - bounce * 0.16,
+            frontArmReach: 0.12,
+            frontArmLift: 0.54 + bounce.abs() * 0.12,
+            backArmLift: 0.26,
+            blush: 0.34,
+          ),
+          accents: [
+            _SceneAccent(
+              child: const _ImpactBurst(),
+              offset: Offset(190 + jab * 18, 158 - bounce * 10),
+              opacity: 0.2 + jab * 0.6,
+              scale: 0.72 + jab * 0.4,
+            ),
+            _SceneAccent(
+              child: const _BounceRing(),
+              offset: Offset(214, 208 - bounce * 14),
+              opacity: 0.16 + bounce.abs() * 0.28,
+              scale: 0.9 + bounce.abs() * 0.26,
+            ),
+          ],
+        );
+      case 'tug_sleeve':
+        final reach = _segment(t, 0.0, 0.22, Curves.easeOut);
+        final pull = _segment(t, 0.22, 0.52, Curves.easeInOut);
+        final settle = _segment(t, 0.52, 0.84, Curves.easeOut);
+        return _SceneMotion(
+          left: Offset(74 + pull * 14, 118 + drift * 0.5),
+          right: Offset(214 - pull * 10, 114 - settle * 10),
           leftPose: _ActorPose(
             scale: 1.0,
-            rotation: -0.08,
-            expression: _ChibiExpression.smirk,
-            handReach: 0.78,
-            handLift: 0.24,
-            headTilt: -0.12,
-            bodyLean: 0.20,
+            rotation: -0.03,
+            expression: _ChibiExpression.softSmile,
+            headTilt: -0.06,
+            bodyLean: 0.08 + pull * 0.08,
+            frontArmReach: 0.54 + pull * 0.16,
+            frontArmLift: 0.22 + reach * 0.12,
+            backArmLift: 0.2,
             blush: 0.16,
           ),
           rightPose: _ActorPose(
-            scale: 1.0,
-            rotation: 0.06,
-            expression: _ChibiExpression.surprised,
-            handReach: 0.12,
-            handLift: 0.64,
-            headTilt: 0.18,
-            bodyLean: -0.18,
-            blush: 0.34,
-          ),
-          accent: const Icon(Icons.touch_app_rounded, color: Colors.white, size: 30),
-          accentOffset: Offset(158 + poke * 14, 122 - bounce * 0.35),
-          accentOpacity: 0.34 + poke * 0.38,
-        );
-      case 'tug_sleeve':
-        final tug = math.sin(t * math.pi).abs();
-        return _SceneMotion(
-          left: Offset(54 + tug * 18, 86 + float),
-          right: Offset(170 - tug * 8, 84 - tug * 10),
-          leftPose: _ActorPose(
             scale: 0.98,
-            rotation: -0.04,
-            expression: _ChibiExpression.gentle,
-            handReach: 0.66,
-            handLift: 0.36,
-            headTilt: -0.08,
-            bodyLean: 0.10,
-            blush: 0.18,
-          ),
-          rightPose: _ActorPose(
-            scale: 1.0,
             rotation: 0.03,
-            expression: _ChibiExpression.shy,
-            handReach: 0.18,
-            handLift: 0.22,
-            headTilt: 0.16,
-            bodyLean: -0.10,
+            expression: pull > 0.18
+                ? _ChibiExpression.shy
+                : _ChibiExpression.softSmile,
+            headTilt: 0.16 + pull * 0.06,
+            bodyLean: -0.04 - pull * 0.12,
+            frontArmReach: 0.24,
+            frontArmLift: 0.22,
+            backArmLift: 0.16 + settle * 0.14,
             blush: 0.42,
           ),
-          accent: Container(
-            width: 54,
-            height: 12,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(999),
-              gradient: LinearGradient(
-                colors: [
-                  Colors.white.withValues(alpha: 0.06),
-                  Colors.white.withValues(alpha: 0.42),
-                ],
-              ),
+          accents: [
+            _SceneAccent(
+              child: const _SleeveRibbon(),
+              offset: Offset(164 + pull * 8, 156),
+              opacity: 0.18 + pull * 0.56,
+              scale: 1.0,
             ),
-          ),
-          accentOffset: Offset(132 + tug * 12, 142),
-          accentOpacity: 0.24 + tug * 0.45,
+            _SceneAccent(
+              child: const _HeartDustCluster(),
+              offset: const Offset(150, 90),
+              opacity: 0.1 + settle * 0.28,
+              scale: 0.9,
+            ),
+          ],
         );
       case 'pat_head':
-        final pat = math.sin(t * math.pi * 1.5).abs();
+        final drop = _segment(t, 0.08, 0.28, Curves.easeOut);
+        final pat = _pulse(t, 0.28, 0.52);
+        final rest = _segment(t, 0.52, 0.86, Curves.easeOut);
         return _SceneMotion(
-          left: Offset(62, 80 + float),
-          right: Offset(172, 86 - pat * 8),
+          left: Offset(80, 110 + drift * 0.4),
+          right: Offset(214, 122 - pat * 10),
           leftPose: _ActorPose(
-            scale: 1.02,
+            scale: 1.0,
             rotation: -0.03,
             expression: _ChibiExpression.gentle,
-            handReach: 0.60,
-            handLift: 0.88,
             headTilt: -0.04,
-            bodyLean: 0.04,
+            bodyLean: 0.02,
+            frontArmReach: 0.56,
+            frontArmLift: 0.44 + drop * 0.46,
+            backArmLift: 0.14,
             blush: 0.12,
           ),
           rightPose: _ActorPose(
             scale: 0.98,
-            rotation: 0.04,
-            expression: _ChibiExpression.softSmile,
-            handReach: 0.08,
-            handLift: 0.28,
-            headTilt: 0.14,
-            bodyLean: -0.08,
-            blush: 0.34,
+            rotation: 0.03,
+            expression: rest > 0.16
+                ? _ChibiExpression.comforted
+                : _ChibiExpression.softSmile,
+            headTilt: 0.12 + pat * 0.06,
+            bodyLean: -0.06,
+            frontArmReach: 0.16,
+            frontArmLift: 0.16,
+            backArmLift: 0.18,
+            blush: 0.3,
           ),
-          accent: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: const [
-              Icon(Icons.auto_awesome_rounded, color: Color(0xFFF4D29B), size: 18),
-              SizedBox(width: 6),
-              Icon(Icons.auto_awesome_rounded, color: Color(0xFFF4D29B), size: 14),
-            ],
-          ),
-          accentOffset: Offset(174, 72 - pat * 10),
-          accentOpacity: 0.22 + pat * 0.58,
+          accents: [
+            _SceneAccent(
+              child: const _StarHalo(),
+              offset: Offset(208, 88 - pat * 12),
+              opacity: 0.16 + pat * 0.5,
+              scale: 0.9 + pat * 0.24,
+            ),
+          ],
         );
       case 'hook_finger':
-        final hold = math.sin(t * math.pi).abs();
+        final approach1 = _segment(t, 0.0, 0.22, Curves.easeOut);
+        final approach2 = _segment(t, 0.28, 0.44, Curves.easeOut);
+        final lock = _segment(t, 0.44, 0.62, Curves.easeInOut);
+        final sway = math.sin(math.max(0.0, t - 0.62) * math.pi * 4) * 0.5;
         return _SceneMotion(
-          left: Offset(62 + hold * 6, 84 + float),
-          right: Offset(166 - hold * 6, 84 + float * 0.5),
+          left: Offset(88 + approach1 * 12 + approach2 * 8, 118 + drift * 0.6),
+          right: Offset(196 - approach1 * 10 - approach2 * 12, 118 - drift * 0.2),
           leftPose: _ActorPose(
             scale: 1.0,
-            rotation: -0.02,
-            expression: _ChibiExpression.smirk,
-            handReach: 0.72,
-            handLift: 0.34,
-            headTilt: -0.10,
-            bodyLean: 0.10,
-            blush: 0.18,
+            rotation: -0.02 + sway * 0.02,
+            expression: lock > 0.1
+                ? _ChibiExpression.naughtySmile
+                : _ChibiExpression.mischief,
+            headTilt: -0.12,
+            bodyLean: 0.08 + lock * 0.08,
+            frontArmReach: 0.46 + approach1 * 0.16 + approach2 * 0.18,
+            frontArmLift: 0.18,
+            backArmLift: 0.14,
+            blush: 0.14,
           ),
           rightPose: _ActorPose(
             scale: 1.0,
-            rotation: 0.02,
-            expression: _ChibiExpression.shy,
-            handReach: 0.56,
-            handLift: 0.28,
-            headTilt: 0.10,
-            bodyLean: -0.02,
+            rotation: 0.02 - sway * 0.02,
+            expression: lock > 0.2
+                ? _ChibiExpression.shy
+                : _ChibiExpression.flustered,
+            headTilt: 0.12,
+            bodyLean: -0.02 + lock * 0.02,
+            frontArmReach: 0.38 + approach2 * 0.18,
+            frontArmLift: 0.16,
+            backArmLift: 0.14,
             blush: 0.44,
           ),
-          accent: CustomPaint(
-            size: const Size(58, 18),
-            painter: _LinkPainter(color: const Color(0xFFE5BD82)),
-          ),
-          accentOffset: const Offset(136, 144),
-          accentOpacity: 0.34 + hold * 0.4,
+          accents: [
+            _SceneAccent(
+              child: const _FingerBridge(),
+              offset: const Offset(156, 168),
+              opacity: 0.18 + lock * 0.58,
+              scale: 1.0,
+            ),
+            _SceneAccent(
+              child: const _HeartDustCluster(),
+              offset: const Offset(164, 116),
+              opacity: 0.08 + lock * 0.34,
+              scale: 0.86,
+            ),
+          ],
         );
       case 'lean_closer':
-        final lean = Curves.easeOutSine.transform(t);
+        final push = _segment(t, 0.06, 0.46, Curves.easeOutCubic);
+        final hover = _segment(t, 0.46, 0.76, Curves.linear);
         return _SceneMotion(
-          left: Offset(74 + lean * 20, 80 + float),
-          right: Offset(170 - lean * 18, 84 - float * 0.3),
+          left: Offset(96 + push * 22, 110 + drift),
+          right: Offset(210 - push * 18, 114 - drift * 0.4),
           leftPose: _ActorPose(
-            scale: 1.04,
+            scale: 1.03,
             rotation: -0.01,
-            expression: _ChibiExpression.smirk,
-            handReach: 0.42,
-            handLift: 0.20,
+            expression: hover > 0.1
+                ? _ChibiExpression.naughtySmile
+                : _ChibiExpression.mischief,
             headTilt: -0.08,
-            bodyLean: 0.22,
-            blush: 0.18,
+            bodyLean: 0.12 + push * 0.18,
+            frontArmReach: 0.3 + push * 0.12,
+            frontArmLift: 0.14,
+            backArmLift: 0.12,
+            blush: 0.14,
           ),
           rightPose: _ActorPose(
             scale: 1.0,
             rotation: 0.01,
-            expression: _ChibiExpression.flustered,
-            handReach: 0.16,
-            handLift: 0.36,
+            expression: hover > 0.16
+                ? _ChibiExpression.flustered
+                : _ChibiExpression.shy,
             headTilt: 0.12,
-            bodyLean: -0.12,
+            bodyLean: -0.08 - push * 0.08,
+            frontArmReach: 0.18,
+            frontArmLift: 0.22,
+            backArmLift: 0.14,
             blush: 0.42,
           ),
-          accent: Container(
-            width: 68,
-            height: 68,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  Colors.white.withValues(alpha: 0.26),
-                  Colors.transparent,
-                ],
-              ),
+          accents: [
+            _SceneAccent(
+              child: const _BreathHalo(),
+              offset: const Offset(142, 84),
+              opacity: 0.12 + push * 0.36,
+              scale: 0.94 + push * 0.22,
             ),
-          ),
-          accentOffset: const Offset(132, 76),
-          accentOpacity: 0.20 + lean * 0.42,
+          ],
         );
       case 'sneak_glance':
-        final glance = math.sin(t * math.pi * 2);
+        final glance = _pulse(t, 0.18, 0.42);
+        final retreat = _segment(t, 0.42, 0.66, Curves.easeIn);
         return _SceneMotion(
-          left: Offset(66, 88 + float),
-          right: Offset(172, 86),
+          left: Offset(92, 118 + drift),
+          right: Offset(214, 118 - drift * 0.3),
           leftPose: _ActorPose(
             scale: 1.0,
             rotation: -0.02,
-            expression: glance > 0 ? _ChibiExpression.glance : _ChibiExpression.softSmile,
-            handReach: 0.18,
-            handLift: 0.20,
-            headTilt: -0.12,
-            bodyLean: 0.02,
+            expression: glance > 0.2
+                ? _ChibiExpression.glance
+                : _ChibiExpression.softSmile,
+            headTilt: -0.18 + retreat * 0.08,
+            bodyLean: 0.0,
+            frontArmReach: 0.16,
+            frontArmLift: 0.14,
+            backArmLift: 0.12,
+            blush: 0.12,
+          ),
+          rightPose: _ActorPose(
+            scale: 1.0,
+            rotation: 0.02,
+            expression: retreat > 0.08
+                ? _ChibiExpression.shy
+                : _ChibiExpression.surprised,
+            headTilt: 0.08 + glance * 0.08,
+            bodyLean: -0.02,
+            frontArmReach: 0.14,
+            frontArmLift: 0.14,
+            backArmLift: 0.12,
+            blush: 0.34,
+          ),
+          accents: [
+            _SceneAccent(
+              child: const _GlanceBeam(),
+              offset: Offset(144 + glance * 8, 114),
+              opacity: 0.12 + glance * 0.44,
+              scale: 1.0,
+            ),
+          ],
+        );
+      case 'brush_shoulder':
+        final cross = _segment(t, 0.1, 0.46, Curves.easeInOut);
+        final checkBack = _segment(t, 0.52, 0.78, Curves.easeOut);
+        return _SceneMotion(
+          left: Offset(96 + cross * 22, 126 + drift * 0.4),
+          right: Offset(186 - cross * 16, 124 - drift * 0.2),
+          leftPose: _ActorPose(
+            scale: 1.0,
+            rotation: -0.01,
+            expression: checkBack > 0.1
+                ? _ChibiExpression.softSmile
+                : _ChibiExpression.gentle,
+            headTilt: -0.08,
+            bodyLean: 0.14,
+            frontArmReach: 0.18,
+            frontArmLift: 0.12,
+            backArmLift: 0.12,
+            blush: 0.16,
+          ),
+          rightPose: _ActorPose(
+            scale: 1.0,
+            rotation: 0.01,
+            expression: cross > 0.16
+                ? _ChibiExpression.flustered
+                : _ChibiExpression.shy,
+            headTilt: 0.1 + checkBack * 0.08,
+            bodyLean: -0.08,
+            frontArmReach: 0.14,
+            frontArmLift: 0.14,
+            backArmLift: 0.12,
+            blush: 0.34,
+          ),
+          accents: [
+            _SceneAccent(
+              child: const _ShoulderTrail(),
+              offset: const Offset(146, 154),
+              opacity: 0.14 + cross * 0.46,
+              scale: 1.0,
+            ),
+          ],
+        );
+      case 'naughty_smile':
+      default:
+        final lookUp = _segment(t, 0.06, 0.3, Curves.easeOut);
+        final smile = _segment(t, 0.3, 0.56, Curves.easeOut);
+        return _SceneMotion(
+          left: Offset(98, 118 + drift),
+          right: Offset(216, 118 - drift * 0.2),
+          leftPose: _ActorPose(
+            scale: 1.02,
+            rotation: -0.02,
+            expression: smile > 0.18
+                ? _ChibiExpression.naughtySmile
+                : _ChibiExpression.mischief,
+            headTilt: -0.16 + lookUp * 0.1,
+            bodyLean: 0.04,
+            frontArmReach: 0.16,
+            frontArmLift: 0.12,
+            backArmLift: 0.12,
             blush: 0.14,
           ),
           rightPose: _ActorPose(
             scale: 1.0,
             rotation: 0.02,
-            expression: glance > 0.25
-                ? _ChibiExpression.surprised
-                : _ChibiExpression.shy,
-            handReach: 0.16,
-            handLift: 0.28,
-            headTilt: 0.14,
-            bodyLean: -0.02,
-            blush: 0.36,
-          ),
-          accent: Icon(
-            Icons.remove_red_eye_rounded,
-            color: const Color(0xFFB9C8FF).withValues(alpha: 0.88),
-            size: 28,
-          ),
-          accentOffset: Offset(132 + glance * 12, 94),
-          accentOpacity: 0.22 + glance.abs() * 0.46,
-        );
-      case 'brush_shoulder':
-        final brush = math.sin(t * math.pi).abs();
-        return _SceneMotion(
-          left: Offset(78 + brush * 18, 90 + float * 0.2),
-          right: Offset(150 - brush * 12, 92 - brush * 4),
-          leftPose: _ActorPose(
-            scale: 1.0,
-            rotation: -0.01,
-            expression: _ChibiExpression.softSmile,
-            handReach: 0.20,
-            handLift: 0.18,
-            headTilt: -0.06,
-            bodyLean: 0.18,
-            blush: 0.18,
-          ),
-          rightPose: _ActorPose(
-            scale: 1.0,
-            rotation: 0.01,
-            expression: _ChibiExpression.flustered,
-            handReach: 0.18,
-            handLift: 0.24,
-            headTilt: 0.08,
-            bodyLean: -0.04,
-            blush: 0.34,
-          ),
-          accent: CustomPaint(
-            size: const Size(64, 24),
-            painter: _TrailPainter(color: const Color(0xFFC9E0FF)),
-          ),
-          accentOffset: const Offset(136, 128),
-          accentOpacity: 0.24 + brush * 0.44,
-        );
-      case 'naughty_smile':
-      default:
-        final smug = math.sin(t * math.pi).abs();
-        return _SceneMotion(
-          left: Offset(72, 86 + float),
-          right: Offset(176, 88),
-          leftPose: _ActorPose(
-            scale: 1.02,
-            rotation: -0.02,
-            expression: _ChibiExpression.smirk,
-            handReach: 0.16,
-            handLift: 0.16,
-            headTilt: -0.14,
-            bodyLean: 0.05,
-            blush: 0.18,
-          ),
-          rightPose: _ActorPose(
-            scale: 1.0,
-            rotation: 0.02,
-            expression: smug > 0.45
+            expression: smile > 0.18
                 ? _ChibiExpression.flustered
                 : _ChibiExpression.shy,
-            handReach: 0.10,
-            handLift: 0.30,
-            headTilt: 0.12,
-            bodyLean: -0.04,
-            blush: 0.40,
+            headTilt: 0.1,
+            bodyLean: -0.02,
+            frontArmReach: 0.12,
+            frontArmLift: 0.14,
+            backArmLift: 0.12,
+            blush: 0.4,
           ),
-          accent: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.auto_awesome_rounded,
-                color: const Color(0xFFF4D29B).withValues(alpha: 0.9),
-                size: 14,
-              ),
-              const SizedBox(width: 6),
-              Container(
-                width: 36,
-                height: 2,
-                color: Colors.white.withValues(alpha: 0.22),
-              ),
-            ],
-          ),
-          accentOffset: const Offset(148, 98),
-          accentOpacity: 0.18 + smug * 0.38,
+          accents: [
+            _SceneAccent(
+              child: const _SmileSlash(),
+              offset: const Offset(162, 120),
+              opacity: 0.1 + smile * 0.32,
+              scale: 1.0,
+            ),
+          ],
         );
     }
+  }
+
+  double _segment(
+    double t,
+    double start,
+    double end,
+    Curve curve,
+  ) {
+    if (t <= start) return 0;
+    if (t >= end) return 1;
+    return curve.transform((t - start) / (end - start));
+  }
+
+  double _pulse(double t, double start, double end) {
+    final p = _segment(t, start, end, Curves.easeInOut);
+    return math.sin(p * math.pi);
+  }
+
+  double _dampedWave(
+    double t, {
+    required double start,
+    required double speed,
+    required double decay,
+  }) {
+    final normalized = math.max(0.0, t - start);
+    return math.sin(normalized * speed) * math.exp(-normalized * decay);
   }
 }
 
@@ -1172,18 +1464,28 @@ class _SceneMotion {
     required this.right,
     required this.leftPose,
     required this.rightPose,
-    required this.accent,
-    required this.accentOffset,
-    required this.accentOpacity,
+    required this.accents,
   });
 
   final Offset left;
   final Offset right;
   final _ActorPose leftPose;
   final _ActorPose rightPose;
-  final Widget accent;
-  final Offset accentOffset;
-  final double accentOpacity;
+  final List<_SceneAccent> accents;
+}
+
+class _SceneAccent {
+  const _SceneAccent({
+    required this.child,
+    required this.offset,
+    required this.opacity,
+    required this.scale,
+  });
+
+  final Widget child;
+  final Offset offset;
+  final double opacity;
+  final double scale;
 }
 
 class _ActorPose {
@@ -1191,29 +1493,33 @@ class _ActorPose {
     required this.scale,
     required this.rotation,
     required this.expression,
-    required this.handReach,
-    required this.handLift,
     required this.headTilt,
     required this.bodyLean,
+    required this.frontArmReach,
+    required this.frontArmLift,
+    required this.backArmLift,
     required this.blush,
   });
 
   final double scale;
   final double rotation;
   final _ChibiExpression expression;
-  final double handReach;
-  final double handLift;
   final double headTilt;
   final double bodyLean;
+  final double frontArmReach;
+  final double frontArmLift;
+  final double backArmLift;
   final double blush;
 }
 
 enum _ChibiExpression {
+  comforted,
+  flustered,
   gentle,
   glance,
-  flustered,
+  mischief,
+  naughtySmile,
   shy,
-  smirk,
   softSmile,
   surprised,
 }
@@ -1223,49 +1529,63 @@ class _ChibiBoy extends StatelessWidget {
     required this.proactive,
     required this.faceRight,
     required this.expression,
-    required this.handReach,
-    required this.handLift,
     required this.headTilt,
     required this.bodyLean,
+    required this.frontArmReach,
+    required this.frontArmLift,
+    required this.backArmLift,
     required this.blush,
   });
 
   final bool proactive;
   final bool faceRight;
   final _ChibiExpression expression;
-  final double handReach;
-  final double handLift;
   final double headTilt;
   final double bodyLean;
+  final double frontArmReach;
+  final double frontArmLift;
+  final double backArmLift;
   final double blush;
 
   @override
   Widget build(BuildContext context) {
-    final hair = proactive
-        ? const [Color(0xFF6A4338), Color(0xFF27131D)]
-        : const [Color(0xFF405A87), Color(0xFF18213B)];
-    final outfit = proactive
-        ? const [Color(0xFF8A394C), Color(0xFF441B2A)]
-        : const [Color(0xFF315D8E), Color(0xFF1A2946)];
+    final palette = proactive
+        ? const _CharacterPalette(
+            hairTop: Color(0xFF855649),
+            hairBase: Color(0xFF26151B),
+            outfitTop: Color(0xFFBE6D63),
+            outfitBase: Color(0xFF5A2636),
+            accent: Color(0xFFF1C08D),
+            accessory: Color(0xFFE7A890),
+          )
+        : const _CharacterPalette(
+            hairTop: Color(0xFF7E97C6),
+            hairBase: Color(0xFF253552),
+            outfitTop: Color(0xFF5E79A4),
+            outfitBase: Color(0xFF1D2946),
+            accent: Color(0xFFC5D6FF),
+            accessory: Color(0xFF93B2D7),
+          );
 
-    final leftArmAngle = lerpDouble(-0.6, 0.35, handLift)! + bodyLean * 0.35;
-    final rightArmAngle = lerpDouble(0.6, -0.55, handReach)! - bodyLean * 0.25;
-    final bodyRotation = bodyLean * 0.12;
+    final frontArmAngle =
+        lerpDouble(-0.55, 0.1, frontArmLift)! - frontArmReach * 0.42;
+    final backArmAngle = lerpDouble(0.42, -0.06, backArmLift)!;
+    final bodyRotation = bodyLean * 0.1;
 
     return Transform(
       alignment: Alignment.center,
       transform: Matrix4.identity()..scale(faceRight ? 1.0 : -1.0, 1.0),
       child: SizedBox(
-        width: 116,
-        height: 154,
+        width: 132,
+        height: 176,
         child: Stack(
           clipBehavior: Clip.none,
           children: [
             Positioned(
               left: 24,
               right: 24,
-              bottom: 4,
-              height: 14,
+              bottom: 8,
+              height: 16,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(999),
@@ -1274,178 +1594,286 @@ class _ChibiBoy extends StatelessWidget {
               ),
             ),
             Positioned(
-              left: 28,
-              bottom: 8,
-              child: _Limb(angle: -0.10, color: outfit.last, height: 36),
+              left: 34,
+              bottom: 18,
+              child: _Limb(
+                angle: -0.10,
+                color: palette.outfitBase,
+                height: 40,
+                width: 16,
+              ),
             ),
             Positioned(
-              right: 28,
-              bottom: 8,
-              child: _Limb(angle: 0.10, color: outfit.last, height: 36),
+              right: 32,
+              bottom: 18,
+              child: _Limb(
+                angle: 0.1,
+                color: palette.outfitBase,
+                height: 40,
+                width: 16,
+              ),
             ),
             Positioned(
-              left: 8,
+              left: 14,
+              top: 78,
+              child: _Limb(
+                angle: backArmAngle + bodyLean * 0.1,
+                color: palette.outfitTop,
+                height: 44,
+                width: 15,
+              ),
+            ),
+            Positioned(
+              right: 20 - frontArmReach * 12,
+              top: 78 - frontArmLift * 10,
+              child: _Limb(
+                angle: frontArmAngle,
+                color: palette.outfitTop,
+                height: 50,
+                width: 15,
+              ),
+            ),
+            Positioned(
+              left: 30,
               top: 74,
-              child: _Limb(
-                angle: leftArmAngle,
-                color: outfit.first,
-                height: 42,
-                width: 14,
-              ),
-            ),
-            Positioned(
-              right: 10 - handReach * 10,
-              top: 72 - handLift * 8,
-              child: _Limb(
-                angle: rightArmAngle,
-                color: outfit.first,
-                height: 48,
-                width: 14,
-              ),
-            ),
-            Positioned(
-              left: 24,
-              top: 64,
               child: Transform.rotate(
                 angle: bodyRotation,
-                child: Container(
-                  width: 68,
-                  height: 70,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(28),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: outfit,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: outfit.first.withValues(alpha: 0.18),
-                        blurRadius: 18,
-                      ),
-                    ],
-                  ),
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        left: 12,
-                        right: 12,
-                        top: 10,
-                        height: 20,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(999),
-                            color: Colors.white.withValues(alpha: 0.08),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        left: 24,
-                        right: 24,
-                        top: 0,
-                        height: 18,
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(999),
-                            color: const Color(0xFFF5D7C8),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                child: _ChibiBody(
+                  proactive: proactive,
+                  palette: palette,
                 ),
               ),
             ),
             Positioned(
-              left: 20,
-              top: 14,
+              left: 22,
+              top: 8,
               child: Transform.rotate(
                 angle: headTilt,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Positioned(
-                      left: 6,
-                      top: 10,
-                      child: Container(
-                        width: 72,
-                        height: 68,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFFF6D8C9),
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: 1,
-                      top: 0,
-                      child: Container(
-                        width: 82,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(34),
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: hair,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: proactive ? 8 : 16,
-                      top: 30,
-                      child: Container(
-                        width: proactive ? 54 : 50,
-                        height: 22,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(20),
-                          color: hair.last.withValues(alpha: 0.92),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: 18,
-                      top: 22,
-                      child: Container(
-                        width: 16,
-                        height: 18,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          color: hair.first,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      right: 18,
-                      top: proactive ? 24 : 20,
-                      child: Container(
-                        width: 18,
-                        height: 20,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          color: hair.first,
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: 17,
-                      top: 32,
-                      child: CustomPaint(
-                        size: const Size(52, 28),
-                        painter: _FacePainter(
-                          expression: expression,
-                          blush: blush,
-                          proactive: proactive,
-                        ),
-                      ),
-                    ),
-                  ],
+                child: _ChibiHead(
+                  proactive: proactive,
+                  palette: palette,
+                  expression: expression,
+                  blush: blush,
                 ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _CharacterPalette {
+  const _CharacterPalette({
+    required this.hairTop,
+    required this.hairBase,
+    required this.outfitTop,
+    required this.outfitBase,
+    required this.accent,
+    required this.accessory,
+  });
+
+  final Color hairTop;
+  final Color hairBase;
+  final Color outfitTop;
+  final Color outfitBase;
+  final Color accent;
+  final Color accessory;
+}
+
+class _ChibiBody extends StatelessWidget {
+  const _ChibiBody({
+    required this.proactive,
+    required this.palette,
+  });
+
+  final bool proactive;
+  final _CharacterPalette palette;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 78,
+      height: 86,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 78,
+            height: 82,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(30),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [palette.outfitTop, palette.outfitBase],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: palette.outfitTop.withValues(alpha: 0.18),
+                  blurRadius: 18,
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            left: 12,
+            right: 12,
+            top: 10,
+            height: 14,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+            ),
+          ),
+          if (proactive)
+            Positioned(
+              right: 10,
+              top: 18,
+              child: Container(
+                width: 12,
+                height: 34,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  color: palette.accent.withValues(alpha: 0.24),
+                ),
+              ),
+            )
+          else
+            Positioned(
+              left: 20,
+              right: 20,
+              top: 24,
+              height: 20,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  color: palette.accent.withValues(alpha: 0.18),
+                ),
+              ),
+            ),
+          Positioned(
+            left: 26,
+            right: 26,
+            top: -4,
+            height: 22,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                color: const Color(0xFFF6D9CC),
+              ),
+            ),
+          ),
+          Positioned(
+            left: proactive ? 10 : 14,
+            right: proactive ? 18 : 14,
+            bottom: 10,
+            height: proactive ? 16 : 20,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(999),
+                color: Colors.black.withValues(alpha: proactive ? 0.12 : 0.08),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChibiHead extends StatelessWidget {
+  const _ChibiHead({
+    required this.proactive,
+    required this.palette,
+    required this.expression,
+    required this.blush,
+  });
+
+  final bool proactive;
+  final _CharacterPalette palette;
+  final _ChibiExpression expression;
+  final double blush;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 90,
+      height: 86,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            left: 8,
+            top: 14,
+            child: Container(
+              width: 74,
+              height: 68,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(0xFFF6D8CA),
+              ),
+            ),
+          ),
+          if (proactive)
+            Positioned(
+              left: 2,
+              top: 0,
+              child: CustomPaint(
+                size: const Size(84, 48),
+                painter: _ProactiveHairPainter(palette),
+              ),
+            )
+          else
+            Positioned(
+              left: 2,
+              top: 0,
+              child: CustomPaint(
+                size: const Size(84, 50),
+                painter: _ShyHairPainter(palette),
+              ),
+            ),
+          Positioned(
+            left: proactive ? 7 : 12,
+            top: proactive ? 22 : 18,
+            child: Container(
+              width: proactive ? 56 : 50,
+              height: 22,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                color: palette.hairBase.withValues(alpha: 0.94),
+              ),
+            ),
+          ),
+          if (proactive)
+            Positioned(
+              right: 8,
+              top: 34,
+              child: Container(
+                width: 5,
+                height: 10,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(999),
+                  color: palette.accent,
+                ),
+              ),
+            ),
+          Positioned(
+            left: 20,
+            top: 34,
+            child: CustomPaint(
+              size: const Size(48, 28),
+              painter: _FacePainter(
+                expression: expression,
+                blush: blush,
+                proactive: proactive,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1494,102 +1922,174 @@ class _FacePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final eye = Paint()
-      ..color = const Color(0xFF2F2330)
-      ..strokeWidth = 3.1
+    final stroke = Paint()
+      ..color = const Color(0xFF2A202D)
+      ..strokeWidth = 2.8
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    final fill = Paint()
+      ..color = const Color(0xFF2A202D)
+      ..style = PaintingStyle.fill;
+    final mouth = Paint()
+      ..color = proactive ? const Color(0xFF7A3F49) : const Color(0xFF734B5E)
+      ..strokeWidth = 2.1
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
     final blushPaint = Paint()
-      ..color = const Color(0xFFEFA6A6).withValues(alpha: 0.28 + blush * 0.36)
-      ..style = PaintingStyle.fill;
-    final mouthPaint = Paint()
-      ..color = proactive ? const Color(0xFF7A3C49) : const Color(0xFF74435A)
-      ..strokeWidth = 2.3
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
+      ..color = const Color(0xFFF1A7AB).withValues(alpha: 0.22 + blush * 0.36);
 
-    final leftEye = Offset(size.width * 0.30, size.height * 0.40);
-    final rightEye = Offset(size.width * 0.70, size.height * 0.40);
+    final leftEye = Offset(size.width * 0.28, size.height * 0.42);
+    final rightEye = Offset(size.width * 0.70, size.height * 0.42);
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(size.width * 0.18, size.height * 0.58), width: 10, height: 7),
+      Rect.fromCenter(
+        center: Offset(size.width * 0.14, size.height * 0.6),
+        width: 10,
+        height: 7,
+      ),
       blushPaint,
     );
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(size.width * 0.82, size.height * 0.58), width: 10, height: 7),
+      Rect.fromCenter(
+        center: Offset(size.width * 0.84, size.height * 0.6),
+        width: 10,
+        height: 7,
+      ),
       blushPaint,
     );
 
     switch (expression) {
-      case _ChibiExpression.smirk:
-        canvas.drawLine(leftEye + const Offset(-3, 0), leftEye + const Offset(3, -1.4), eye);
-        canvas.drawLine(rightEye + const Offset(-3, -1.4), rightEye + const Offset(3, 0.8), eye);
+      case _ChibiExpression.mischief:
+        canvas.drawLine(
+          leftEye + const Offset(-3, 0.4),
+          leftEye + const Offset(3, -1.2),
+          stroke,
+        );
+        canvas.drawLine(
+          rightEye + const Offset(-3, -1.2),
+          rightEye + const Offset(3, 0.6),
+          stroke,
+        );
+        final path = Path()
+          ..moveTo(size.width * 0.42, size.height * 0.72)
+          ..quadraticBezierTo(
+            size.width * 0.52,
+            size.height * 0.78,
+            size.width * 0.66,
+            size.height * 0.67,
+          );
+        canvas.drawPath(path, mouth);
+        break;
+      case _ChibiExpression.naughtySmile:
+        canvas.drawLine(
+          leftEye + const Offset(-3, -0.2),
+          leftEye + const Offset(3, -1.4),
+          stroke,
+        );
+        canvas.drawLine(
+          rightEye + const Offset(-3, -0.8),
+          rightEye + const Offset(3, 0.4),
+          stroke,
+        );
         final path = Path()
           ..moveTo(size.width * 0.42, size.height * 0.73)
           ..quadraticBezierTo(
-            size.width * 0.55,
-            size.height * 0.80,
-            size.width * 0.68,
-            size.height * 0.68,
+            size.width * 0.56,
+            size.height * 0.82,
+            size.width * 0.7,
+            size.height * 0.66,
           );
-        canvas.drawPath(path, mouthPaint);
+        canvas.drawPath(path, mouth);
         break;
       case _ChibiExpression.shy:
-        canvas.drawLine(leftEye + const Offset(-3, 0), leftEye + const Offset(3, 0), eye);
-        canvas.drawLine(rightEye + const Offset(-3, 0), rightEye + const Offset(3, 0), eye);
-        final path = Path()
-          ..moveTo(size.width * 0.45, size.height * 0.72)
+        canvas.drawLine(
+          leftEye + const Offset(-3, 0),
+          leftEye + const Offset(3, 0),
+          stroke,
+        );
+        canvas.drawLine(
+          rightEye + const Offset(-3, 0),
+          rightEye + const Offset(3, 0),
+          stroke,
+        );
+        final shy = Path()
+          ..moveTo(size.width * 0.46, size.height * 0.72)
           ..quadraticBezierTo(
             size.width * 0.52,
-            size.height * 0.80,
-            size.width * 0.60,
+            size.height * 0.8,
+            size.width * 0.59,
             size.height * 0.72,
           );
-        canvas.drawPath(path, mouthPaint);
+        canvas.drawPath(shy, mouth);
         break;
-      case _ChibiExpression.gentle:
       case _ChibiExpression.softSmile:
-        canvas.drawLine(leftEye + const Offset(-3, 0), leftEye + const Offset(3, -0.8), eye);
-        canvas.drawLine(rightEye + const Offset(-3, -0.8), rightEye + const Offset(3, 0), eye);
-        final path = Path()
-          ..moveTo(size.width * 0.42, size.height * 0.71)
+      case _ChibiExpression.gentle:
+      case _ChibiExpression.comforted:
+        canvas.drawLine(
+          leftEye + const Offset(-3, 0),
+          leftEye + const Offset(3, -0.8),
+          stroke,
+        );
+        canvas.drawLine(
+          rightEye + const Offset(-3, -0.8),
+          rightEye + const Offset(3, 0),
+          stroke,
+        );
+        final smile = Path()
+          ..moveTo(size.width * 0.42, size.height * 0.72)
           ..quadraticBezierTo(
             size.width * 0.52,
-            size.height * 0.80,
+            size.height * 0.82,
             size.width * 0.62,
-            size.height * 0.71,
+            size.height * 0.72,
           );
-        canvas.drawPath(path, mouthPaint);
+        canvas.drawPath(smile, mouth);
         break;
       case _ChibiExpression.surprised:
-        canvas.drawCircle(leftEye, 2.6, eye..style = PaintingStyle.fill);
-        canvas.drawCircle(rightEye, 2.6, eye);
+        canvas.drawCircle(leftEye, 2.4, fill);
+        canvas.drawCircle(rightEye, 2.4, fill);
         canvas.drawCircle(
           Offset(size.width * 0.52, size.height * 0.73),
-          3.6,
-          mouthPaint..style = PaintingStyle.fill,
+          3.4,
+          Paint()..color = mouth.color,
         );
         break;
       case _ChibiExpression.glance:
-        canvas.drawLine(leftEye + const Offset(-4, 0), leftEye + const Offset(2, -0.8), eye);
-        canvas.drawLine(rightEye + const Offset(-2, 0.6), rightEye + const Offset(4, -0.8), eye);
         canvas.drawLine(
-          Offset(size.width * 0.45, size.height * 0.73),
-          Offset(size.width * 0.58, size.height * 0.71),
-          mouthPaint,
+          leftEye + const Offset(-4, 0.2),
+          leftEye + const Offset(2, -1.0),
+          stroke,
+        );
+        canvas.drawLine(
+          rightEye + const Offset(-1, 0.6),
+          rightEye + const Offset(4, -0.8),
+          stroke,
+        );
+        canvas.drawLine(
+          Offset(size.width * 0.44, size.height * 0.72),
+          Offset(size.width * 0.6, size.height * 0.7),
+          mouth,
         );
         break;
       case _ChibiExpression.flustered:
-        canvas.drawLine(leftEye + const Offset(-3, -0.6), leftEye + const Offset(3, 0.4), eye);
-        canvas.drawLine(rightEye + const Offset(-3, 0.4), rightEye + const Offset(3, -0.6), eye);
+        canvas.drawLine(
+          leftEye + const Offset(-3, -0.6),
+          leftEye + const Offset(3, 0.4),
+          stroke,
+        );
+        canvas.drawLine(
+          rightEye + const Offset(-3, 0.4),
+          rightEye + const Offset(3, -0.6),
+          stroke,
+        );
         final path = Path()
-          ..moveTo(size.width * 0.44, size.height * 0.71)
+          ..moveTo(size.width * 0.44, size.height * 0.72)
           ..quadraticBezierTo(
-            size.width * 0.50,
-            size.height * 0.83,
-            size.width * 0.60,
+            size.width * 0.5,
+            size.height * 0.84,
+            size.width * 0.6,
             size.height * 0.72,
           );
-        canvas.drawPath(path, mouthPaint);
+        canvas.drawPath(path, mouth);
         break;
     }
   }
@@ -1602,8 +2102,277 @@ class _FacePainter extends CustomPainter {
   }
 }
 
-class _LinkPainter extends CustomPainter {
-  const _LinkPainter({required this.color});
+class _ProactiveHairPainter extends CustomPainter {
+  const _ProactiveHairPainter(this.palette);
+
+  final _CharacterPalette palette;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [palette.hairTop, palette.hairBase],
+      ).createShader(Offset.zero & size);
+    final path = Path()
+      ..moveTo(6, 28)
+      ..quadraticBezierTo(8, 6, 36, 2)
+      ..quadraticBezierTo(62, 0, 78, 14)
+      ..quadraticBezierTo(82, 28, 74, 42)
+      ..lineTo(62, 32)
+      ..lineTo(56, 44)
+      ..lineTo(48, 34)
+      ..lineTo(34, 46)
+      ..lineTo(24, 30)
+      ..lineTo(12, 40)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ProactiveHairPainter oldDelegate) => false;
+}
+
+class _ShyHairPainter extends CustomPainter {
+  const _ShyHairPainter(this.palette);
+
+  final _CharacterPalette palette;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [palette.hairTop, palette.hairBase],
+      ).createShader(Offset.zero & size);
+    final path = Path()
+      ..moveTo(10, 18)
+      ..quadraticBezierTo(20, -2, 44, 0)
+      ..quadraticBezierTo(68, -1, 78, 16)
+      ..quadraticBezierTo(80, 34, 72, 46)
+      ..lineTo(62, 42)
+      ..quadraticBezierTo(54, 50, 44, 48)
+      ..quadraticBezierTo(34, 54, 22, 48)
+      ..lineTo(14, 40)
+      ..quadraticBezierTo(8, 30, 10, 18)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ShyHairPainter oldDelegate) => false;
+}
+
+class _ImpactBurst extends StatelessWidget {
+  const _ImpactBurst();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: const Size(42, 42),
+      painter: _BurstPainter(
+        color: const Color(0xFFFFD5A6),
+        points: 6,
+      ),
+    );
+  }
+}
+
+class _BounceRing extends StatelessWidget {
+  const _BounceRing();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 46,
+      height: 18,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.32),
+          width: 1.3,
+        ),
+      ),
+    );
+  }
+}
+
+class _SleeveRibbon extends StatelessWidget {
+  const _SleeveRibbon();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: const Size(58, 18),
+      painter: _RibbonPainter(color: const Color(0xFFE7C89D)),
+    );
+  }
+}
+
+class _StarHalo extends StatelessWidget {
+  const _StarHalo();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: const [
+        Icon(Icons.auto_awesome_rounded, size: 18, color: Color(0xFFF4D6A2)),
+        SizedBox(width: 4),
+        Icon(Icons.auto_awesome_rounded, size: 12, color: Color(0xFFF4D6A2)),
+      ],
+    );
+  }
+}
+
+class _FingerBridge extends StatelessWidget {
+  const _FingerBridge();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: const Size(68, 22),
+      painter: _BridgePainter(color: const Color(0xFFF0C38A)),
+    );
+  }
+}
+
+class _BreathHalo extends StatelessWidget {
+  const _BreathHalo();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 82,
+      height: 82,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [
+            Colors.white.withValues(alpha: 0.24),
+            Colors.transparent,
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GlanceBeam extends StatelessWidget {
+  const _GlanceBeam();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: const Size(54, 16),
+      painter: _BeamPainter(color: const Color(0xFFC6D7FF)),
+    );
+  }
+}
+
+class _ShoulderTrail extends StatelessWidget {
+  const _ShoulderTrail();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: const Size(70, 24),
+      painter: _TrailPainter(color: const Color(0xFFC4E2FF)),
+    );
+  }
+}
+
+class _SmileSlash extends StatelessWidget {
+  const _SmileSlash();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 30,
+          height: 2,
+          color: Colors.white.withValues(alpha: 0.2),
+        ),
+        const SizedBox(width: 6),
+        const Icon(Icons.auto_awesome_rounded,
+            size: 12, color: Color(0xFFF4D29B)),
+      ],
+    );
+  }
+}
+
+class _HeartDustCluster extends StatelessWidget {
+  const _HeartDustCluster();
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 44,
+      height: 26,
+      child: Stack(
+        children: const [
+          Positioned(
+            left: 0,
+            top: 8,
+            child: Icon(Icons.favorite, size: 10, color: Color(0x66FFD4C0)),
+          ),
+          Positioned(
+            left: 16,
+            top: 0,
+            child: Icon(Icons.favorite, size: 12, color: Color(0x88FFD4C0)),
+          ),
+          Positioned(
+            right: 0,
+            top: 10,
+            child: Icon(Icons.favorite, size: 8, color: Color(0x55FFD4C0)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BurstPainter extends CustomPainter {
+  const _BurstPainter({
+    required this.color,
+    required this.points,
+  });
+
+  final Color color;
+  final int points;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.9)
+      ..strokeWidth = 2.2
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    final center = Offset(size.width / 2, size.height / 2);
+    for (var i = 0; i < points; i++) {
+      final angle = (math.pi * 2 / points) * i;
+      final inner = Offset(
+        center.dx + math.cos(angle) * 6,
+        center.dy + math.sin(angle) * 6,
+      );
+      final outer = Offset(
+        center.dx + math.cos(angle) * 18,
+        center.dy + math.sin(angle) * 18,
+      );
+      canvas.drawLine(inner, outer, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BurstPainter oldDelegate) => false;
+}
+
+class _RibbonPainter extends CustomPainter {
+  const _RibbonPainter({required this.color});
 
   final Color color;
 
@@ -1614,13 +2383,42 @@ class _LinkPainter extends CustomPainter {
         colors: [color.withValues(alpha: 0), color.withValues(alpha: 0.92)],
       ).createShader(Offset.zero & size)
       ..strokeWidth = 2.2
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
     final path = Path()
-      ..moveTo(0, size.height * 0.65)
+      ..moveTo(0, size.height * 0.6)
       ..quadraticBezierTo(
-        size.width * 0.48,
-        size.height * 0.0,
+        size.width * 0.38,
+        0,
+        size.width,
+        size.height * 0.54,
+      );
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _RibbonPainter oldDelegate) => false;
+}
+
+class _BridgePainter extends CustomPainter {
+  const _BridgePainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..shader = LinearGradient(
+        colors: [color.withValues(alpha: 0), color.withValues(alpha: 0.9)],
+      ).createShader(Offset.zero & size)
+      ..strokeWidth = 2.3
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+    final path = Path()
+      ..moveTo(0, size.height * 0.72)
+      ..quadraticBezierTo(
+        size.width * 0.5,
+        0,
         size.width,
         size.height * 0.45,
       );
@@ -1628,7 +2426,32 @@ class _LinkPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _LinkPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _BridgePainter oldDelegate) => false;
+}
+
+class _BeamPainter extends CustomPainter {
+  const _BeamPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..shader = LinearGradient(
+        colors: [color.withValues(alpha: 0), color.withValues(alpha: 0.76)],
+      ).createShader(Offset.zero & size)
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(
+      Offset(0, size.height * 0.7),
+      Offset(size.width, size.height * 0.35),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _BeamPainter oldDelegate) => false;
 }
 
 class _TrailPainter extends CustomPainter {
@@ -1640,15 +2463,15 @@ class _TrailPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..shader = LinearGradient(
-        colors: [color.withValues(alpha: 0), color.withValues(alpha: 0.75)],
+        colors: [color.withValues(alpha: 0), color.withValues(alpha: 0.76)],
       ).createShader(Offset.zero & size)
       ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
     final path = Path()
-      ..moveTo(0, size.height * 0.70)
+      ..moveTo(0, size.height * 0.76)
       ..quadraticBezierTo(
-        size.width * 0.44,
+        size.width * 0.42,
         size.height * 0.18,
         size.width,
         size.height * 0.48,

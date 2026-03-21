@@ -464,20 +464,39 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   void _triggerFlirtyHaptics(String actionId) {
     switch (actionId) {
       case 'poke_butt':
-      case 'lean_closer':
         HapticFeedback.mediumImpact();
         Future<void>.delayed(
-          const Duration(milliseconds: 150),
+          const Duration(milliseconds: 170),
+          HapticFeedback.lightImpact,
+        );
+        return;
+      case 'lean_closer':
+        HapticFeedback.mediumImpact();
+        return;
+      case 'hook_finger':
+        HapticFeedback.selectionClick();
+        Future<void>.delayed(
+          const Duration(milliseconds: 190),
+          HapticFeedback.softImpact,
+        );
+        return;
+      case 'pat_head':
+        HapticFeedback.softImpact();
+        Future<void>.delayed(
+          const Duration(milliseconds: 210),
           HapticFeedback.selectionClick,
         );
         return;
-      case 'hook_finger':
-      case 'pat_head':
+      case 'tug_sleeve':
         HapticFeedback.selectionClick();
         Future<void>.delayed(
-          const Duration(milliseconds: 180),
+          const Duration(milliseconds: 120),
           HapticFeedback.lightImpact,
         );
+        return;
+      case 'naughty_smile':
+      case 'sneak_glance':
+        HapticFeedback.selectionClick();
         return;
       default:
         HapticFeedback.lightImpact();
