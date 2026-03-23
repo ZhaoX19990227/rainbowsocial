@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nearby Discovery</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#7C3AED", // Luminous purple
+                        "background-light": "#F8FAFC", // Bright white/very light slate
+                        "background-dark": "#0F172A",
+                        "card-glass": "rgba(255, 255, 255, 0.7)",
+                        "card-glass-dark": "rgba(30, 41, 59, 0.7)"
+                    },
+                    fontFamily: {
+                        display: ["Inter", "sans-serif"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "1rem",
+                        'xl': '1.5rem',
+                        '2xl': '2rem'
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 25px -5px rgba(124, 58, 237, 0.1), 0 8px 10px -6px rgba(124, 58, 237, 0.1)',
+                    }
+                },
+            },
+        };
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+        }
+        .dark body {
+            background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+        }.masonry-container {
+            column-count: 2;
+            column-gap: 1rem;
+            padding: 1rem;
+        }
+        .masonry-item {
+            break-inside: avoid;
+            margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+            border-radius: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }.glass-info {
+            background: linear-gradient(to top, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.7) 60%, rgba(255,255,255,0) 100%);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        .dark .glass-info {
+            background: linear-gradient(to top, rgba(30,41,59,0.95) 0%, rgba(30,41,59,0.7) 60%, rgba(30,41,59,0) 100%);
+        }::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }.h-var-1 { height: 260px; }
+        .h-var-2 { height: 320px; }
+        .h-var-3 { height: 280px; }
+        .h-var-4 { height: 340px; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-white min-h-screen flex flex-col antialiased relative pb-20">
+<header class="sticky top-0 z-20 bg-background-light/90 dark:bg-background-dark/90 backdrop-blur-md pt-12 pb-4 px-5">
+<div class="flex justify-between items-center mb-5">
+<h1 class="text-3xl font-bold tracking-tight text-slate-800 dark:text-slate-100">附近</h1>
+<div class="flex space-x-3 text-primary">
+<button class="p-2 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors">
+<span class="material-icons text-xl">tune</span>
+</button>
+<button class="p-2 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors">
+<span class="material-icons text-xl">my_location</span>
+</button>
+</div>
+</div>
+<div class="flex bg-slate-200 dark:bg-slate-800 rounded-full p-1 mb-5 relative">
+<button class="flex-1 text-center py-2.5 rounded-full text-slate-600 dark:text-slate-400 font-medium text-sm transition-all z-10 relative flex justify-center items-center">
+<span class="material-icons text-sm mr-1">explore</span> 推荐
+            </button>
+<button class="flex-1 text-center py-2.5 rounded-full bg-white dark:bg-slate-700 text-primary font-semibold text-sm shadow-sm transition-all z-10 relative flex justify-center items-center">
+<span class="material-icons text-sm mr-1">location_on</span> 附近
+            </button>
+</div>
+<div class="relative">
+<span class="material-icons absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+<input class="w-full bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-full py-3.5 pl-12 pr-4 shadow-sm border-none focus:ring-2 focus:ring-primary/50 text-sm placeholder-slate-400 dark:placeholder-slate-500" placeholder="搜索昵称、简介或标签..." type="text"/>
+</div>
+</header>
+<main class="flex-1">
+<div class="masonry-container">
+<div class="masonry-item h-var-2 group">
+<img alt="Profile picture of user" class="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD8TNctijmcJ1gcb3aO0xDKClGmCSno7_tXXOHddFMm8je_Sg2BF-u0Bf4bog57cM3zTkfINMDeMv-dkSuEwNUiwQcb4MvA5wFImVRukJSrOZ7A2vflEVbnWoYbIPSlR9pUOS9RQWkvvPulrDQFzbF9bbOPZYwZslRsX8_A_n1HuHfbPBfqOrYIM08AcTLycnoq4-7cFhv9ql0HevtNgQIGjSYVnCBLVNPRRDdekG1r2KGxESy5UtvKCArwQW7gAt7kAcmzuW-X2o9G"/>
+<div class="absolute bottom-0 left-0 w-full glass-info p-4 pt-12 flex flex-col justify-end">
+<h3 class="font-bold text-slate-900 dark:text-white text-base truncate mb-1">xiaokeai_longname_test</h3>
+<div class="flex items-center space-x-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-200">
+<span class="material-icons text-[10px] mr-0.5">psychology</span> ISTP
+                        </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/50 dark:text-purple-200">
+<span class="material-icons text-[10px] mr-0.5">auto_awesome</span> 双子座
+                        </span>
+</div>
+</div>
+</div>
+<div class="masonry-item h-var-1 group">
+<img alt="Profile picture of user" class="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQq8z4PpTSg0Kbk8Y4KScc5fDqfDIkYHP76O0N2dse-oGuUG3NgLy9HKxccdRk4FPJ9Gl7uO3KR-XM1hkMFdg2C81aGbZ_7igciXAAXBsz7mLhsfLDL6oo421pUw2JnbKuThNnL4mUrTGHqSyLAqG-A9_n_R2ltM01fdJA0t7lNyT0_C3gQC35amBHmgdsUkuvt43gDZs8xz8gaOwLbd1LWdtk9YhYaUVj51SUNYAsF30PDqsOlqSJSVuugg1QbEeLIE72IoPn3pKr"/>
+<div class="absolute bottom-0 left-0 w-full glass-info p-4 pt-12 flex flex-col justify-end">
+<h3 class="font-bold text-slate-900 dark:text-white text-base truncate mb-1">xiaopang456</h3>
+<div class="flex items-center space-x-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-200">
+<span class="material-icons text-[10px] mr-0.5">psychology</span> ENFJ
+                        </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-pink-100 text-pink-700 dark:bg-pink-900/50 dark:text-pink-200">
+<span class="material-icons text-[10px] mr-0.5">auto_awesome</span> 双鱼座
+                        </span>
+</div>
+</div>
+</div>
+<div class="masonry-item h-var-4 group">
+<img alt="Profile picture of user" class="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZpxAcL-lInht-VdA8lKg_dysHcT7mX0PLSmi9nNvpr9O-lHqqrJSFdiu8aFGWUxvU4iQ9a_LXz9biAZaEe2ucQBQY6LUvkbVb3Yt3QAHfIhogbqUDtZjaEk3wGJNXYPtWZF5MwflmeXwgwyO1XLR623ErHcA7Kx90eXGWbRf5ozPQdJKcOTweBBG9R8y53yibOCH-QkwBggAUz0WSV2BhpqwmNM0xcR1VrOMh2gbKbjgt_udpPB68IRmDPXPzFhGdGrp53ZvYlLKj"/>
+<div class="absolute bottom-0 left-0 w-full glass-info p-4 pt-12 flex flex-col justify-end">
+<h3 class="font-bold text-slate-900 dark:text-white text-base truncate mb-1">sunshine_boy</h3>
+<div class="flex items-center space-x-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-200">
+<span class="material-icons text-[10px] mr-0.5">psychology</span> ENFP
+                        </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-200">
+<span class="material-icons text-[10px] mr-0.5">auto_awesome</span> 射手座
+                        </span>
+</div>
+</div>
+</div>
+<div class="masonry-item h-var-3 group">
+<img alt="Profile picture of user" class="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnx535zQSeUDMexJFODEPRzJIQ7QUSh6Ntbh6p6zv6HWp5wc1wu-b1wniUGjgjvRMx38rIFf7Pf79EUPe5WslvnY4y3th6w7fYX3Nzxga-povbVsM5IeXpfZxkvL6RQStKjOyvudYl7U5haKr9WrIYcKcp8s7x2uea_SNseR5Y5j2NooUtQsqf9sGiA-WRQ2_nlIyNQPMprDTZduhWOr4f_X6JIqlLtoePFSjxujv0Ioo7-MiAsrnpNdi4Y-qrGMHIvlsp-wNoeqYh"/>
+<div class="absolute bottom-0 left-0 w-full glass-info p-4 pt-12 flex flex-col justify-end">
+<h3 class="font-bold text-slate-900 dark:text-white text-base truncate mb-1">xiaozhu</h3>
+<div class="flex items-center space-x-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-100 text-yellow-700 dark:bg-yellow-900/50 dark:text-yellow-200">
+<span class="material-icons text-[10px] mr-0.5">psychology</span> ENTP
+                        </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-200">
+<span class="material-icons text-[10px] mr-0.5">auto_awesome</span> 天秤座
+                        </span>
+</div>
+</div>
+</div>
+<div class="masonry-item h-var-2 group">
+<img alt="Profile picture of user" class="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCsMyzdMsvFDsHT7Ua85D8ZKxF5bz99lGhnIbS3f6yljEHBiH0n9Myp9uXRdTFFl05lc8cnUOrzDF0_Rk9GpO6VF_YQlx-odf4a9XIDLRNMexNbBB91XUVkZUS1eFO9VGq4OANxs9D1X8IReQh8Gl9k8Tm5-XWkrmmII-3-Z6v0AeZFbzBvYUfJq_CbXJ-OeGu-NKYsSaXldWO5RhfLZZfyF3zZCNIRtTT8zmJEOlKDZ_5vYrEm0AUum6Td-oaoHxi2If1WSFb-eP0"/>
+<div class="absolute bottom-0 left-0 w-full glass-info p-4 pt-12 flex flex-col justify-end">
+<h3 class="font-bold text-slate-900 dark:text-white text-base truncate mb-1">cool_guy_99</h3>
+<div class="flex items-center space-x-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-cyan-100 text-cyan-700 dark:bg-cyan-900/50 dark:text-cyan-200">
+<span class="material-icons text-[10px] mr-0.5">psychology</span> INTJ
+                        </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-200">
+<span class="material-icons text-[10px] mr-0.5">auto_awesome</span> 水瓶座
+                        </span>
+</div>
+</div>
+</div>
+<div class="masonry-item h-var-1 group">
+<img alt="Profile picture of user" class="w-full h-full object-cover rounded-xl transition-transform duration-500 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAaOCIQmxhjnP-XbaEaoAAigq9nFfYRg5R1s3kcGV5mb4m1ySdb1_LofCnQJgidft3rKe7nkjQYAWm2sfZSh1ucIw3DG9qzM4ysmHqSSit-LzOXSHSe0qAblJben6reImQSq6aX6pSreA4QmtLlbjKpXOZ-9HBctyhhZpsYFXjKKUFO9vke7wAu_5r7dzUiiOSWXYJVZT8MtHL_h6siDCtLti2IkJhODJfFun8aePiOg8_GS0Q5Lsmy_1Ry6pxU4vedV5ht4rFU_fae"/>
+<div class="absolute bottom-0 left-0 w-full glass-info p-4 pt-12 flex flex-col justify-end">
+<h3 class="font-bold text-slate-900 dark:text-white text-base truncate mb-1">traveler</h3>
+<div class="flex items-center space-x-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-rose-100 text-rose-700 dark:bg-rose-900/50 dark:text-rose-200">
+<span class="material-icons text-[10px] mr-0.5">psychology</span> ISFP
+                        </span>
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/50 dark:text-fuchsia-200">
+<span class="material-icons text-[10px] mr-0.5">auto_awesome</span> 巨蟹座
+                        </span>
+</div>
+</div>
+</div>
+</div>
+</main>
+<nav class="fixed bottom-0 w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-lg border-t border-slate-200 dark:border-slate-800 pb-safe pt-2 px-6 z-30 shadow-[0_-5px_20px_rgba(0,0,0,0.05)] dark:shadow-[0_-5px_20px_rgba(0,0,0,0.2)] rounded-t-[2rem]">
+<div class="flex justify-between items-center max-w-md mx-auto h-16">
+<a class="flex flex-col items-center justify-center w-full text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-icons text-2xl mb-1">explore</span>
+<span class="text-[10px] font-medium">推荐</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full text-primary transition-colors relative" href="#">
+<div class="absolute -top-3 w-12 h-1 bg-primary rounded-full"></div>
+<div class="bg-primary/10 rounded-full p-2 mb-1">
+<span class="material-icons text-2xl">location_on</span>
+</div>
+<span class="text-[10px] font-bold">附近</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full text-slate-400 hover:text-primary transition-colors" href="#">
+<div class="relative">
+<span class="material-icons text-2xl mb-1">chat_bubble_outline</span>
+<span class="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+</div>
+<span class="text-[10px] font-medium">消息</span>
+</a>
+<a class="flex flex-col items-center justify-center w-full text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-icons text-2xl mb-1">person_outline</span>
+<span class="text-[10px] font-medium">我的</span>
+</a>
+</div>
+</nav>
+<div class="h-8 bg-white/90 dark:bg-slate-900/90 w-full fixed bottom-0 z-20" style="padding-bottom: env(safe-area-inset-bottom);"></div>
+
+</body></html>
