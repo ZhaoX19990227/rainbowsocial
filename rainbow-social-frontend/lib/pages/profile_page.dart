@@ -77,11 +77,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 children: [
                   _ProfileTopBar(
                     onEdit: () => _showProfileActions(context, ref),
-                    onMore: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('分享功能正在准备中')),
-                      );
-                    },
                   ),
                   const SizedBox(height: 20),
                   _ProfileHeroCard(
@@ -722,11 +717,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 class _ProfileTopBar extends StatelessWidget {
   const _ProfileTopBar({
     required this.onEdit,
-    required this.onMore,
   });
 
   final VoidCallback onEdit;
-  final VoidCallback onMore;
 
   @override
   Widget build(BuildContext context) {
@@ -745,9 +738,9 @@ class _ProfileTopBar extends StatelessWidget {
               ),
         ),
         const Spacer(),
-        _IconShell(
-          icon: Icons.more_horiz_rounded,
-          onTap: onMore,
+        const SizedBox(
+          width: 44,
+          height: 44,
         ),
       ],
     );

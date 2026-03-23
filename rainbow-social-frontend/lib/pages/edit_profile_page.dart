@@ -65,8 +65,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final user = ref.read(profileControllerProvider).valueOrNull;
-    if (user != null) {
+    final sessionUser = ref.read(authControllerProvider).valueOrNull?.user;
+    final user = ref.read(profileControllerProvider).valueOrNull ?? sessionUser;
+    if (user != null && _hydratedUserId != user.id) {
       _hydrateFromUser(user);
     }
   }
@@ -76,12 +77,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     final sessionUser = ref.watch(authControllerProvider).valueOrNull?.user;
     final profile =
         ref.watch(profileControllerProvider).valueOrNull ?? sessionUser;
-    if (profile != null && _hydratedUserId != profile.id) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        setState(() => _hydrateFromUser(profile));
-      });
-    }
     final isOnboardingFlow = ProfileCompletion.needsOnboarding(profile);
     final missingFields = ProfileCompletion.missingFields(profile);
     final zodiacSign = ZodiacUtils.zodiacFromBirthday(
