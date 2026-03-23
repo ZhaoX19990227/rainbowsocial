@@ -69,9 +69,8 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
         : user.distanceKm == null
             ? '就在附近'
             : '距离 ${user.distanceKm!.toStringAsFixed(1)} km';
-    final headlineBio = user.bio.trim().isEmpty
-        ? '在耐心地把自己的温柔，摊成想靠近的余地。'
-        : user.bio.trim();
+    final headlineBio =
+        user.bio.trim().isEmpty ? '在耐心地把自己的温柔，摊成想靠近的余地。' : user.bio.trim();
 
     return Scaffold(
       body: CustomScrollView(
@@ -104,8 +103,7 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                     const PopupMenuItem(value: 'report', child: Text('举报')),
                     PopupMenuItem(
                       value: status?.blockedByMe == true ? 'unblock' : 'block',
-                      child:
-                          Text(status?.blockedByMe == true ? '取消屏蔽' : '屏蔽'),
+                      child: Text(status?.blockedByMe == true ? '取消屏蔽' : '屏蔽'),
                     ),
                   ];
                 },
@@ -180,10 +178,11 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                         ),
                         child: Text(
                           '${_selectedPhotoIndex + 1}/${_galleryPhotos.length}',
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.labelMedium?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w700,
+                                  ),
                         ),
                       ),
                     ),
@@ -214,11 +213,13 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                           const SizedBox(height: 12),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(_galleryPhotos.length, (index) {
+                            children:
+                                List.generate(_galleryPhotos.length, (index) {
                               final active = index == _selectedPhotoIndex;
                               return AnimatedContainer(
                                 duration: const Duration(milliseconds: 180),
-                                margin: const EdgeInsets.symmetric(horizontal: 4),
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 4),
                                 width: active ? 18 : 7,
                                 height: 7,
                                 decoration: BoxDecoration(
@@ -253,157 +254,165 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                           child: Padding(
                             padding: const EdgeInsets.only(top: 24),
                             child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Center(
-                                child: Column(
-                                  children: [
-                                    Text(
-                                      user.title,
-                                      textAlign: TextAlign.center,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .headlineMedium
-                                          ?.copyWith(fontSize: 32, height: 1.08),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      user.basicsLine,
-                                      textAlign: TextAlign.center,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelLarge
-                                          ?.copyWith(
-                                            color: AppTheme.textSecondary,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 18),
-                                    Row(
-                                      children: [
-                                        if (user.mbtiType.trim().isNotEmpty)
-                                          Expanded(
-                                            child: _IdentitySummaryTile(
-                                              title: user.mbtiType,
-                                              subtitle: MbtiCatalog
-                                                  .resolve(user.mbtiType)
-                                                  .name,
-                                              accent: const LinearGradient(
-                                                colors: [
-                                                  Color(0xFFECDFFF),
-                                                  Color(0xFFFFFFFF),
-                                                ],
-                                              ),
-                                              footer: '人格类型',
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Center(
+                                  child: Column(
+                                    children: [
+                                      Text(
+                                        user.title,
+                                        textAlign: TextAlign.center,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headlineMedium
+                                            ?.copyWith(
+                                                fontSize: 32, height: 1.08),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Text(
+                                        user.basicsLine,
+                                        textAlign: TextAlign.center,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelLarge
+                                            ?.copyWith(
+                                              color: AppTheme.textSecondary,
                                             ),
-                                          ),
-                                        if (user.mbtiType.trim().isNotEmpty &&
-                                            user.zodiacSign.trim().isNotEmpty)
-                                          const SizedBox(width: 12),
-                                        if (user.zodiacSign.trim().isNotEmpty)
-                                          Expanded(
-                                            child: _IdentitySummaryTile(
-                                              title: ZodiacUtils.displayName(
-                                                  user.zodiacSign),
-                                              subtitle: user.birthday.trim().isEmpty
-                                                  ? '今日气场'
-                                                  : user.birthday,
-                                              accent: const LinearGradient(
-                                                colors: [
-                                                  Color(0xFFF6F1FF),
-                                                  Color(0xFFF2F8FF),
-                                                ],
+                                      ),
+                                      const SizedBox(height: 18),
+                                      Row(
+                                        children: [
+                                          if (user.mbtiType.trim().isNotEmpty)
+                                            Expanded(
+                                              child: _IdentitySummaryTile(
+                                                title: user.mbtiType,
+                                                subtitle: MbtiCatalog.resolve(
+                                                        user.mbtiType)
+                                                    .name,
+                                                accent: const LinearGradient(
+                                                  colors: [
+                                                    Color(0xFFECDFFF),
+                                                    Color(0xFFFFFFFF),
+                                                  ],
+                                                ),
+                                                footer: '人格类型',
                                               ),
-                                              footer: '星座档案',
                                             ),
-                                          ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              if (user.tags.isNotEmpty) ...[
-                                const SizedBox(height: 18),
-                                Wrap(
-                                  spacing: 10,
-                                  runSpacing: 10,
-                                  children: user.tags
-                                      .take(5)
-                                      .map(
-                                        (tag) => TagChip(
-                                          label: tag,
-                                          icon: Icons.auto_awesome_rounded,
-                                          maxWidth: 140,
-                                        ),
-                                      )
-                                      .toList(),
-                                ),
-                              ],
-                              const SizedBox(height: 18),
-                              Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(26),
-                                  gradient: const LinearGradient(
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                    colors: [
-                                      Color(0xFFFFFFFF),
-                                      Color(0xFFF5F1FF),
+                                          if (user.mbtiType.trim().isNotEmpty &&
+                                              user.zodiacSign.trim().isNotEmpty)
+                                            const SizedBox(width: 12),
+                                          if (user.zodiacSign.trim().isNotEmpty)
+                                            Expanded(
+                                              child: _IdentitySummaryTile(
+                                                title: ZodiacUtils.displayName(
+                                                    user.zodiacSign),
+                                                subtitle:
+                                                    user.birthday.trim().isEmpty
+                                                        ? '今日气场'
+                                                        : user.birthday,
+                                                accent: const LinearGradient(
+                                                  colors: [
+                                                    Color(0xFFF6F1FF),
+                                                    Color(0xFFF2F8FF),
+                                                  ],
+                                                ),
+                                                footer: '星座档案',
+                                              ),
+                                            ),
+                                        ],
+                                      ),
                                     ],
                                   ),
-                                  border: Border.all(color: AppTheme.ghostBorder),
                                 ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '更多介绍',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelLarge
-                                          ?.copyWith(color: AppTheme.primary),
-                                    ),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      '“$headlineBio”',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyLarge
-                                          ?.copyWith(
-                                            height: 1.7,
-                                            fontStyle: FontStyle.italic,
+                                if (user.tags.isNotEmpty) ...[
+                                  const SizedBox(height: 18),
+                                  Wrap(
+                                    spacing: 10,
+                                    runSpacing: 10,
+                                    children: user.tags
+                                        .take(5)
+                                        .map(
+                                          (tag) => TagChip(
+                                            label: tag,
+                                            icon: Icons.auto_awesome_rounded,
+                                            maxWidth: 140,
                                           ),
+                                        )
+                                        .toList(),
+                                  ),
+                                ],
+                                const SizedBox(height: 18),
+                                Container(
+                                  width: double.infinity,
+                                  padding:
+                                      const EdgeInsets.fromLTRB(18, 18, 18, 18),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(26),
+                                    gradient: const LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: [
+                                        Color(0xFFFFFFFF),
+                                        Color(0xFFF5F1FF),
+                                      ],
                                     ),
-                                    if (user.mbtiType.trim().isNotEmpty) ...[
-                                      const SizedBox(height: 18),
-                                      _InsightSection(
-                                        title: '人格档案摘要',
-                                        accent: const Color(0xFF8B56E8),
-                                        points: [
-                                          '更贴近 ${MbtiCatalog.resolve(user.mbtiType).name} 的互动方式',
-                                          MbtiCatalog.resolve(user.mbtiType).summary,
-                                        ],
+                                    border:
+                                        Border.all(color: AppTheme.ghostBorder),
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        '更多介绍',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelLarge
+                                            ?.copyWith(color: AppTheme.primary),
                                       ),
-                                    ],
-                                    if (user.zodiacSign.trim().isNotEmpty) ...[
-                                      const SizedBox(height: 16),
-                                      _InsightSection(
-                                        title: '星座档案摘要',
-                                        accent: const Color(0xFFFF5EA8),
-                                        points: [
-                                          user.birthday.trim().isEmpty
-                                              ? '更愿意先感受氛围，再决定关系推进的速度。'
-                                              : '${user.birthday} 出生，通常更看重情绪节奏与靠近方式。',
-                                          '聊天时如果被认真接住，往往更容易聊出感觉。',
-                                        ],
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        '“$headlineBio”',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyLarge
+                                            ?.copyWith(
+                                              height: 1.7,
+                                              fontStyle: FontStyle.italic,
+                                            ),
                                       ),
+                                      if (user.mbtiType.trim().isNotEmpty) ...[
+                                        const SizedBox(height: 18),
+                                        _InsightSection(
+                                          title: '人格档案摘要',
+                                          accent: const Color(0xFF8B56E8),
+                                          points: [
+                                            '更贴近 ${MbtiCatalog.resolve(user.mbtiType).name} 的互动方式',
+                                            MbtiCatalog.resolve(user.mbtiType)
+                                                .summary,
+                                          ],
+                                        ),
+                                      ],
+                                      if (user.zodiacSign
+                                          .trim()
+                                          .isNotEmpty) ...[
+                                        const SizedBox(height: 16),
+                                        _InsightSection(
+                                          title: '星座档案摘要',
+                                          accent: const Color(0xFFFF5EA8),
+                                          points: [
+                                            user.birthday.trim().isEmpty
+                                                ? '更愿意先感受氛围，再决定关系推进的速度。'
+                                                : '${user.birthday} 出生，通常更看重情绪节奏与靠近方式。',
+                                            '聊天时如果被认真接住，往往更容易聊出感觉。',
+                                          ],
+                                        ),
+                                      ],
                                     ],
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ],
-                          ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
@@ -429,68 +438,6 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                       ),
                     ),
                   ),
-                  if (_galleryPhotos.length > 1) ...[
-                    const SizedBox(height: 18),
-                    Text('更多照片', style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      height: 92,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: _galleryPhotos.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 12),
-                        itemBuilder: (context, index) {
-                          final photo = _galleryPhotos[index];
-                          final active = index == _selectedPhotoIndex;
-                          return GestureDetector(
-                            onTap: () {
-                              _photoController.animateToPage(
-                                index,
-                                duration: const Duration(milliseconds: 260),
-                                curve: Curves.easeOutCubic,
-                              );
-                              setState(() => _selectedPhotoIndex = index);
-                            },
-                            onLongPress: () => _openFullScreenGallery(index),
-                            child: AnimatedContainer(
-                              duration: const Duration(milliseconds: 180),
-                              width: 78,
-                              height: 92,
-                              padding: const EdgeInsets.all(3),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(24),
-                                gradient: active
-                                    ? const LinearGradient(
-                                        colors: [
-                                          AppTheme.primary,
-                                          AppTheme.primaryDark,
-                                        ],
-                                      )
-                                    : null,
-                                color: active ? null : Colors.white,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppTheme.primary.withValues(
-                                      alpha: active ? 0.18 : 0.06,
-                                    ),
-                                    blurRadius: 16,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                ],
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(21),
-                                child: Image.network(
-                                  photo,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
                 ],
               ),
             ),
@@ -513,10 +460,12 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                       return;
                     }
                     if (!relation.isMutual) {
-                      AppFeedback.showToast(RelationshipCopy.chatRequiresMutual);
+                      AppFeedback.showToast(
+                          RelationshipCopy.chatRequiresMutual);
                       return;
                     }
-                    Navigator.of(context).pushNamed(AppRouter.chat, arguments: user);
+                    Navigator.of(context)
+                        .pushNamed(AppRouter.chat, arguments: user);
                   },
                   icon: const Icon(Icons.chat_bubble_rounded),
                   label: const Text('打招呼'),
@@ -533,7 +482,8 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                       AppFeedback.showToast(_blockedMessage(status!));
                       return;
                     }
-                    final session = ref.read(authControllerProvider).valueOrNull;
+                    final session =
+                        ref.read(authControllerProvider).valueOrNull;
                     if (session == null) return;
 
                     try {
@@ -543,8 +493,12 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                       );
                       if (!context.mounted) return;
                       if (result.matched) {
-                        await ref.read(matchesControllerProvider.notifier).load();
-                        await ref.read(matchSummaryControllerProvider.notifier).load();
+                        await ref
+                            .read(matchesControllerProvider.notifier)
+                            .load();
+                        await ref
+                            .read(matchSummaryControllerProvider.notifier)
+                            .load();
                         await _showRelationshipOverlay(
                           context,
                           child: _RelationshipUpgradeOverlay(
@@ -559,7 +513,9 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                           ),
                         );
                       } else {
-                        await ref.read(matchSummaryControllerProvider.notifier).load();
+                        await ref
+                            .read(matchSummaryControllerProvider.notifier)
+                            .load();
                         if (!context.mounted) return;
                         await _showRelationshipOverlay(
                           context,
@@ -568,7 +524,9 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                             user: user,
                             onPrimary: () {
                               Navigator.of(context).pop();
-                              ref.read(matchSummaryControllerProvider.notifier).load();
+                              ref
+                                  .read(matchSummaryControllerProvider.notifier)
+                                  .load();
                             },
                             onSecondary: () => Navigator.of(context).pop(),
                           ),
@@ -594,7 +552,9 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
   ) async {
     final user = widget.user;
     if (status.blockedByMe) {
-      await ref.read(safetyControllerProvider.notifier).unblock(userId: user.id);
+      await ref
+          .read(safetyControllerProvider.notifier)
+          .unblock(userId: user.id);
       ref.invalidate(blockStatusProvider(user.id));
       if (context.mounted) {
         AppFeedback.showToast('已取消屏蔽');
@@ -689,7 +649,8 @@ class _PhotoGalleryViewerState extends State<_PhotoGalleryViewer> {
                     tag: index == 0
                         ? 'match-avatar-${widget.heroUserId}'
                         : 'match-avatar-${widget.heroUserId}-$index',
-                    child: Image.network(widget.photos[index], fit: BoxFit.contain),
+                    child: Image.network(widget.photos[index],
+                        fit: BoxFit.contain),
                   ),
                 ),
               );
@@ -844,20 +805,22 @@ class _RelationshipUpgradeOverlay extends StatelessWidget {
                       ),
                       child: Text(
                         isMutual ? '关系升级' : '轻轻靠近',
-                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                              color: isMutual
-                                  ? const Color(0xFF8B4EE8)
-                                  : const Color(0xFFB86B42),
-                              letterSpacing: 0.7,
-                            ),
+                        style:
+                            Theme.of(context).textTheme.labelMedium?.copyWith(
+                                  color: isMutual
+                                      ? const Color(0xFF8B4EE8)
+                                      : const Color(0xFFB86B42),
+                                  letterSpacing: 0.7,
+                                ),
                       ),
                     ),
                     const SizedBox(height: 18),
                     Text(
                       title,
-                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                            fontSize: isMutual ? 40 : 34,
-                          ),
+                      style:
+                          Theme.of(context).textTheme.headlineLarge?.copyWith(
+                                fontSize: isMutual ? 40 : 34,
+                              ),
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -882,7 +845,9 @@ class _RelationshipUpgradeOverlay extends StatelessWidget {
                               shape: BoxShape.circle,
                               gradient: RadialGradient(
                                 colors: [
-                                  (isMutual ? AppTheme.tertiary : AppTheme.secondary)
+                                  (isMutual
+                                          ? AppTheme.tertiary
+                                          : AppTheme.secondary)
                                       .withValues(alpha: 0.18),
                                   AppTheme.primary.withValues(alpha: 0.08),
                                   Colors.transparent,
@@ -1028,7 +993,8 @@ class _UserRelation {
   }
 }
 
-String _mutualSubtitle(String nickname) => RelationshipCopy.mutualLike(nickname);
+String _mutualSubtitle(String nickname) =>
+    RelationshipCopy.mutualLike(nickname);
 String _receivedSubtitle(String nickname) => '$nickname 喜欢了你，回个喜欢就可以聊天。';
 String _waitingReplySubtitle(String nickname) =>
     '你喜欢 $nickname 后，对方会收到提醒；互相关注后才可以聊天。';
@@ -1063,9 +1029,7 @@ IconData _relationshipCardIcon(_UserRelation relation, BlockStatus? status) {
   if (status?.isBlocked == true) {
     return Icons.visibility_off_rounded;
   }
-  return relation.isMutual
-      ? Icons.chat_bubble_rounded
-      : Icons.favorite_rounded;
+  return relation.isMutual ? Icons.chat_bubble_rounded : Icons.favorite_rounded;
 }
 
 String _blockedMessage(BlockStatus status) {
