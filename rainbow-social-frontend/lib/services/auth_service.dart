@@ -36,9 +36,15 @@ class AuthService {
       id: 99,
       email: account,
       nickname: account,
-      age: 25,
-      bio: 'A little mysterious, a little radiant.',
-      tags: const ['Night walks', 'Coffee', 'Design'],
+      age: 0,
+      heightCm: 0,
+      weightKg: 0,
+      birthday: '',
+      zodiacSign: '',
+      bio: '',
+      tags: const [],
+      positionRole: '',
+      locationLabel: '',
     );
     return AuthSession(token: 'demo-token', user: user);
   }

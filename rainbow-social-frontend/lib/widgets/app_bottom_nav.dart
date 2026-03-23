@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../controllers/chat_controller.dart';
 import '../theme/app_theme.dart';
 
-class AppBottomNav extends StatelessWidget {
+class AppBottomNav extends ConsumerWidget {
   const AppBottomNav({
     super.key,
     required this.currentIndex,
@@ -13,7 +15,7 @@ class AppBottomNav extends StatelessWidget {
   final ValueChanged<int> onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     const icons = [
       Icons.explore_rounded,
       Icons.location_on_rounded,
@@ -21,6 +23,14 @@ class AppBottomNav extends StatelessWidget {
       Icons.person_rounded,
     ];
     const labels = ['推荐', '附近', '消息', '我的'];
+    final unreadCount = ref.watch(
+      chatThreadsControllerProvider.select(
+        (state) => state.threads.fold<int>(
+          0,
+          (total, thread) => total + thread.unreadCount,
+        ),
+      ),
+    );
 
     return Container(
       margin: const EdgeInsets.fromLTRB(18, 0, 18, 18),
@@ -75,6 +85,29 @@ class AppBottomNav extends StatelessWidget {
                     color: selected ? Colors.white : AppTheme.textSecondary,
                     size: 20,
                   ),
+                  if (index == 2 && unreadCount > 0) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 7,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: selected ? Colors.white : AppTheme.error,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        unreadCount > 99 ? '99+' : '$unreadCount',
+                        style:
+                            Theme.of(context).textTheme.labelMedium?.copyWith(
+                                  color: selected
+                                      ? AppTheme.primary
+                                      : const Color(0xFFFDF7FF),
+                                  fontWeight: FontWeight.w800,
+                                ),
+                      ),
+                    ),
+                  ],
                   if (selected) ...[
                     const SizedBox(width: 6),
                     Text(

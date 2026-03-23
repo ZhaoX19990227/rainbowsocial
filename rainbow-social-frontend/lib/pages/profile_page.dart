@@ -18,7 +18,6 @@ import '../theme/app_theme.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/app_skeleton.dart';
 import '../widgets/avatar_widget.dart';
-import '../widgets/glass_card.dart';
 import '../widgets/mbti_badge.dart';
 import '../widgets/zodiac_badge.dart';
 
@@ -245,7 +244,8 @@ class _ProfileHero extends StatelessWidget {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  _HeroMetaPill(icon: Icons.cake_rounded, label: '${user.age} 岁'),
+                  _HeroMetaPill(
+                      icon: Icons.cake_rounded, label: '${user.age} 岁'),
                   _HeroMetaPill(
                     icon: Icons.height_rounded,
                     label: '${user.heightCm}cm',
@@ -255,6 +255,12 @@ class _ProfileHero extends StatelessWidget {
                     label: '${user.weightKg}kg',
                   ),
                   _HeroMetaPill(icon: Icons.place_rounded, label: locationText),
+                  if (user.positionRole.trim().isNotEmpty)
+                    _HeroMetaPill(
+                      icon: Icons.bolt_rounded,
+                      label: user.positionRole.trim(),
+                      accent: AppTheme.tertiary,
+                    ),
                 ],
               ),
             ],
@@ -263,10 +269,124 @@ class _ProfileHero extends StatelessWidget {
         const SizedBox(height: 18),
         _RelationshipQuickStats(summary: summary),
         const SizedBox(height: 16),
+        _IdentityProfileCard(user: user),
+        const SizedBox(height: 14),
         _MbtiProfileCard(user: user),
         const SizedBox(height: 14),
         _HoroscopeProfileCard(user: user),
       ],
+    );
+  }
+}
+
+class _IdentityProfileCard extends StatelessWidget {
+  const _IdentityProfileCard({required this.user});
+
+  final AppUser user;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPosition = user.positionRole.trim().isNotEmpty;
+    final hasTags = user.tags.isNotEmpty;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xCCFFFFFF),
+            Color(0xBFFFF6FB),
+          ],
+        ),
+        border: Border.all(color: AppTheme.ghostBorder),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withValues(alpha: 0.06),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text('身份档案', style: Theme.of(context).textTheme.titleMedium),
+              const Spacer(),
+              TextButton(
+                onPressed: () =>
+                    Navigator.of(context).pushNamed(AppRouter.editProfile),
+                child: const Text('去完善'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          if (hasPosition)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                color: const Color(0xFFFFEEF7),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    Icons.bolt_rounded,
+                    size: 16,
+                    color: AppTheme.tertiary,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '属性：${user.positionRole}',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: AppTheme.tertiary,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          if (hasPosition && hasTags) const SizedBox(height: 12),
+          if (hasTags)
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: user.tags
+                  .map(
+                    (tag) => Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(999),
+                        color: Colors.white,
+                        border: Border.all(color: AppTheme.ghostBorder),
+                      ),
+                      child: Text(
+                        tag,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: AppTheme.textSecondary,
+                            ),
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          if (!hasPosition && !hasTags)
+            Text(
+              '还没有填写属性和标签。完善后，个人中心会直接展示你的角色偏好和兴趣关键词。',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.textSecondary,
+                  ),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -311,7 +431,8 @@ class _MbtiProfileCard extends StatelessWidget {
               Text('人格档案', style: Theme.of(context).textTheme.titleMedium),
               const Spacer(),
               TextButton(
-                onPressed: () => Navigator.of(context).pushNamed(AppRouter.mbtiTest),
+                onPressed: () =>
+                    Navigator.of(context).pushNamed(AppRouter.mbtiTest),
                 child: Text(hasMbti ? '重新测试' : '立即测试'),
               ),
             ],
@@ -335,7 +456,8 @@ class _MbtiProfileCard extends StatelessWidget {
                     children: [
                       MbtiBadge(type: mbti.type),
                       const SizedBox(height: 8),
-                      Text(mbti.name, style: Theme.of(context).textTheme.titleLarge),
+                      Text(mbti.name,
+                          style: Theme.of(context).textTheme.titleLarge),
                       const SizedBox(height: 4),
                       Text(
                         mbti.oneLiner,
@@ -395,7 +517,8 @@ class _HoroscopeProfileCard extends ConsumerWidget {
               Text('星座档案', style: Theme.of(context).textTheme.titleMedium),
               const Spacer(),
               TextButton(
-                onPressed: () => Navigator.of(context).pushNamed(AppRouter.birthdaySetup),
+                onPressed: () =>
+                    Navigator.of(context).pushNamed(AppRouter.birthdaySetup),
                 child: Text(hasZodiac ? '修改生日' : '填写生日'),
               ),
             ],
@@ -429,8 +552,8 @@ class _HoroscopeProfileCard extends ConsumerWidget {
                 ),
                 const Spacer(),
                 FilledButton.tonalIcon(
-                  onPressed: () =>
-                      Navigator.of(context).pushNamed(AppRouter.horoscopeDetail),
+                  onPressed: () => Navigator.of(context)
+                      .pushNamed(AppRouter.horoscopeDetail),
                   icon: const Icon(Icons.auto_awesome_rounded),
                   label: const Text('查看今日运势'),
                 ),
@@ -472,15 +595,19 @@ class _HoroscopeProfileCard extends ConsumerWidget {
                       Row(
                         children: [
                           Expanded(
-                            child: _MiniScore(label: '桃花', value: horoscope.scores.romance),
+                            child: _MiniScore(
+                                label: '桃花', value: horoscope.scores.romance),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: _MiniScore(label: '主动', value: horoscope.scores.initiative),
+                            child: _MiniScore(
+                                label: '主动',
+                                value: horoscope.scores.initiative),
                           ),
                           const SizedBox(width: 10),
                           Expanded(
-                            child: _MiniScore(label: '幸运', value: horoscope.scores.luck),
+                            child: _MiniScore(
+                                label: '幸运', value: horoscope.scores.luck),
                           ),
                         ],
                       ),
@@ -693,43 +820,6 @@ class _AmbientOrb extends StatelessWidget {
           shape: BoxShape.circle,
           gradient: RadialGradient(colors: colors),
         ),
-      ),
-    );
-  }
-}
-
-class _HeroTopPill extends StatelessWidget {
-  const _HeroTopPill({
-    required this.icon,
-    required this.label,
-    this.accent = const Color(0xFFF59B72),
-  });
-
-  final IconData icon;
-  final String label;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(999),
-        color: Colors.white.withValues(alpha: 0.18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.24)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: accent),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: Colors.white,
-                ),
-          ),
-        ],
       ),
     );
   }

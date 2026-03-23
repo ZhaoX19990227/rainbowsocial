@@ -5,13 +5,16 @@ import 'package:image_picker/image_picker.dart';
 import '../controllers/auth_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../models/app_user.dart';
+import '../providers/app_providers.dart';
 import '../routes/app_router.dart';
 import '../services/api_config.dart';
 import '../services/app_feedback.dart';
+import '../services/profile_completion.dart';
 import '../services/tag_options.dart';
 import '../services/zodiac_utils.dart';
 import '../theme/app_theme.dart';
 import '../usecases/upload_usecases.dart';
+import '../usecases/user_usecases.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/inline_birthday_picker.dart';
@@ -39,7 +42,12 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
   List<String> _photos = const [];
   List<String> _selectedTags = const [];
+  String _selectedPositionRole = '';
+  String _locationLabel = '';
+  double _lat = 0;
+  double _lng = 0;
   bool _uploading = false;
+  bool _updatingLocation = false;
   int? _hydratedUserId;
 
   @override
@@ -66,13 +74,17 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final profile = ref.watch(profileControllerProvider).valueOrNull;
+    final sessionUser = ref.watch(authControllerProvider).valueOrNull?.user;
+    final profile =
+        ref.watch(profileControllerProvider).valueOrNull ?? sessionUser;
     if (profile != null && _hydratedUserId != profile.id) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         setState(() => _hydrateFromUser(profile));
       });
     }
+    final isOnboardingFlow = ProfileCompletion.needsOnboarding(profile);
+    final missingFields = ProfileCompletion.missingFields(profile);
     final zodiacSign = ZodiacUtils.zodiacFromBirthday(
           ZodiacUtils.tryParseBirthday(_birthday.text.trim()),
         ) ??
@@ -80,366 +92,542 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('编辑资料'),
+        automaticallyImplyLeading: !isOnboardingFlow,
+        title: Text(isOnboardingFlow ? '完善资料' : '编辑资料'),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('预览'),
-          ),
+          if (!isOnboardingFlow)
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('预览'),
+            ),
         ],
       ),
-      body: LuminousBackground(
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-            children: [
-              _SectionHeader(
-                title: '展示资料',
-                subtitle: '长按下方照片可调整顺序',
-                trailing: IconButton(
-                  onPressed: _uploading ? null : () => _pickAndUploadImage(isAvatar: false),
-                  icon: const Icon(Icons.add_a_photo_rounded),
-                ),
-              ),
-              const SizedBox(height: 14),
-              _PhotoGridCard(
-                avatarUrl: _avatar.text.trim(),
-                photos: _normalizePhotos(
-                  _photos,
-                  avatarUrl: _avatar.text.trim(),
-                ),
-                uploading: _uploading,
-                onAvatarTap: () => _pickAndUploadImage(isAvatar: true),
-                onAddTap: () => _pickAndUploadImage(isAvatar: false),
-                onReorderPhotos: _reorderPhotos,
-                onDeletePhoto: (photo) => setState(() {
-                  _photos = _normalizePhotos(
-                    _photos.where((item) => item != photo).toList(),
-                    avatarUrl: _avatar.text.trim(),
-                  );
-                }),
-              ),
-              const SizedBox(height: 22),
-              const _SectionHeader(title: '基础信息'),
-              const SizedBox(height: 14),
-              GlassCard(
-                borderRadius: BorderRadius.circular(30),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _LabeledField(
-                      label: '昵称',
-                      child: TextField(
-                        controller: _nickname,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                        decoration: const InputDecoration(hintText: '输入你的昵称'),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _LabeledField(
-                            label: '年龄',
-                            child: TextField(
-                              controller: _age,
-                              keyboardType: TextInputType.number,
-                              style: Theme.of(context).textTheme.bodyLarge,
-                              decoration: const InputDecoration(hintText: '26'),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _LabeledField(
-                            label: '身高 (CM)',
-                            child: TextField(
-                              controller: _heightCm,
-                              keyboardType: TextInputType.number,
-                              style: Theme.of(context).textTheme.bodyLarge,
-                              decoration: const InputDecoration(hintText: '182'),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _LabeledField(
-                            label: '体重 (KG)',
-                            child: TextField(
-                              controller: _weightKg,
-                              keyboardType: TextInputType.number,
-                              style: Theme.of(context).textTheme.bodyLarge,
-                              decoration: const InputDecoration(hintText: '75'),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _LabeledField(
-                            label: '城市 / 位置',
-                            child: Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 16,
-                              ),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(28),
-                                color: AppTheme.surfaceHighest,
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      (profile?.locationLabel.trim().isNotEmpty ??
-                                              false)
-                                          ? profile!.locationLabel.trim()
-                                          : '进入附近后自动更新',
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(
-                                            color: AppTheme.textSecondary,
-                                          ),
-                                    ),
-                                  ),
-                                  const Icon(
-                                    Icons.location_on_rounded,
-                                    color: AppTheme.primary,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _LabeledField(
-                      label: '生日',
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          InlineBirthdayPicker(
-                            initialDate: ZodiacUtils.tryParseBirthday(
-                                  _birthday.text.trim(),
-                                ) ??
-                                DateTime(1998, 6, 15),
-                            onChanged: (value) {
-                              setState(() {
-                                _birthday.text = ZodiacUtils.formatBirthday(value);
-                              });
-                            },
-                          ),
-                          if (zodiacSign.isNotEmpty) ...[
-                            const SizedBox(height: 10),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 12,
-                              ),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(18),
-                                color: const Color(0xFFFFE2F1),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.auto_awesome_rounded,
-                                    size: 16,
-                                    color: AppTheme.tertiary,
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    ZodiacUtils.displayName(zodiacSign),
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelLarge
-                                        ?.copyWith(color: AppTheme.tertiary),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+      body: PopScope(
+        canPop: !isOnboardingFlow,
+        child: LuminousBackground(
+          child: SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+              children: [
+                if (isOnboardingFlow) ...[
+                  Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(28),
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFFF7E9FF),
+                          Color(0xFFE8F3FF),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 22),
-              const _SectionHeader(title: '身份档案'),
-              const SizedBox(height: 14),
-              GlassCard(
-                borderRadius: BorderRadius.circular(30),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _LabeledField(
-                      label: '人格类型 (MBTI)',
-                      child: Container(
-                        padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(22),
-                          color: const Color(0x1FD2E4FF),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primary.withValues(alpha: 0.1),
+                          blurRadius: 24,
+                          offset: const Offset(0, 12),
                         ),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 42,
-                              height: 42,
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: AppTheme.secondary,
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '先把关键资料补完整',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          '完成这些信息后，我们才能更准确地展示推荐、附近和个人中心。',
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: AppTheme.textSecondary,
+                                  ),
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: missingFields
+                              .map(
+                                (field) => Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(999),
+                                    color: Colors.white.withValues(alpha: 0.82),
+                                  ),
+                                  child: Text(
+                                    field,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium
+                                        ?.copyWith(
+                                          color: AppTheme.primary,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                ],
+                _SectionHeader(
+                  title: '展示资料',
+                  subtitle: '长按下方照片可调整顺序',
+                  trailing: IconButton(
+                    onPressed: _uploading
+                        ? null
+                        : () => _pickAndUploadImage(isAvatar: false),
+                    icon: const Icon(Icons.add_a_photo_rounded),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                _PhotoGridCard(
+                  avatarUrl: _avatar.text.trim(),
+                  photos: _normalizePhotos(
+                    _photos,
+                    avatarUrl: _avatar.text.trim(),
+                  ),
+                  uploading: _uploading,
+                  onAvatarTap: () => _pickAndUploadImage(isAvatar: true),
+                  onAddTap: () => _pickAndUploadImage(isAvatar: false),
+                  onReorderPhotos: _reorderPhotos,
+                  onDeletePhoto: (photo) => setState(() {
+                    _photos = _normalizePhotos(
+                      _photos.where((item) => item != photo).toList(),
+                      avatarUrl: _avatar.text.trim(),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 22),
+                const _SectionHeader(title: '基础信息'),
+                const SizedBox(height: 14),
+                GlassCard(
+                  borderRadius: BorderRadius.circular(30),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _LabeledField(
+                        label: '昵称',
+                        child: TextField(
+                          controller: _nickname,
+                          style: Theme.of(context).textTheme.bodyLarge,
+                          decoration: const InputDecoration(hintText: '输入你的昵称'),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _LabeledField(
+                              label: '年龄',
+                              child: TextField(
+                                controller: _age,
+                                keyboardType: TextInputType.number,
+                                style: Theme.of(context).textTheme.bodyLarge,
+                                decoration:
+                                    const InputDecoration(hintText: '26'),
                               ),
-                              child: Center(
-                                child: Text(
-                                  profile?.mbtiType.trim().isEmpty ?? true
-                                      ? 'MB'
-                                      : profile!.mbtiType,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .labelMedium
-                                      ?.copyWith(color: Colors.white),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _LabeledField(
+                              label: '身高 (CM)',
+                              child: TextField(
+                                controller: _heightCm,
+                                keyboardType: TextInputType.number,
+                                style: Theme.of(context).textTheme.bodyLarge,
+                                decoration:
+                                    const InputDecoration(hintText: '182'),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _LabeledField(
+                              label: '体重 (KG)',
+                              child: TextField(
+                                controller: _weightKg,
+                                keyboardType: TextInputType.number,
+                                style: Theme.of(context).textTheme.bodyLarge,
+                                decoration:
+                                    const InputDecoration(hintText: '75'),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _LabeledField(
+                              label: '城市 / 位置',
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(28),
+                                  color: AppTheme.surfaceHighest,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        _locationLabel.trim().isNotEmpty
+                                            ? _locationLabel.trim()
+                                            : '点击右侧按钮获取当前位置',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: AppTheme.textSecondary,
+                                            ),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      onPressed: _updatingLocation
+                                          ? null
+                                          : _resolveCurrentLocation,
+                                      icon: _updatingLocation
+                                          ? const SizedBox(
+                                              width: 18,
+                                              height: 18,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : const Icon(
+                                              Icons.my_location_rounded,
+                                              color: AppTheme.primary,
+                                            ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _LabeledField(
+                        label: '生日',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            InlineBirthdayPicker(
+                              initialDate: ZodiacUtils.tryParseBirthday(
+                                    _birthday.text.trim(),
+                                  ) ??
+                                  DateTime(1998, 6, 15),
+                              onChanged: (value) {
+                                setState(() {
+                                  _birthday.text =
+                                      ZodiacUtils.formatBirthday(value);
+                                });
+                              },
+                            ),
+                            if (zodiacSign.isNotEmpty) ...[
+                              const SizedBox(height: 10),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(18),
+                                  color: const Color(0xFFFFE2F1),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.auto_awesome_rounded,
+                                      size: 16,
+                                      color: AppTheme.tertiary,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      ZodiacUtils.displayName(zodiacSign),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge
+                                          ?.copyWith(color: AppTheme.tertiary),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 22),
+                const _SectionHeader(title: '身份档案'),
+                const SizedBox(height: 14),
+                GlassCard(
+                  borderRadius: BorderRadius.circular(30),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _LabeledField(
+                        label: '人格类型 (MBTI)',
+                        child: Container(
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(22),
+                            color: const Color(0x1FD2E4FF),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 42,
+                                height: 42,
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: AppTheme.secondary,
+                                ),
+                                child: Center(
+                                  child: Text(
                                     profile?.mbtiType.trim().isEmpty ?? true
-                                        ? '还没有人格结果'
+                                        ? 'MB'
                                         : profile!.mbtiType,
-                                    style: Theme.of(context).textTheme.titleMedium,
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    profile?.mbtiType.trim().isEmpty ?? true
-                                        ? '完成测试后，会展示你的人格类型'
-                                        : '热情、有创意、自由的精神',
                                     style: Theme.of(context)
                                         .textTheme
-                                        .bodySmall
-                                        ?.copyWith(color: AppTheme.textSecondary),
+                                        .labelMedium
+                                        ?.copyWith(color: Colors.white),
                                   ),
-                                ],
+                                ),
                               ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      profile?.mbtiType.trim().isEmpty ?? true
+                                          ? '还没有人格结果'
+                                          : profile!.mbtiType,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium,
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      profile?.mbtiType.trim().isEmpty ?? true
+                                          ? '完成测试后，会展示你的人格类型'
+                                          : '热情、有创意、自由的精神',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                              color: AppTheme.textSecondary),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.of(context)
+                                    .pushNamed(AppRouter.mbtiTest),
+                                child: const Text('去测试'),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _LabeledField(
+                        label: '属性',
+                        child: Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: profilePositionOptions.map((option) {
+                            final selected = _selectedPositionRole == option;
+                            return ChoiceChip(
+                              selected: selected,
+                              label: Text(option),
+                              onSelected: (_) {
+                                setState(() => _selectedPositionRole = option);
+                              },
+                              selectedColor:
+                                  AppTheme.primary.withValues(alpha: 0.16),
+                              side: BorderSide(
+                                color: selected
+                                    ? AppTheme.primary
+                                    : AppTheme.ghostBorder,
+                              ),
+                              labelStyle: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.copyWith(
+                                    color: selected
+                                        ? AppTheme.primary
+                                        : AppTheme.textSecondary,
+                                  ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      _LabeledField(
+                        label: '个性标签',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextField(
+                              controller: _tags,
+                              style: Theme.of(context).textTheme.bodyLarge,
+                              decoration: const InputDecoration(
+                                hintText: '标签，使用逗号分隔，最多 5 个',
+                              ),
+                              onChanged: _syncTagsFromInput,
                             ),
-                            TextButton(
-                              onPressed: () =>
-                                  Navigator.of(context).pushNamed(AppRouter.mbtiTest),
-                              child: const Text('去测试'),
+                            const SizedBox(height: 10),
+                            Text(
+                              '已选择 ${_selectedTags.length}/$_maxTags',
+                              style: Theme.of(context).textTheme.labelMedium,
+                            ),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: profileTagOptions.map((tag) {
+                                return FilterChip(
+                                  selected: _selectedTags.contains(tag),
+                                  label: Text(tag),
+                                  onSelected: (_) => _toggleTag(tag),
+                                );
+                              }).toList(),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    _LabeledField(
-                      label: '个性标签',
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          TextField(
-                            controller: _tags,
-                            style: Theme.of(context).textTheme.bodyLarge,
-                            decoration: const InputDecoration(
-                              hintText: '标签，使用逗号分隔，最多 5 个',
-                            ),
-                            onChanged: _syncTagsFromInput,
+                      const SizedBox(height: 12),
+                      _LabeledField(
+                        label: '简介',
+                        child: TextField(
+                          controller: _bio,
+                          maxLines: 4,
+                          style: Theme.of(context).textTheme.bodyLarge,
+                          decoration: const InputDecoration(
+                            hintText: '介绍一下你自己，让更多人认识你...',
                           ),
-                          const SizedBox(height: 10),
-                          Text(
-                            '已选择 ${_selectedTags.length}/$_maxTags',
-                            style: Theme.of(context).textTheme.labelMedium,
-                          ),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 10,
-                            runSpacing: 10,
-                            children: profileTagOptions.map((tag) {
-                              return FilterChip(
-                                selected: _selectedTags.contains(tag),
-                                label: Text(tag),
-                                onSelected: (_) => _toggleTag(tag),
-                              );
-                            }).toList(),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _LabeledField(
-                      label: '简介',
-                      child: TextField(
-                        controller: _bio,
-                        maxLines: 4,
-                        style: Theme.of(context).textTheme.bodyLarge,
-                        decoration: const InputDecoration(
-                          hintText: '介绍一下你自己，让更多人认识你...',
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 22),
-              GradientButton(
-                label: _uploading ? '上传中...' : '保存修改',
-                icon: Icons.check_rounded,
-                onPressed: profile == null || _uploading
-                    ? null
-                    : () async {
-                        final updated = AppUser(
-                          id: profile.id,
-                          email: profile.email,
-                          nickname: _nickname.text.trim(),
-                          avatar: _avatar.text.trim(),
-                          photos: _normalizePhotos(
-                            _photos,
-                            avatarUrl: _avatar.text.trim(),
-                          ),
-                          age: int.tryParse(_age.text.trim()) ?? profile.age,
-                          heightCm: int.tryParse(_heightCm.text.trim()) ??
-                              profile.heightCm,
-                          weightKg: int.tryParse(_weightKg.text.trim()) ??
-                              profile.weightKg,
-                          birthday: _birthday.text.trim(),
-                          zodiacSign: ZodiacUtils.zodiacFromBirthday(
-                                ZodiacUtils.tryParseBirthday(_birthday.text.trim()),
-                              ) ??
-                              '',
-                          mbtiType: profile.mbtiType,
-                          bio: _bio.text.trim(),
-                          tags: _parseTags(_tags.text),
-                          lat: profile.lat,
-                          lng: profile.lng,
-                          locationLabel: profile.locationLabel,
-                          onlineStatus: profile.onlineStatus,
-                          distanceKm: profile.distanceKm,
-                        );
-                        await ref
-                            .read(profileControllerProvider.notifier)
-                            .save(updated);
-                        if (context.mounted) {
-                          AppFeedback.showToast('资料已更新');
-                          Navigator.of(context).pop();
-                        }
-                      },
-              ),
-            ],
+                const SizedBox(height: 22),
+                GradientButton(
+                  label: _uploading ? '上传中...' : '保存修改',
+                  icon: Icons.check_rounded,
+                  onPressed: profile == null || _uploading
+                      ? null
+                      : () async {
+                          final updated = AppUser(
+                            id: profile.id,
+                            email: profile.email,
+                            nickname: _nickname.text.trim(),
+                            avatar: _avatar.text.trim(),
+                            photos: _normalizePhotos(
+                              _photos,
+                              avatarUrl: _avatar.text.trim(),
+                            ),
+                            age: int.tryParse(_age.text.trim()) ?? profile.age,
+                            heightCm: int.tryParse(_heightCm.text.trim()) ??
+                                profile.heightCm,
+                            weightKg: int.tryParse(_weightKg.text.trim()) ??
+                                profile.weightKg,
+                            birthday: _birthday.text.trim(),
+                            zodiacSign: ZodiacUtils.zodiacFromBirthday(
+                                  ZodiacUtils.tryParseBirthday(
+                                      _birthday.text.trim()),
+                                ) ??
+                                '',
+                            mbtiType: profile.mbtiType,
+                            bio: _bio.text.trim(),
+                            tags: _parseTags(_tags.text),
+                            positionRole: _selectedPositionRole.trim(),
+                            lat: _lat,
+                            lng: _lng,
+                            locationLabel: _locationLabel.trim(),
+                            onlineStatus: profile.onlineStatus,
+                            distanceKm: profile.distanceKm,
+                          );
+                          await ref
+                              .read(profileControllerProvider.notifier)
+                              .save(updated);
+                          if (context.mounted) {
+                            AppFeedback.showToast(
+                              isOnboardingFlow ? '资料已完善，开始探索吧' : '资料已更新',
+                            );
+                            if (isOnboardingFlow) {
+                              Navigator.of(context).pushNamedAndRemoveUntil(
+                                AppRouter.main,
+                                (route) => false,
+                              );
+                            } else {
+                              Navigator.of(context).pop();
+                            }
+                          }
+                        },
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _resolveCurrentLocation() async {
+    final session = ref.read(authControllerProvider).valueOrNull;
+    if (session == null || _updatingLocation) return;
+
+    setState(() => _updatingLocation = true);
+    try {
+      final position =
+          await ref.read(locationServiceProvider).getCurrentPosition();
+      final locationLabel =
+          await ref.read(locationLabelServiceProvider).getLocationLabel(
+                lat: position.latitude,
+                lng: position.longitude,
+              );
+      final updated = await ref.read(updateLocationUseCaseProvider)(
+        session.token,
+        lat: position.latitude,
+        lng: position.longitude,
+        locationLabel: locationLabel,
+      );
+      ref.read(authControllerProvider.notifier).updateSessionUser(updated);
+      ref.read(profileControllerProvider.notifier).load();
+      if (!mounted) return;
+      setState(() {
+        _lat = position.latitude;
+        _lng = position.longitude;
+        _locationLabel = updated.locationLabel.trim().isEmpty
+            ? locationLabel
+            : updated.locationLabel;
+      });
+    } catch (error) {
+      AppFeedback.showError('位置获取失败：$error');
+    } finally {
+      if (mounted) {
+        setState(() => _updatingLocation = false);
+      }
+    }
   }
 
   Future<void> _pickAndUploadImage({required bool isAvatar}) async {
@@ -563,15 +751,22 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     _bio.text = user.bio;
     _tags.text = user.tags.join(', ');
     _selectedTags = [...user.tags];
+    _selectedPositionRole = user.positionRole;
+    _locationLabel = user.locationLabel;
+    _lat = user.lat;
+    _lng = user.lng;
     _photos = _normalizePhotos(user.photos, avatarUrl: user.avatar);
   }
 
-  List<String> _normalizePhotos(List<String> photos, {required String avatarUrl}) {
+  List<String> _normalizePhotos(List<String> photos,
+      {required String avatarUrl}) {
     final seen = <String>{};
     final result = <String>[];
     for (final photo in photos) {
       final normalized = photo.trim();
-      if (normalized.isEmpty || normalized == avatarUrl.trim() || seen.contains(normalized)) {
+      if (normalized.isEmpty ||
+          normalized == avatarUrl.trim() ||
+          seen.contains(normalized)) {
         continue;
       }
       seen.add(normalized);
@@ -582,7 +777,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
   void _reorderPhotos(int oldIndex, int newIndex) {
     setState(() {
-      final updated = [..._normalizePhotos(_photos, avatarUrl: _avatar.text.trim())];
+      final updated = [
+        ..._normalizePhotos(_photos, avatarUrl: _avatar.text.trim())
+      ];
       if (oldIndex < 0 ||
           oldIndex >= updated.length ||
           newIndex < 0 ||
@@ -663,7 +860,8 @@ class _ImageTile extends StatelessWidget {
                     color: Colors.black.withValues(alpha: 0.36),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.close_rounded, size: 16, color: Colors.white),
+                  child: const Icon(Icons.close_rounded,
+                      size: 16, color: Colors.white),
                 ),
               ),
             ),
@@ -849,7 +1047,8 @@ class _PhotoGridCard extends StatelessWidget {
                     child: photoIndex < extraPhotos.length
                         ? _ImageTile(
                             imageUrl: extraPhotos[photoIndex],
-                            onDelete: () => onDeletePhoto(extraPhotos[photoIndex]),
+                            onDelete: () =>
+                                onDeletePhoto(extraPhotos[photoIndex]),
                           )
                         : _AddImageTile(
                             loading: uploading,
@@ -896,9 +1095,9 @@ class _PhotoGridCard extends StatelessWidget {
                           builder: (context, _) {
                             final lift = Tween<double>(begin: 1, end: 1.04)
                                 .animate(CurvedAnimation(
-                              parent: animation,
-                              curve: Curves.easeOutCubic,
-                            ))
+                                  parent: animation,
+                                  curve: Curves.easeOutCubic,
+                                ))
                                 .value;
                             return Transform.scale(
                               scale: lift,
@@ -923,7 +1122,8 @@ class _PhotoGridCard extends StatelessWidget {
                               Positioned.fill(
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(24),
-                                  child: Image.network(photo, fit: BoxFit.cover),
+                                  child:
+                                      Image.network(photo, fit: BoxFit.cover),
                                 ),
                               ),
                               Positioned(
@@ -957,7 +1157,8 @@ class _PhotoGridCard extends StatelessWidget {
                                     width: 28,
                                     height: 28,
                                     decoration: BoxDecoration(
-                                      color: Colors.white.withValues(alpha: 0.88),
+                                      color:
+                                          Colors.white.withValues(alpha: 0.88),
                                       borderRadius: BorderRadius.circular(999),
                                     ),
                                     child: const Icon(

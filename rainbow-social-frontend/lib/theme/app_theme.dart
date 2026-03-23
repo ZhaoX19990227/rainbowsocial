@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   static const Color background = Color(0xFFF8F9FE);
@@ -17,6 +16,7 @@ class AppTheme {
 
   static ThemeData get darkTheme {
     final base = ThemeData.light(useMaterial3: true);
+    const fontFamily = 'PingFang SC';
     return base.copyWith(
       scaffoldBackgroundColor: background,
       colorScheme: const ColorScheme.light(
@@ -25,45 +25,53 @@ class AppTheme {
         surface: surface,
         error: error,
       ),
-      textTheme: GoogleFonts.manropeTextTheme(base.textTheme).copyWith(
-        displayLarge: GoogleFonts.plusJakartaSans(
+      textTheme: base.textTheme.copyWith(
+        displayLarge: const TextStyle(
+          fontFamily: fontFamily,
           fontSize: 46,
           fontWeight: FontWeight.w800,
           letterSpacing: -1.2,
           color: textPrimary,
         ),
-        headlineLarge: GoogleFonts.plusJakartaSans(
+        headlineLarge: const TextStyle(
+          fontFamily: fontFamily,
           fontSize: 32,
           fontWeight: FontWeight.w800,
           letterSpacing: -0.8,
           color: textPrimary,
         ),
-        headlineMedium: GoogleFonts.plusJakartaSans(
+        headlineMedium: const TextStyle(
+          fontFamily: fontFamily,
           fontSize: 24,
           fontWeight: FontWeight.w800,
           color: textPrimary,
         ),
-        titleLarge: GoogleFonts.plusJakartaSans(
+        titleLarge: const TextStyle(
+          fontFamily: fontFamily,
           fontSize: 20,
           fontWeight: FontWeight.w700,
           color: textPrimary,
         ),
-        bodyLarge: GoogleFonts.manrope(
+        bodyLarge: const TextStyle(
+          fontFamily: fontFamily,
           fontSize: 16,
           height: 1.5,
           color: textPrimary,
         ),
-        bodyMedium: GoogleFonts.manrope(
+        bodyMedium: const TextStyle(
+          fontFamily: fontFamily,
           fontSize: 14,
           height: 1.5,
           color: textPrimary,
         ),
-        labelLarge: GoogleFonts.manrope(
+        labelLarge: const TextStyle(
+          fontFamily: fontFamily,
           fontSize: 13,
           fontWeight: FontWeight.w700,
           color: textSecondary,
         ),
-        labelMedium: GoogleFonts.manrope(
+        labelMedium: const TextStyle(
+          fontFamily: fontFamily,
           fontSize: 12,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.4,
@@ -79,7 +87,8 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surfaceHighest,
-        hintStyle: GoogleFonts.manrope(
+        hintStyle: const TextStyle(
+          fontFamily: fontFamily,
           color: textSecondary,
           fontSize: 14,
         ),

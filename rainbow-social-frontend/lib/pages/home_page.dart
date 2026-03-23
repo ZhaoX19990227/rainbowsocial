@@ -62,9 +62,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                         const SizedBox(height: 4),
                         Text(
                           '往下翻，看看今天会和谁对上眼',
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                color: AppTheme.textSecondary,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.labelMedium?.copyWith(
+                                    color: AppTheme.textSecondary,
+                                  ),
                         ),
                       ],
                     ),
@@ -93,14 +94,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
                 const SizedBox(height: 12),
                 Container(
-                  padding: const EdgeInsets.all(5),
+                  padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.9),
+                    color: Colors.white.withValues(alpha: 0.92),
                     borderRadius: BorderRadius.circular(999),
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.primary.withValues(alpha: 0.08),
-                        blurRadius: 20,
+                        color: AppTheme.primary.withValues(alpha: 0.12),
+                        blurRadius: 24,
                         offset: const Offset(0, 10),
                       ),
                     ],
@@ -113,23 +114,45 @@ class _HomePageState extends ConsumerState<HomePage> {
                               .read(homeControllerProvider.notifier)
                               .loadRecommendations(),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(999),
                               gradient: const LinearGradient(
                                 colors: [
-                                  Color(0x33F2D8FF),
-                                  Color(0x33FFD9E6),
+                                  AppTheme.primary,
+                                  AppTheme.tertiary,
                                 ],
                               ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      AppTheme.primary.withValues(alpha: 0.24),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 8),
+                                ),
+                              ],
                             ),
                             child: Center(
-                              child: Text(
-                                '推荐',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(color: AppTheme.textPrimary),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.explore_rounded,
+                                    size: 18,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '推荐',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -139,14 +162,30 @@ class _HomePageState extends ConsumerState<HomePage> {
                         child: GestureDetector(
                           onTap: widget.onSwitchToNearby,
                           child: Padding(
-                            padding: EdgeInsets.symmetric(vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 13),
                             child: Center(
-                              child: Text(
-                                '附近',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(color: AppTheme.textSecondary),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.location_on_rounded,
+                                    size: 18,
+                                    color: AppTheme.textSecondary.withValues(
+                                      alpha: 0.9,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '附近',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                          color: AppTheme.textSecondary,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
@@ -310,7 +349,8 @@ class _HomePageState extends ConsumerState<HomePage> {
       return;
     }
     if (decision == _SwipeDecision.superLike) {
-      AppFeedback.showToast(RelationshipCopy.superLikeSent(result.user.nickname));
+      AppFeedback.showToast(
+          RelationshipCopy.superLikeSent(result.user.nickname));
     } else if (decision == _SwipeDecision.like) {
       AppFeedback.showToast(RelationshipCopy.likeSent(result.user.nickname));
     }
@@ -501,8 +541,7 @@ class _HoroscopeEntryCard extends StatelessWidget {
       glowColors: const [Color(0x227DDCFF), Color(0x007DDCFF)],
       icon: Icons.auto_awesome_rounded,
       title: '查看今日运势',
-      subtitle:
-          hasBirthday && zodiacLabel.isNotEmpty ? zodiacLabel : '解锁星座档案',
+      subtitle: hasBirthday && zodiacLabel.isNotEmpty ? zodiacLabel : '解锁星座档案',
       chevronColor: AppTheme.secondary,
       semanticLabel: '运势入口',
     );
@@ -605,7 +644,7 @@ class _SwipeDeckState extends State<_SwipeDeck>
 
   @override
   Widget build(BuildContext context) {
-    final visible = widget.users.take(3).toList();
+    final visible = widget.users.take(2).toList();
     final dxProgress = (_effectiveOffset.dx.abs() / _horizontalThreshold)
         .clamp(0.0, 1.0)
         .toDouble();
@@ -642,9 +681,8 @@ class _SwipeDeckState extends State<_SwipeDeck>
     required double upProgress,
   }) {
     final isTop = index == 0;
-    final depth = index.toDouble();
-    final scale = isTop ? 1.0 : 1.0 - (depth * 0.035);
-    final topOffset = isTop ? 0.0 : 10 + (depth * 6);
+    final scale = isTop ? 1.0 : 0.965;
+    final topOffset = isTop ? 0.0 : 18.0;
 
     Widget child = Positioned.fill(
       top: topOffset,
@@ -652,7 +690,7 @@ class _SwipeDeckState extends State<_SwipeDeck>
         scale: scale,
         alignment: Alignment.topCenter,
         child: Opacity(
-          opacity: isTop ? 1 : 0.5 - (depth * 0.08),
+          opacity: isTop ? 1 : 0.76,
           child: UserCard(
             user: user,
             onTap: () => widget.onCardTap(user),
@@ -990,7 +1028,8 @@ class _MatchOverlayState extends State<_MatchOverlay>
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: AppTheme.primary.withValues(alpha: 0.1),
+                                  color:
+                                      AppTheme.primary.withValues(alpha: 0.1),
                                 ),
                               ),
                             );
@@ -1019,7 +1058,8 @@ class _MatchOverlayState extends State<_MatchOverlay>
                               border: Border.all(color: Colors.white, width: 4),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppTheme.primary.withValues(alpha: 0.12),
+                                  color:
+                                      AppTheme.primary.withValues(alpha: 0.12),
                                   blurRadius: 20,
                                   offset: const Offset(0, 8),
                                 ),
@@ -1059,7 +1099,8 @@ class _MatchOverlayState extends State<_MatchOverlay>
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.primary.withValues(alpha: 0.12),
+                                    color: AppTheme.primary
+                                        .withValues(alpha: 0.12),
                                     blurRadius: 20,
                                     offset: const Offset(0, 8),
                                   ),
@@ -1144,7 +1185,8 @@ class _MatchOverlayState extends State<_MatchOverlay>
                                     ?.copyWith(color: Colors.white),
                               ),
                               const SizedBox(width: 8),
-                              const Icon(Icons.send_rounded, color: Colors.white),
+                              const Icon(Icons.send_rounded,
+                                  color: Colors.white),
                             ],
                           ),
                         ),

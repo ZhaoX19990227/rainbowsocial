@@ -15,6 +15,7 @@ class AppUser {
     required this.mbtiType,
     required this.bio,
     required this.tags,
+    this.positionRole = '',
     required this.lat,
     required this.lng,
     required this.onlineStatus,
@@ -35,6 +36,7 @@ class AppUser {
   final String mbtiType;
   final String bio;
   final List<String> tags;
+  final String positionRole;
   final double lat;
   final double lng;
   final bool onlineStatus;
@@ -59,6 +61,8 @@ class AppUser {
       mbtiType: '${json['mbti_type'] ?? ''}',
       bio: '${json['bio'] ?? ''}',
       tags: rawTags is List ? rawTags.cast<String>() : const [],
+      positionRole:
+          '${json['position_role'] ?? json['position'] ?? json['attribute'] ?? ''}',
       lat: ((json['lat'] ?? 0) as num).toDouble(),
       lng: ((json['lng'] ?? 0) as num).toDouble(),
       locationLabel: '${json['location_label'] ?? ''}',
@@ -84,6 +88,7 @@ class AppUser {
       'mbti_type': mbtiType,
       'bio': bio,
       'tags': tags,
+      'position_role': positionRole,
       'lat': lat,
       'lng': lng,
       'location_label': locationLabel,
@@ -111,6 +116,7 @@ class AppUser {
     String? mbtiType,
     String? bio,
     List<String>? tags,
+    String? positionRole,
     double? lat,
     double? lng,
     bool? onlineStatus,
@@ -131,6 +137,7 @@ class AppUser {
       mbtiType: mbtiType ?? this.mbtiType,
       bio: bio ?? this.bio,
       tags: tags ?? this.tags,
+      positionRole: positionRole ?? this.positionRole,
       lat: lat ?? this.lat,
       lng: lng ?? this.lng,
       locationLabel: locationLabel ?? this.locationLabel,

@@ -65,6 +65,101 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
               ],
             ),
             const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.92),
+                borderRadius: BorderRadius.circular(999),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.secondary.withValues(alpha: 0.12),
+                    blurRadius: 24,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: widget.onSwitchToRecommendations,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 13),
+                        child: Center(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.explore_rounded,
+                                size: 18,
+                                color: AppTheme.textSecondary
+                                    .withValues(alpha: 0.9),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                '推荐',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      color: AppTheme.textSecondary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 13),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(999),
+                        gradient: const LinearGradient(
+                          colors: [
+                            AppTheme.secondary,
+                            Color(0xFF6A7CFF),
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.secondary.withValues(alpha: 0.22),
+                            blurRadius: 16,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.location_on_rounded,
+                              size: 18,
+                              color: Colors.white,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              '附近',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleMedium
+                                  ?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
             TextField(
               controller: _searchController,
               onChanged: (value) => setState(() => _keyword = value.trim()),
@@ -159,7 +254,9 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
       return user.nickname.toLowerCase().contains(normalized) ||
           user.bio.toLowerCase().contains(normalized) ||
           user.mbtiType.toLowerCase().contains(normalized) ||
-          ZodiacUtils.displayName(user.zodiacSign).toLowerCase().contains(normalized) ||
+          ZodiacUtils.displayName(user.zodiacSign)
+              .toLowerCase()
+              .contains(normalized) ||
           user.tags.any((tag) => tag.toLowerCase().contains(normalized));
     }).toList();
   }
@@ -179,7 +276,8 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.84),
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(36)),
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(36)),
                 ),
                 child: Stack(
                   children: [
@@ -189,158 +287,175 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                    Text('筛选条件', style: Theme.of(context).textTheme.titleLarge),
-                    const SizedBox(height: 22),
-                    Row(
-                      children: [
-                        Text(
-                          '年龄范围',
-                          style: Theme.of(context).textTheme.labelLarge,
-                        ),
-                        const Spacer(),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: AppTheme.primary.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            '${draft.minAge} - ${draft.maxAge} 岁',
-                            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  color: AppTheme.primary,
-                                  fontWeight: FontWeight.w700,
+                          Text('筛选条件',
+                              style: Theme.of(context).textTheme.titleLarge),
+                          const SizedBox(height: 22),
+                          Row(
+                            children: [
+                              Text(
+                                '年龄范围',
+                                style: Theme.of(context).textTheme.labelLarge,
+                              ),
+                              const Spacer(),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color:
+                                      AppTheme.primary.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(999),
                                 ),
+                                child: Text(
+                                  '${draft.minAge} - ${draft.maxAge} 岁',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelMedium
+                                      ?.copyWith(
+                                        color: AppTheme.primary,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
-                    ),
-                    RangeSlider(
-                      values: RangeValues(
-                        draft.minAge.toDouble(),
-                        draft.maxAge.toDouble(),
-                      ),
-                      min: 18,
-                      max: 60,
-                      divisions: 42,
-                      onChanged: (values) {
-                        setModalState(() {
-                          draft = draft.copyWith(
-                            minAge: values.start.round(),
-                            maxAge: values.end.round(),
-                          );
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      decoration: BoxDecoration(
-                        color: AppTheme.surfaceHighest,
-                        borderRadius: BorderRadius.circular(24),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.sensors_rounded, color: AppTheme.primary),
-                          const SizedBox(width: 10),
-                          const Expanded(child: Text('仅看在线')),
-                          Switch(
-                            value: draft.onlineOnly,
-                            onChanged: (value) {
+                          RangeSlider(
+                            values: RangeValues(
+                              draft.minAge.toDouble(),
+                              draft.maxAge.toDouble(),
+                            ),
+                            min: 18,
+                            max: 60,
+                            divisions: 42,
+                            onChanged: (values) {
                               setModalState(() {
-                                draft = draft.copyWith(onlineOnly: value);
+                                draft = draft.copyWith(
+                                  minAge: values.start.round(),
+                                  maxAge: values.end.round(),
+                                );
                               });
                             },
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    TextField(
-                      controller: tagController,
-                      decoration: const InputDecoration(
-                        hintText: '标签，例如：旅行 / 运动 / 音乐',
-                      ),
-                      onChanged: (value) {
-                        draft = draft.copyWith(tag: value.trim());
-                      },
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'MBTI',
-                      style: Theme.of(context).textTheme.labelLarge,
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: MbtiCatalog.validTypes.map((type) {
-                        final selected = draft.mbtiType == type;
-                        return FilterChip(
-                          selected: selected,
-                          label: Text(type),
-                          selectedColor: AppTheme.primary.withValues(alpha: 0.9),
-                          checkmarkColor: Colors.white,
-                          labelStyle: TextStyle(
-                            color: selected ? Colors.white : AppTheme.textSecondary,
-                            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: AppTheme.surfaceHighest,
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.sensors_rounded,
+                                    color: AppTheme.primary),
+                                const SizedBox(width: 10),
+                                const Expanded(child: Text('仅看在线')),
+                                Switch(
+                                  value: draft.onlineOnly,
+                                  onChanged: (value) {
+                                    setModalState(() {
+                                      draft = draft.copyWith(onlineOnly: value);
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
-                          backgroundColor: AppTheme.surfaceHighest,
-                          onSelected: (_) {
-                            setModalState(() {
-                              draft = draft.copyWith(
-                                mbtiType: selected ? '' : type,
-                              );
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      '星座',
-                      style: Theme.of(context).textTheme.labelLarge,
-                    ),
-                    const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: ZodiacUtils.signs.map((sign) {
-                        final selected = draft.zodiacSign == sign;
-                        return FilterChip(
-                          selected: selected,
-                          label: Text(ZodiacUtils.displayName(sign)),
-                          selectedColor: const Color(0xFFD2E4FF),
-                          labelStyle: TextStyle(
-                            color: selected ? const Color(0xFF001D37) : AppTheme.textSecondary,
-                            fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+                          const SizedBox(height: 24),
+                          TextField(
+                            controller: tagController,
+                            decoration: const InputDecoration(
+                              hintText: '标签，例如：旅行 / 运动 / 音乐',
+                            ),
+                            onChanged: (value) {
+                              draft = draft.copyWith(tag: value.trim());
+                            },
                           ),
-                          backgroundColor: AppTheme.surfaceHighest,
-                          onSelected: (_) {
-                            setModalState(() {
-                              draft = draft.copyWith(
-                                zodiacSign: selected ? '' : sign,
+                          const SizedBox(height: 12),
+                          Text(
+                            'MBTI',
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: MbtiCatalog.validTypes.map((type) {
+                              final selected = draft.mbtiType == type;
+                              return FilterChip(
+                                selected: selected,
+                                label: Text(type),
+                                selectedColor:
+                                    AppTheme.primary.withValues(alpha: 0.9),
+                                checkmarkColor: Colors.white,
+                                labelStyle: TextStyle(
+                                  color: selected
+                                      ? Colors.white
+                                      : AppTheme.textSecondary,
+                                  fontWeight: selected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                ),
+                                backgroundColor: AppTheme.surfaceHighest,
+                                onSelected: (_) {
+                                  setModalState(() {
+                                    draft = draft.copyWith(
+                                      mbtiType: selected ? '' : type,
+                                    );
+                                  });
+                                },
                               );
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: profileTagOptions.take(10).map((tag) {
-                        return ActionChip(
-                          label: Text(tag),
-                          onPressed: () {
-                            tagController.text = tag;
-                            setModalState(() {
-                              draft = draft.copyWith(tag: tag);
-                            });
-                          },
-                        );
-                      }).toList(),
-                    ),
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            '星座',
+                            style: Theme.of(context).textTheme.labelLarge,
+                          ),
+                          const SizedBox(height: 10),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: ZodiacUtils.signs.map((sign) {
+                              final selected = draft.zodiacSign == sign;
+                              return FilterChip(
+                                selected: selected,
+                                label: Text(ZodiacUtils.displayName(sign)),
+                                selectedColor: const Color(0xFFD2E4FF),
+                                labelStyle: TextStyle(
+                                  color: selected
+                                      ? const Color(0xFF001D37)
+                                      : AppTheme.textSecondary,
+                                  fontWeight: selected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                ),
+                                backgroundColor: AppTheme.surfaceHighest,
+                                onSelected: (_) {
+                                  setModalState(() {
+                                    draft = draft.copyWith(
+                                      zodiacSign: selected ? '' : sign,
+                                    );
+                                  });
+                                },
+                              );
+                            }).toList(),
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: profileTagOptions.take(10).map((tag) {
+                              return ActionChip(
+                                label: Text(tag),
+                                onPressed: () {
+                                  tagController.text = tag;
+                                  setModalState(() {
+                                    draft = draft.copyWith(tag: tag);
+                                  });
+                                },
+                              );
+                            }).toList(),
+                          ),
                         ],
                       ),
                     ),
@@ -374,9 +489,13 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
                               child: DecoratedBox(
                                 decoration: const BoxDecoration(
                                   gradient: LinearGradient(
-                                    colors: [AppTheme.primary, AppTheme.primaryDark],
+                                    colors: [
+                                      AppTheme.primary,
+                                      AppTheme.primaryDark
+                                    ],
                                   ),
-                                  borderRadius: BorderRadius.all(Radius.circular(999)),
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(999)),
                                 ),
                                 child: FilledButton(
                                   onPressed: () => Navigator.of(context).pop(

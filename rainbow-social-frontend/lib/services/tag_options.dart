@@ -1,3 +1,12 @@
+const List<String> profilePositionOptions = [
+  'Top',
+  'Side',
+  'Bottom',
+  'Vers',
+  'Vers Bottom',
+  'Vers Top',
+];
+
 const List<String> profileTagOptions = [
   '熊',
   '猴',
