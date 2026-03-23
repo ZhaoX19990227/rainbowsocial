@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../models/app_user.dart';
 import '../services/user_status_catalog.dart';
 import '../theme/app_theme.dart';
+import 'mbti_badge.dart';
 import 'tag_chip.dart';
+import 'zodiac_badge.dart';
 
 class UserCard extends StatelessWidget {
   const UserCard({
@@ -24,6 +26,7 @@ class UserCard extends StatelessWidget {
     final status = UserStatusCatalog.isActive(user.statusExpiresAt)
         ? UserStatusCatalog.byId(user.statusId)
         : null;
+    final nickname = user.nickname.trim().isEmpty ? '未命名用户' : user.nickname.trim();
 
     return GestureDetector(
       onTap: onTap,
@@ -190,13 +193,13 @@ class UserCard extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.88),
+                    color: Colors.white.withValues(alpha: 0.76),
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.primary.withValues(alpha: 0.08),
-                        blurRadius: 18,
-                        offset: const Offset(0, 10),
+                        color: AppTheme.primary.withValues(alpha: 0.06),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
@@ -212,8 +215,8 @@ class UserCard extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  user.title,
-                                  maxLines: 2,
+                                  nickname,
+                                  maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: Theme.of(context)
                                       .textTheme
@@ -223,7 +226,29 @@ class UserCard extends StatelessWidget {
                                         color: AppTheme.textPrimary,
                                       ),
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 8,
+                                  children: [
+                                    if (user.positionRole.trim().isNotEmpty)
+                                      _IdentityPill(
+                                        label: user.positionRole.trim(),
+                                        highlighted: true,
+                                      ),
+                                    if (user.mbtiType.trim().isNotEmpty)
+                                      MbtiBadge(
+                                        type: user.mbtiType.trim(),
+                                        compact: true,
+                                      ),
+                                    if (user.zodiacSign.trim().isNotEmpty)
+                                      ZodiacBadge(
+                                        sign: user.zodiacSign.trim(),
+                                        compact: true,
+                                      ),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
                                 Text(
                                   user.locationLabel.trim().isNotEmpty
                                       ? user.locationLabel.trim()
@@ -322,6 +347,41 @@ class UserCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _IdentityPill extends StatelessWidget {
+  const _IdentityPill({
+    required this.label,
+    this.highlighted = false,
+  });
+
+  final String label;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        gradient: highlighted
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppTheme.primary, AppTheme.primaryDark],
+              )
+            : null,
+        color: highlighted ? null : AppTheme.surfaceHighest,
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: highlighted ? Colors.white : AppTheme.primary,
+              fontWeight: FontWeight.w800,
+            ),
       ),
     );
   }

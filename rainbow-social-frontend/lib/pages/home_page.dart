@@ -60,7 +60,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       opacity: controller.canUndo ? 1 : 0.45,
                       duration: const Duration(milliseconds: 180),
                       child: IconButton(
-                        onPressed: controller.canUndo ? _undoLastSwipe : null,
+                        onPressed: _undoLastSwipe,
                         icon: const Icon(
                           Icons.undo_rounded,
                           color: AppTheme.secondary,
@@ -87,7 +87,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       if (users.isEmpty) {
                         return AppEmptyState(
                           title: '暂时没有更多推荐了',
-                          subtitle: '可以稍后再来，或者刷新看看有没有新的心动对象。',
+                          subtitle: '可以稍后再来，或刷新看看有没有新的心动对象～',
                           action: TextButton(
                             onPressed: () => ref
                                 .read(homeControllerProvider.notifier)
@@ -125,7 +125,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       icon: Icons.undo_rounded,
                       color: AppTheme.secondary,
                       size: 52,
-                      onTap: controller.canUndo ? _undoLastSwipe : null,
+                      onTap: _undoLastSwipe,
                     ),
                     const SizedBox(width: 14),
                     _ActionCircle(
@@ -196,7 +196,6 @@ class _HomePageState extends ConsumerState<HomePage> {
       if (decision == _SwipeDecision.superLike) {
         AppFeedback.showLikeSentToast(
           title: '已送出超级喜欢',
-          subtitle: '对方会更快注意到你的心意',
         );
       }
     }
@@ -217,7 +216,6 @@ class _HomePageState extends ConsumerState<HomePage> {
     if (decision == _SwipeDecision.superLike) {
       AppFeedback.showLikeSentToast(
         title: RelationshipCopy.superLikeSent(result.user.nickname),
-        subtitle: '你的超级喜欢已经高亮送达',
       );
     } else if (decision == _SwipeDecision.like) {
       AppFeedback.showLikeSentToast(
@@ -227,11 +225,14 @@ class _HomePageState extends ConsumerState<HomePage> {
   }
 
   Future<void> _undoLastSwipe() async {
+    final controller = ref.read(homeControllerProvider.notifier);
+    if (!controller.canUndo) {
+      AppFeedback.showUndoUnavailableToast();
+      return;
+    }
     try {
-      final restored =
-          await ref.read(homeControllerProvider.notifier).undoLastSwipe();
+      final restored = await controller.undoLastSwipe();
       if (!mounted || restored == null) return;
-      AppFeedback.showToast('已撤销上一张');
       setState(() {});
     } catch (error) {
       AppFeedback.showError('撤销失败：$error');

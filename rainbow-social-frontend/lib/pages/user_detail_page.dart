@@ -609,8 +609,7 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
       } else {
         await ref.read(matchSummaryControllerProvider.notifier).load();
         AppFeedback.showLikeSentToast(
-          title: '已发送喜欢，等待对方回应哦～',
-          subtitle: '对方会很快收到你的心意',
+          title: '已发送喜欢',
         );
       }
     } catch (error) {

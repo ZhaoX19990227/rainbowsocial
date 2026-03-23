@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "inverse-primary": "#dbb8ff",
+                        "on-primary": "#ffffff",
+                        "surface-tint": "#7d38c4",
+                        "surface-container": "#eceef3",
+                        "secondary-container": "#4aa5fd",
+                        "surface-container-highest": "#e1e2e7",
+                        "on-secondary-fixed-variant": "#00497e",
+                        "surface-bright": "#f8f9fe",
+                        "on-primary-container": "#fffbff",
+                        "on-tertiary-container": "#fffbff",
+                        "on-primary-fixed-variant": "#6417ab",
+                        "surface-dim": "#d8dadf",
+                        "tertiary": "#a32975",
+                        "surface-variant": "#e1e2e7",
+                        "outline": "#7d7384",
+                        "on-surface-variant": "#4c4453",
+                        "on-secondary": "#ffffff",
+                        "surface-container-high": "#e7e8ed",
+                        "on-secondary-container": "#003964",
+                        "on-error": "#ffffff",
+                        "inverse-on-surface": "#eff0f5",
+                        "primary": "#7b36c2",
+                        "secondary": "#0061a5",
+                        "secondary-fixed": "#d2e4ff",
+                        "on-background": "#191c1f",
+                        "inverse-surface": "#2e3134",
+                        "on-tertiary": "#ffffff",
+                        "error-container": "#ffdad6",
+                        "on-secondary-fixed": "#001d37",
+                        "on-primary-fixed": "#2b0052",
+                        "tertiary-fixed": "#ffd8e8",
+                        "tertiary-container": "#c2438f",
+                        "on-tertiary-fixed": "#3c0028",
+                        "surface-container-low": "#f2f3f8",
+                        "on-tertiary-fixed-variant": "#870a5f",
+                        "secondary-fixed-dim": "#9fcaff",
+                        "primary-fixed": "#efdbff",
+                        "primary-fixed-dim": "#dbb8ff",
+                        "primary-container": "#9552dd",
+                        "error": "#ba1a1a",
+                        "outline-variant": "#cec2d5",
+                        "on-error-container": "#93000a",
+                        "tertiary-fixed-dim": "#ffafd6",
+                        "on-surface": "#191c1f",
+                        "background": "#f8f9fe",
+                        "surface-container-lowest": "#ffffff",
+                        "surface": "#f8f9fe"
+                    },
+                    fontFamily: {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    },
+                    borderRadius: { "DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background font-body text-on-surface antialiased">
+<!-- Top App Bar (Shared Component) -->
+<header class="fixed top-0 w-full z-50 bg-white/70 dark:bg-slate-950/70 backdrop-blur-xl shadow-[0px_16px_40px_rgba(125,56,196,0.08)]">
+<div class="flex items-center justify-between px-6 h-16 w-full">
+<div class="w-8 h-8 rounded-full overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="User profile photo of a smiling man" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHzfmX_mz5_u88qERffOoUCMxsHy_1SnkyML3a5x057TjY5I5giOJdsHdxGZwGq9JbyJdveNn6tCoYaOY8_rsfbFLvSXh5pQw2EPAOM2RgudTg57MuzcSRG5uH2vu8ROcKVso38WhTI0v9bm7jNVKCUsIDHy5O4gv_hSXq_0Rz8zftPYU2E5hxa4GwT8nTP1nLlIBiPP40GpvU_3X0DTsPw2_zh4c_YEsHVzFlyE07AaaV_dj7tOl84ZUv5H7zzKwQXqzXkVsmUmqj"/>
+</div>
+<h1 class="text-2xl font-black bg-gradient-to-br from-purple-600 to-pink-500 bg-clip-text text-transparent font-headline tracking-tight">Luminous</h1>
+<div class="text-purple-600 dark:text-purple-400 hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined">notifications</span>
+</div>
+</div>
+</header>
+<!-- Main Content (Settings/Profile Context - Dimmed) -->
+<main class="pt-24 pb-32 px-6 opacity-40 grayscale-[0.2]">
+<div class="max-w-md mx-auto space-y-8">
+<!-- Profile Section -->
+<section class="flex flex-col items-center text-center space-y-4">
+<div class="relative group">
+<div class="w-32 h-32 rounded-xl overflow-hidden shadow-2xl">
+<img class="w-full h-full object-cover" data-alt="Large profile portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAxjl6rEnUk1m6X1ht4iN762dvAIoVuBsheuDDvM7IA2QwN4L33bD0-LUc9pLE64I8UjuR6HTcfehW9BQb4gqw0f9U8_duReIe6z1HAXCfgfzOYJatXUJW2AtwJ6q-ku2zSRTzvte67lRl9QmKpxF2AYkv3InYWna35bYRowiISwZf17MmQS4JijiGvDXCFb5CpVxTZFp4b_9_rd81t7HS9ue6az6pF3sjilBAQCsa9anPUUQPFiPKckhe6LSVC36Ib2CcS5I9W24c4"/>
+</div>
+<div class="absolute -bottom-2 -right-2 bg-primary text-white p-2 rounded-full shadow-lg">
+<span class="material-symbols-outlined text-sm">edit</span>
+</div>
+</div>
+<div>
+<h2 class="font-headline text-2xl font-bold text-on-surface">Alex Rivera</h2>
+<p class="text-on-surface-variant font-medium">Digital Creator • 2.4km</p>
+</div>
+</section>
+<!-- Settings Grid (Asymmetric Bento Style) -->
+<div class="grid grid-cols-2 gap-4">
+<div class="col-span-2 bg-surface-container-lowest p-6 rounded-xl shadow-sm">
+<p class="text-xs font-label uppercase tracking-widest text-on-surface-variant mb-2">About Me</p>
+<p class="text-on-surface leading-relaxed">Art enthusiast, coffee lover, and weekend hiker. Looking for meaningful connections and late-night gallery talks.</p>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl space-y-2">
+<span class="material-symbols-outlined text-primary">verified_user</span>
+<p class="font-bold text-sm">Verified</p>
+</div>
+<div class="bg-surface-container-low p-6 rounded-xl space-y-2">
+<span class="material-symbols-outlined text-secondary">favorite</span>
+<p class="font-bold text-sm">Interests</p>
+</div>
+</div>
+<!-- List Items -->
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest rounded-lg">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant">lock</span>
+<span class="font-medium">Privacy Settings</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant">chevron_right</span>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest rounded-lg">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-on-surface-variant">palette</span>
+<span class="font-medium">App Appearance</span>
+</div>
+<span class="material-symbols-outlined text-outline-variant">chevron_right</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Overlay Success Feedback Toast (Snackbar) -->
+<div class="fixed inset-0 flex items-center justify-center pointer-events-none z-[100] px-6">
+<div class="glass-panel px-6 py-4 rounded-full flex items-center gap-4 shadow-[0px_16px_40px_rgba(125,56,196,0.15)] pointer-events-auto border border-white/40">
+<!-- Gradient Icon Container -->
+<div class="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<!-- Toast Content -->
+<div class="flex flex-col">
+<span class="text-on-surface font-headline font-bold text-lg tracking-tight">资料已保存</span>
+<span class="text-on-surface-variant font-label text-[10px] uppercase tracking-widest opacity-70">Saved Successfully</span>
+</div>
+</div>
+</div>
+<!-- Bottom Nav Bar (Shared Component) -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-white/70 dark:bg-slate-900/70 backdrop-blur-2xl rounded-t-[3rem] z-50 shadow-[0px_-8px_24px_rgba(125,56,196,0.05)]">
+<div class="flex items-center justify-center text-slate-400 dark:text-slate-500 p-3 hover:text-purple-500 transition-all">
+<span class="material-symbols-outlined">explore</span>
+</div>
+<div class="flex items-center justify-center text-slate-400 dark:text-slate-500 p-3 hover:text-purple-500 transition-all">
+<span class="material-symbols-outlined">search</span>
+</div>
+<div class="flex items-center justify-center text-slate-400 dark:text-slate-500 p-3 hover:text-purple-500 transition-all">
+<span class="material-symbols-outlined">add_circle</span>
+</div>
+<div class="flex items-center justify-center text-slate-400 dark:text-slate-500 p-3 hover:text-purple-500 transition-all">
+<span class="material-symbols-outlined">chat_bubble</span>
+</div>
+<!-- Active Tab: Profile/Settings -->
+<div class="flex items-center justify-center bg-gradient-to-br from-purple-600 to-pink-500 text-white rounded-full p-3 shadow-lg shadow-purple-500/30 scale-110">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+</div>
+</nav>
+<!-- Background Decoration -->
+<div class="fixed top-[-10%] left-[-10%] w-[50%] h-[50%] bg-primary/5 rounded-full blur-[120px] -z-10"></div>
+<div class="fixed bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-secondary/5 rounded-full blur-[120px] -z-10"></div>
+</body></html>

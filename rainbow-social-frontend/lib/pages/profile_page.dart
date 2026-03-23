@@ -15,6 +15,7 @@ import '../routes/app_router.dart';
 import '../services/api_config.dart';
 import '../services/app_feedback.dart';
 import '../services/mbti_catalog.dart';
+import '../services/tag_options.dart';
 import '../services/user_status_catalog.dart';
 import '../services/zodiac_utils.dart';
 import '../theme/app_theme.dart';
@@ -35,6 +36,7 @@ class ProfilePage extends ConsumerStatefulWidget {
 
 class _ProfilePageState extends ConsumerState<ProfilePage> {
   final ImagePicker _picker = ImagePicker();
+  static const _maxTags = 5;
   bool _uploadingMoment = false;
 
   @override
@@ -98,6 +100,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     user: displayUser,
                     uploading: _uploadingMoment,
                     onUpload: _pickAndUploadMoment,
+                    onViewAll: () => Navigator.of(context)
+                        .pushNamed(AppRouter.moments, arguments: displayUser),
                   ),
                   const SizedBox(height: 24),
                   _SocialStatsGrid(summary: summary),
@@ -123,9 +127,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _TagsInsightCard(user: displayUser),
+                  _TagsInsightCard(
+                    user: displayUser,
+                    onTap: () => _showTagPicker(displayUser),
+                  ),
                   const SizedBox(height: 16),
-                  _AboutInsightCard(user: displayUser),
+                  _AboutInsightCard(
+                    user: displayUser,
+                    onTap: () => _showAboutEditor(displayUser),
+                  ),
                 ],
               ),
             );
@@ -487,6 +497,218 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     AppFeedback.showToast(option == null ? '今日状态已恢复默认' : '今日状态已更新');
   }
 
+  Future<void> _showTagPicker(AppUser user) async {
+    List<String> draft = [...user.tags];
+    final result = await showModalBottomSheet<List<String>>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return SafeArea(
+              top: false,
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 22),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.96),
+                  borderRadius: BorderRadius.circular(32),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primary.withValues(alpha: 0.12),
+                      blurRadius: 34,
+                      offset: const Offset(0, -12),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 46,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: AppTheme.ghostBorder.withValues(alpha: 0.34),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      '选择兴趣标签',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '最多选择 $_maxTags 个，让合拍的人更快找到你',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppTheme.textSecondary,
+                          ),
+                    ),
+                    const SizedBox(height: 18),
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: profileTagOptions.map((tag) {
+                        final selected = draft.contains(tag);
+                        return GestureDetector(
+                          onTap: () {
+                            setSheetState(() {
+                              if (selected) {
+                                draft = draft.where((item) => item != tag).toList();
+                              } else if (draft.length < _maxTags) {
+                                draft = [...draft, tag];
+                              } else {
+                                AppFeedback.showToast('最多选择 $_maxTags 个标签');
+                              }
+                            });
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 9,
+                            ),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(999),
+                              gradient: selected
+                                  ? const LinearGradient(
+                                      colors: [
+                                        AppTheme.primary,
+                                        AppTheme.primaryDark,
+                                      ],
+                                    )
+                                  : null,
+                              color: selected ? null : const Color(0xFFF4F1FB),
+                            ),
+                            child: Text(
+                              tag,
+                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                                    color: selected ? Colors.white : AppTheme.primary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 22),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: () => Navigator.of(sheetContext).pop(draft),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppTheme.primary,
+                          foregroundColor: Colors.white,
+                          minimumSize: const Size.fromHeight(54),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        child: const Text('保存标签'),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (result == null) return;
+    final profile = ref.read(profileControllerProvider).valueOrNull;
+    if (profile == null) return;
+    await ref.read(profileControllerProvider.notifier).save(
+          profile.copyWith(tags: result),
+        );
+    if (!mounted) return;
+    AppFeedback.showToast('兴趣标签已更新');
+  }
+
+  Future<void> _showAboutEditor(AppUser user) async {
+    final controller = TextEditingController(text: user.bio.trim());
+    final result = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return Dialog(
+          backgroundColor: Colors.white.withValues(alpha: 0.96),
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '填写关于我',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '写一点你的性格、节奏和想认识怎样的人',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.textSecondary,
+                      ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: controller,
+                  minLines: 4,
+                  maxLines: 6,
+                  maxLength: 120,
+                  decoration: const InputDecoration(
+                    hintText: '例如：慢热但真诚，喜欢轻松有分寸的聊天。',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                      child: const Text('取消'),
+                    ),
+                    const Spacer(),
+                    FilledButton(
+                      onPressed: () => Navigator.of(dialogContext)
+                          .pop(controller.text.trim()),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppTheme.primary,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('保存'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+    controller.dispose();
+
+    if (result == null) return;
+    final profile = ref.read(profileControllerProvider).valueOrNull;
+    if (profile == null) return;
+    await ref.read(profileControllerProvider.notifier).save(
+          profile.copyWith(bio: result),
+        );
+    if (!mounted) return;
+    AppFeedback.showToast('关于我已更新');
+  }
+
   Future<void> _signOut(BuildContext context, WidgetRef ref) async {
     await ref.read(authControllerProvider.notifier).signOut();
     ref.invalidate(profileControllerProvider);
@@ -715,11 +937,13 @@ class _MomentsSection extends StatelessWidget {
     required this.user,
     required this.uploading,
     required this.onUpload,
+    required this.onViewAll,
   });
 
   final AppUser user;
   final bool uploading;
   final VoidCallback onUpload;
+  final VoidCallback onViewAll;
 
   @override
   Widget build(BuildContext context) {
@@ -730,9 +954,10 @@ class _MomentsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionHeader(
+        _SectionHeader(
           title: '感性瞬间',
           trailingLabel: '查看全部',
+          onTap: onViewAll,
         ),
         const SizedBox(height: 14),
         SizedBox(
@@ -999,9 +1224,13 @@ class _ZodiacInsightCard extends StatelessWidget {
 }
 
 class _TagsInsightCard extends StatelessWidget {
-  const _TagsInsightCard({required this.user});
+  const _TagsInsightCard({
+    required this.user,
+    required this.onTap,
+  });
 
   final AppUser user;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1010,6 +1239,7 @@ class _TagsInsightCard extends StatelessWidget {
       subtitle: 'HEADLINES',
       accent: const [Color(0xFFF8F4FF), Color(0xFFFFFFFF)],
       fullWidth: true,
+      onTap: user.tags.isEmpty && user.positionRole.trim().isEmpty ? onTap : null,
       child: user.tags.isEmpty && user.positionRole.trim().isEmpty
           ? Column(
               children: [
@@ -1076,9 +1306,13 @@ class _TagsInsightCard extends StatelessWidget {
 }
 
 class _AboutInsightCard extends StatelessWidget {
-  const _AboutInsightCard({required this.user});
+  const _AboutInsightCard({
+    required this.user,
+    required this.onTap,
+  });
 
   final AppUser user;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1091,6 +1325,7 @@ class _AboutInsightCard extends StatelessWidget {
       subtitle: 'ABOUT',
       accent: const [Color(0xFFFFFFFF), Color(0xFFF7F3FF)],
       fullWidth: true,
+      onTap: user.bio.trim().isEmpty ? onTap : null,
       child: user.bio.trim().isEmpty
           ? Column(
               children: [
@@ -1134,10 +1369,12 @@ class _SectionHeader extends StatelessWidget {
   const _SectionHeader({
     required this.title,
     required this.trailingLabel,
+    this.onTap,
   });
 
   final String title;
   final String trailingLabel;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -1163,12 +1400,15 @@ class _SectionHeader extends StatelessWidget {
               ),
         ),
         const Spacer(),
-        Text(
-          trailingLabel,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: AppTheme.primary,
-                fontWeight: FontWeight.w700,
-              ),
+        GestureDetector(
+          onTap: onTap,
+          child: Text(
+            trailingLabel,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppTheme.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
         ),
       ],
     );
@@ -1470,11 +1710,36 @@ class _InsightShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final body = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          subtitle,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: AppTheme.tertiary.withValues(alpha: 0.68),
+                letterSpacing: 1.6,
+              ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+        ),
+        const SizedBox(height: 14),
+        Expanded(
+          child: Align(
+            alignment: Alignment.topLeft,
+            child: child,
+          ),
+        ),
+      ],
+    );
+
     final content = Container(
       width: fullWidth ? double.infinity : null,
-      constraints: compactHeight == null
-          ? null
-          : BoxConstraints(minHeight: compactHeight!),
+      height: compactHeight,
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
@@ -1491,27 +1756,7 @@ class _InsightShell extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            subtitle,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppTheme.tertiary.withValues(alpha: 0.68),
-                  letterSpacing: 1.6,
-                ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-          ),
-          const SizedBox(height: 14),
-          child,
-        ],
-      ),
+      child: compactHeight == null ? body : SizedBox.expand(child: body),
     );
     if (onTap == null) return content;
     return InkWell(

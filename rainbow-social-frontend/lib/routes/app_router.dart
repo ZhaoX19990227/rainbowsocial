@@ -10,6 +10,7 @@ import '../pages/likes_overview_page.dart';
 import '../pages/login_page.dart';
 import '../pages/main_tab_page.dart';
 import '../pages/mbti_test_page.dart';
+import '../pages/moments_page.dart';
 import '../pages/splash_page.dart';
 import '../pages/user_detail_page.dart';
 
@@ -25,6 +26,7 @@ class AppRouter {
   static const mbtiTest = '/mbti-test';
   static const birthdaySetup = '/birthday-setup';
   static const horoscopeDetail = '/horoscope-detail';
+  static const moments = '/moments';
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -64,6 +66,10 @@ class AppRouter {
       case horoscopeDetail:
         return MaterialPageRoute(
           builder: (_) => const HoroscopeDetailPage(),
+        );
+      case moments:
+        return MaterialPageRoute(
+          builder: (_) => MomentsPage(user: settings.arguments! as AppUser),
         );
       default:
         return MaterialPageRoute(

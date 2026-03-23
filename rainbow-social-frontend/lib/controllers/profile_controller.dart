@@ -24,9 +24,22 @@ class ProfileController extends StateNotifier<AsyncValue<AppUser?>> {
       return;
     }
 
-    state = await AsyncValue.guard(
-      () => _ref.read(getProfileUseCaseProvider)(session.token),
-    );
+    state = await AsyncValue.guard(() async {
+      final remoteUser = await _ref.read(getProfileUseCaseProvider)(session.token);
+      final mergedUser = remoteUser.copyWith(
+        statusId: remoteUser.statusId.trim().isEmpty
+            ? session.user.statusId
+            : remoteUser.statusId,
+        statusLabel: remoteUser.statusLabel.trim().isEmpty
+            ? session.user.statusLabel
+            : remoteUser.statusLabel,
+        statusExpiresAt: remoteUser.statusExpiresAt.trim().isEmpty
+            ? session.user.statusExpiresAt
+            : remoteUser.statusExpiresAt,
+      );
+      _ref.read(authControllerProvider.notifier).updateSessionUser(mergedUser);
+      return mergedUser;
+    });
   }
 
   Future<void> save(AppUser user) async {

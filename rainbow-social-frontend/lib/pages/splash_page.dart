@@ -19,7 +19,7 @@ class SplashPage extends ConsumerStatefulWidget {
 }
 
 class _SplashPageState extends ConsumerState<SplashPage> {
-  static const Duration _minimumShowDuration = Duration(milliseconds: 3200);
+  static const Duration _minimumShowDuration = Duration(milliseconds: 4000);
 
   bool _navigated = false;
   AsyncValue? _latestAuthState;
@@ -123,26 +123,40 @@ class _SplashPageState extends ConsumerState<SplashPage> {
                         .scale(
                           begin: const Offset(0.82, 0.82),
                           end: const Offset(1, 1),
-                          duration: 760.ms,
+                          duration: 900.ms,
                           curve: Curves.easeOutBack,
                         )
-                        .then(delay: 80.ms)
+                        .then(delay: 220.ms)
                         .scale(
                           begin: const Offset(1, 1),
-                          end: const Offset(1.04, 1.04),
-                          duration: 220.ms,
+                          end: const Offset(1.12, 1.12),
+                          duration: 260.ms,
                           curve: Curves.easeOut,
                         )
-                        .then()
+                        .then(delay: 70.ms)
                         .scale(
-                          begin: const Offset(1.04, 1.04),
+                          begin: const Offset(1.12, 1.12),
+                          end: const Offset(0.96, 0.96),
+                          duration: 220.ms,
+                          curve: Curves.easeInOut,
+                        )
+                        .then(delay: 70.ms)
+                        .scale(
+                          begin: const Offset(0.96, 0.96),
+                          end: const Offset(1.08, 1.08),
+                          duration: 240.ms,
+                          curve: Curves.easeOut,
+                        )
+                        .then(delay: 60.ms)
+                        .scale(
+                          begin: const Offset(1.08, 1.08),
                           end: const Offset(1, 1),
                           duration: 260.ms,
                           curve: Curves.easeInOut,
                         ),
                     const SizedBox(height: 30),
                     Text(
-                      '彩虹社交',
+                      '灵感相约',
                       style: textTheme.displayLarge?.copyWith(
                         fontSize: 42,
                         color: AppTheme.textPrimary,
@@ -167,19 +181,19 @@ class _SplashPageState extends ConsumerState<SplashPage> {
                           animatedTexts: [
                             TypewriterAnimatedText(
                               '期待与你相识的那一刻',
-                              speed: const Duration(milliseconds: 96),
-                              cursor: ' |',
+                              speed: const Duration(milliseconds: 140),
+                              cursor: '▋',
                               textStyle: textTheme.bodyLarge!.copyWith(
-                                color: AppTheme.textSecondary,
-                                fontWeight: FontWeight.w600,
+                                color: AppTheme.primaryDark,
+                                fontWeight: FontWeight.w700,
                                 height: 1.45,
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ).animate().fadeIn(delay: 700.ms, duration: 380.ms).moveY(
-                        begin: 10, end: 0, delay: 700.ms, duration: 500.ms),
+                    ).animate().fadeIn(delay: 820.ms, duration: 460.ms).moveY(
+                        begin: 10, end: 0, delay: 820.ms, duration: 560.ms),
                     const Spacer(),
                     Column(
                       mainAxisSize: MainAxisSize.min,
@@ -187,15 +201,15 @@ class _SplashPageState extends ConsumerState<SplashPage> {
                         const _FlowingLoadingBar(),
                         const SizedBox(height: 14),
                         Text(
-                          '正在为你酝酿一次更温柔的相遇',
+                          '正在为你酝酿一次更温柔的相遇~',
                           style: textTheme.labelLarge?.copyWith(
                             color:
                                 AppTheme.textSecondary.withValues(alpha: 0.82),
                           ),
                         ),
                       ],
-                    ).animate().fadeIn(delay: 980.ms, duration: 320.ms).moveY(
-                        begin: 12, end: 0, delay: 980.ms, duration: 420.ms),
+                    ).animate().fadeIn(delay: 1180.ms, duration: 360.ms).moveY(
+                        begin: 12, end: 0, delay: 1180.ms, duration: 460.ms),
                   ],
                 ),
               ),
@@ -230,7 +244,7 @@ class _SplashBrandMark extends StatelessWidget {
             .animate(onPlay: (controller) => controller.repeat(reverse: true))
             .scale(
               begin: const Offset(0.96, 0.96),
-              end: const Offset(1.06, 1.06),
+              end: const Offset(1.08, 1.08),
               duration: 2200.ms,
               curve: Curves.easeInOut,
             )
@@ -271,12 +285,41 @@ class _SplashBrandMark extends StatelessWidget {
               ),
               child: const Icon(
                 Icons.favorite_rounded,
-                size: 46,
+                size: 48,
                 color: Color(0xFFFDF7FF),
               ),
             ),
           ),
-        ),
+        )
+            .animate(onPlay: (controller) => controller.repeat())
+            .scale(
+              begin: const Offset(1, 1),
+              end: const Offset(1.16, 1.16),
+              duration: 340.ms,
+              curve: Curves.easeOut,
+            )
+            .then(delay: 80.ms)
+            .scale(
+              begin: const Offset(1.16, 1.16),
+              end: const Offset(0.94, 0.94),
+              duration: 220.ms,
+              curve: Curves.easeInOut,
+            )
+            .then(delay: 70.ms)
+            .scale(
+              begin: const Offset(0.94, 0.94),
+              end: const Offset(1.08, 1.08),
+              duration: 220.ms,
+              curve: Curves.easeOut,
+            )
+            .then(delay: 60.ms)
+            .scale(
+              begin: const Offset(1.08, 1.08),
+              end: const Offset(1, 1),
+              duration: 260.ms,
+              curve: Curves.easeInOut,
+            )
+            .then(delay: 1200.ms),
       ],
     );
   }

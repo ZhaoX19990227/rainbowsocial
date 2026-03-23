@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -32,13 +33,21 @@ class AppFeedback {
 
   static void showLikeSentToast({
     required String title,
-    String subtitle = '对方会很快收到你的心意',
+    String subtitle = '',
   }) {
     _showToastCard(
       title,
       subtitle: subtitle,
       style: const _FeedbackToastStyle.likeSent(),
       duration: const Duration(milliseconds: 2400),
+    );
+  }
+
+  static void showUndoUnavailableToast() {
+    _showToastCard(
+      '不可以再撤回咯～',
+      style: const _FeedbackToastStyle.undo(),
+      duration: const Duration(milliseconds: 1800),
     );
   }
 
@@ -57,7 +66,7 @@ class AppFeedback {
     final entry = OverlayEntry(
       builder: (context) {
         final width = MediaQuery.of(context).size.width;
-        final maxWidth = width > 560 ? 420.0 : width - 32;
+        final maxWidth = math.min(style.maxWidth, width - 40);
 
         return IgnorePointer(
           child: Material(
@@ -67,8 +76,8 @@ class AppFeedback {
                 alignment: Alignment.center,
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0.94, end: 1),
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 0.94, end: 1),
                     duration: const Duration(milliseconds: 240),
                     curve: Curves.easeOutCubic,
                     builder: (context, value, child) {
@@ -150,8 +159,8 @@ class AppFeedback {
                                       color: style.iconColor,
                                     ),
                                   ),
-                                const SizedBox(width: 14),
-                                Expanded(
+                                const SizedBox(width: 12),
+                                Flexible(
                                   child: Column(
                                     mainAxisSize: MainAxisSize.min,
                                     crossAxisAlignment:
@@ -159,6 +168,7 @@ class AppFeedback {
                                     children: [
                                       Text(
                                         title,
+                                        softWrap: true,
                                         style: Theme.of(context)
                                             .textTheme
                                             .labelLarge
@@ -172,6 +182,7 @@ class AppFeedback {
                                         const SizedBox(height: 2),
                                         Text(
                                           subtitle,
+                                          softWrap: true,
                                           style: Theme.of(context)
                                               .textTheme
                                               .labelMedium
@@ -237,7 +248,7 @@ class AppFeedback {
       return null;
     }
     if (text.contains('喜欢')) {
-      return '你的心意已经送达';
+      return null;
     }
     return null;
   }
@@ -272,6 +283,7 @@ class _FeedbackToastStyle {
     this.iconGlyphSize = 20,
     this.shadowBlur = 32,
     this.padding = const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+    this.maxWidth = 320,
     this.showsSpinner = false,
     this.spinnerColor = AppTheme.primary,
     this.spinnerTrackColor = const Color(0x229552DD),
@@ -293,26 +305,29 @@ class _FeedbackToastStyle {
           iconShadowColor: const Color(0x4D7D38C4),
           iconSize: 44,
           iconGlyphSize: 22,
+          maxWidth: 300,
         );
 
   const _FeedbackToastStyle.likeSent()
       : this(
           backgroundColor: const Color(0xEAFFF8FF),
           borderColor: const Color(0x66FFFFFF),
-          shadowColor: const Color(0x407D38C4),
+          shadowColor: const Color(0x597D38C4),
           titleColor: AppTheme.textPrimary,
           subtitleColor: AppTheme.textSecondary,
           icon: Icons.favorite_rounded,
           iconColor: Colors.white,
           iconBackgroundColor: Colors.transparent,
           iconGradient: const LinearGradient(
-            colors: [Color(0xFF7B36C2), Color(0xFFA94FFF), Color(0xFFC2438F)],
+            colors: [Color(0xFF6D21C8), Color(0xFF8E31F6), Color(0xFFB12CDA)],
           ),
-          iconShadowColor: const Color(0x667D38C4),
+          iconShadowColor: const Color(0x887D38C4),
           radius: 999,
-          iconSize: 50,
+          iconSize: 48,
           iconGlyphSize: 26,
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 16),
+          shadowBlur: 22,
+          maxWidth: 286,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         );
 
   const _FeedbackToastStyle.location()
@@ -329,6 +344,7 @@ class _FeedbackToastStyle {
           iconShadowColor: Colors.transparent,
           radius: 999,
           iconSize: 38,
+          maxWidth: 240,
         );
 
   const _FeedbackToastStyle.undo()
@@ -343,9 +359,12 @@ class _FeedbackToastStyle {
           iconBackgroundColor: const Color(0xFFF5F4F8),
           iconGradient: null,
           iconShadowColor: Colors.transparent,
-          radius: 20,
-          iconSize: 34,
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+          radius: 999,
+          iconSize: 30,
+          iconGlyphSize: 16,
+          shadowBlur: 16,
+          maxWidth: 220,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
         );
 
   const _FeedbackToastStyle.connecting()
@@ -362,6 +381,7 @@ class _FeedbackToastStyle {
           iconShadowColor: Colors.transparent,
           radius: 26,
           showsSpinner: true,
+          maxWidth: 220,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
         );
 
@@ -379,6 +399,7 @@ class _FeedbackToastStyle {
           iconShadowColor: Colors.transparent,
           radius: 24,
           iconSize: 40,
+          maxWidth: 260,
           padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         );
 
@@ -397,6 +418,7 @@ class _FeedbackToastStyle {
   final double iconGlyphSize;
   final double shadowBlur;
   final EdgeInsets padding;
+  final double maxWidth;
   final bool showsSpinner;
   final Color spinnerColor;
   final Color spinnerTrackColor;
