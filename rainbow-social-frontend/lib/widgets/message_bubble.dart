@@ -31,7 +31,8 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isMediaFrame = message.isImage || message.isFlashImage || message.isAudio;
+    final isMediaFrame =
+        message.isImage || message.isFlashImage || message.isAudio;
     final isCustomCard = message.isFlirty;
     final radius = BorderRadius.only(
       topLeft: const Radius.circular(24),
@@ -83,14 +84,17 @@ class MessageBubble extends StatelessWidget {
                   gradient: isCustomCard || isMediaFrame
                       ? null
                       : isMine
-                      ? LinearGradient(
-                          colors: message.isFailed
-                              ? const [Color(0x33FF9A9A), Color(0x22FF6E85)]
-                              : const [Color(0x44EA87FF), Color(0x22E470FF)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : null,
+                          ? LinearGradient(
+                              colors: message.isFailed
+                                  ? const [Color(0x33FF9A9A), Color(0x22FF6E85)]
+                                  : const [
+                                      Color(0x44EA87FF),
+                                      Color(0x22E470FF)
+                                    ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            )
+                          : null,
                   color: isCustomCard
                       ? Colors.transparent
                       : isMediaFrame
@@ -104,7 +108,8 @@ class MessageBubble extends StatelessWidget {
                     color: isCustomCard
                         ? Colors.transparent
                         : isMediaFrame
-                            ? Colors.white.withValues(alpha: isMine ? 0.08 : 0.06)
+                            ? Colors.white
+                                .withValues(alpha: isMine ? 0.08 : 0.06)
                             : isMine
                                 ? (message.isFailed
                                     ? AppTheme.error.withValues(alpha: 0.35)
@@ -120,7 +125,8 @@ class MessageBubble extends StatelessWidget {
                               : isMine
                                   ? (message.isFailed
                                       ? AppTheme.error.withValues(alpha: 0.12)
-                                      : AppTheme.primary.withValues(alpha: 0.12))
+                                      : AppTheme.primary
+                                          .withValues(alpha: 0.12))
                                   : Colors.black.withValues(alpha: 0.06),
                       blurRadius: isMediaFrame ? 10 : 18,
                     ),
@@ -134,14 +140,14 @@ class MessageBubble extends StatelessWidget {
                             isMine: isMine,
                             onTap: onFlirtyTap,
                           )
-                    : message.isFlashImage
-                        ? _FlashImageContent(
-                            message: message,
-                            isMine: isMine,
-                          )
-                    : message.isImage
-                        ? _ImageMessageContent(message: message)
-                        : Text(message.content),
+                        : message.isFlashImage
+                            ? _FlashImageContent(
+                                message: message,
+                                isMine: isMine,
+                              )
+                            : message.isImage
+                                ? _ImageMessageContent(message: message)
+                                : Text(message.content),
               ),
               if (isMine)
                 Padding(
@@ -225,9 +231,8 @@ class _FlashImageContentState extends ConsumerState<_FlashImageContent> {
       });
       return;
     }
-    final burned = await ref
-        .read(flashPhotoStateServiceProvider)
-        .isBurned(_flashId);
+    final burned =
+        await ref.read(flashPhotoStateServiceProvider).isBurned(_flashId);
     if (!mounted) return;
     setState(() {
       _isBurned = burned;
@@ -343,7 +348,9 @@ class _FlashImageContentState extends ConsumerState<_FlashImageContent> {
                   ),
                 ),
                 child: Icon(
-                  burned ? Icons.visibility_off_rounded : Icons.lock_open_rounded,
+                  burned
+                      ? Icons.visibility_off_rounded
+                      : Icons.lock_open_rounded,
                   color: Colors.white,
                   size: 32,
                 ),
@@ -489,9 +496,10 @@ class _FlashPhotoViewerState extends ConsumerState<_FlashPhotoViewer> {
                             ? '查看中，$_secondsLeft 秒后焚毁'
                             : '你发出的闪照',
                         textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: Colors.white,
-                            ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Colors.white,
+                                ),
                       ),
                     ),
                   ),
@@ -512,9 +520,7 @@ class _FlashPhotoViewerState extends ConsumerState<_FlashPhotoViewer> {
                     ),
                   const SizedBox(height: 10),
                   Text(
-                    widget.burnAfterViewing
-                        ? '已启用安全查看模式'
-                        : '仅对对方查看一次生效',
+                    widget.burnAfterViewing ? '已启用安全查看模式' : '仅对对方查看一次生效',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                           color: Colors.white.withValues(alpha: 0.72),
@@ -907,28 +913,27 @@ class _StatusLabel extends StatelessWidget {
           ],
         );
       case ChatMessageStatus.sent:
+        final isRead = message.deliveryStatus == ChatDeliveryStatus.read;
         return Row(
           key: key,
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              message.deliveryStatus == ChatDeliveryStatus.read
-                  ? Icons.done_all_rounded
-                  : Icons.check_rounded,
+              isRead ? Icons.done_all_rounded : Icons.check_rounded,
               size: 14,
-              color: AppTheme.primary.withValues(alpha: 0.9),
+              color: isRead ? AppTheme.secondary : AppTheme.textSecondary,
             ),
             const SizedBox(width: 5),
             Text(
               switch (message.deliveryStatus) {
                 ChatDeliveryStatus.read => '已读',
-                ChatDeliveryStatus.delivered => '已送达',
-                ChatDeliveryStatus.none => message.isFlashImage ? '闪照已发送' : '已发送',
+                ChatDeliveryStatus.delivered => '未读',
+                ChatDeliveryStatus.none => '未读',
               },
-              style: Theme.of(context)
-                  .textTheme
-                  .labelSmall
-                  ?.copyWith(color: AppTheme.textSecondary),
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: isRead ? AppTheme.secondary : AppTheme.textSecondary,
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
           ],
         );

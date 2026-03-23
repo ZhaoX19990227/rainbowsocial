@@ -80,34 +80,47 @@ class AppBottomNav extends ConsumerWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(
-                    icons[index],
-                    color: selected ? Colors.white : AppTheme.textSecondary,
-                    size: 20,
+                  Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Icon(
+                        icons[index],
+                        color: selected ? Colors.white : AppTheme.textSecondary,
+                        size: 20,
+                      ),
+                      if (index == 2 && unreadCount > 0)
+                        Positioned(
+                          right: -10,
+                          top: -8,
+                          child: Container(
+                            constraints: const BoxConstraints(minWidth: 18),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppTheme.error,
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                color: const Color(0xFFFDF7FF),
+                                width: 1.2,
+                              ),
+                            ),
+                            child: Text(
+                              unreadCount > 99 ? '99+' : '$unreadCount',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelMedium
+                                  ?.copyWith(
+                                    color: const Color(0xFFFDF7FF),
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-                  if (index == 2 && unreadCount > 0) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: selected ? Colors.white : AppTheme.error,
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        unreadCount > 99 ? '99+' : '$unreadCount',
-                        style:
-                            Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  color: selected
-                                      ? AppTheme.primary
-                                      : const Color(0xFFFDF7FF),
-                                  fontWeight: FontWeight.w800,
-                                ),
-                      ),
-                    ),
-                  ],
                   if (selected) ...[
                     const SizedBox(width: 6),
                     Text(

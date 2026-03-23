@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Luminous Chats</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary": "#a32975",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#f8f9fe",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#f2f3f8",
+                        "surface-dim": "#d8dadf",
+                        "surface-container-high": "#e7e8ed",
+                        "surface-container": "#eceef3",
+                        "on-error-container": "#93000a",
+                        "surface-tint": "#7d38c4",
+                        "on-secondary-fixed": "#001d37",
+                        "on-tertiary-fixed": "#3c0028",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#870a5f",
+                        "secondary": "#0061a5",
+                        "inverse-on-surface": "#eff0f5",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-container-highest": "#e1e2e7",
+                        "surface-variant": "#e1e2e7",
+                        "on-surface-variant": "#4c4453",
+                        "tertiary-fixed-dim": "#ffafd6",
+                        "on-secondary-container": "#003964",
+                        "primary-fixed": "#efdbff",
+                        "inverse-primary": "#dbb8ff",
+                        "primary-fixed-dim": "#dbb8ff",
+                        "secondary-fixed-dim": "#9fcaff",
+                        "background": "#f8f9fe",
+                        "on-tertiary-container": "#fffbff",
+                        "on-secondary-fixed-variant": "#00497e",
+                        "on-background": "#191c1f",
+                        "on-primary-container": "#fffbff",
+                        "outline": "#7d7384",
+                        "on-primary-fixed": "#2b0052",
+                        "outline-variant": "#cec2d5",
+                        "secondary-fixed": "#d2e4ff",
+                        "primary-container": "#9552dd",
+                        "on-error": "#ffffff",
+                        "on-surface": "#191c1f",
+                        "tertiary-container": "#c2438f",
+                        "on-primary-fixed-variant": "#6417ab",
+                        "on-tertiary": "#ffffff",
+                        "secondary-container": "#4aa5fd",
+                        "inverse-surface": "#2e3134",
+                        "primary": "#7b36c2",
+                        "on-secondary": "#ffffff",
+                        "surface": "#f8f9fe",
+                        "tertiary-fixed": "#ffd8e8"
+                    },
+                    fontFamily: {
+                        "headline": ["Plus Jakarta Sans"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    },
+                    borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-header {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(32px);
+        }
+        .active-glow {
+            box-shadow: 0 0 15px rgba(123, 54, 194, 0.4);
+        }
+        .online-glow {
+            box-shadow: 0 0 12px rgba(149, 82, 221, 0.5);
+        }
+        body {
+            background-color: #f8f9fe;
+            font-family: 'Manrope', sans-serif;
+            color: #191c1f;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 right-0 z-50 glass-header flex justify-between items-center w-full px-6 h-20 shadow-[0_16px_40px_rgba(125,56,196,0.08)] bg-gradient-to-b from-slate-50/50 to-transparent">
+<div class="flex flex-col">
+<h1 class="font-['Plus_Jakarta_Sans'] font-extrabold text-2xl tracking-tighter text-purple-600 dark:text-purple-400">Chats</h1>
+<span class="text-[10px] font-medium text-on-surface-variant/70 tracking-wide uppercase">今天有 3 条新消息在等待你</span>
+</div>
+<div class="flex gap-4">
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-purple-600 hover:bg-purple-50 transition-colors duration-200 active:scale-95">
+<span class="material-symbols-outlined" data-icon="bubble_chart">bubble_chart</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full text-purple-600 hover:bg-purple-50 transition-colors duration-200 active:scale-95">
+<span class="material-symbols-outlined" data-icon="edit_square">edit_square</span>
+</button>
+</div>
+</header>
+<main class="pt-24 px-6 max-w-2xl mx-auto space-y-8">
+<!-- Search Section -->
+<section class="relative">
+<div class="flex items-center bg-surface-container-low rounded-xl px-4 py-3 group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+<span class="material-symbols-outlined text-on-surface-variant mr-3" data-icon="search">search</span>
+<input class="bg-transparent border-none focus:ring-0 w-full text-sm font-body placeholder:text-on-surface-variant/50" placeholder="搜索聊天内容" type="text"/>
+</div>
+</section>
+<!-- Chat List (Relationship Cards) -->
+<section class="space-y-4">
+<!-- Pinned Chat Card -->
+<div class="relative bg-surface-container-lowest rounded-xl p-4 flex items-center gap-4 shadow-sm border border-primary/5 transition-transform active:scale-[0.98]">
+<div class="absolute top-3 right-4">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<div class="relative">
+<img alt="" class="w-14 h-14 rounded-full object-cover ring-2 ring-primary/20" data-alt="Portrait of a handsome young man smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjOUgYSqe9EF_ZnEWn3smpJXmlcyKNoEhde5Zzg5imJ6Dn0_xQJ7zvhYFKtqv0viDL5cUKq1KO3Scn2COC_-GJV0OB29ddmOZIbcFIDpHK5ReynnZxwnBiy8xUdYuR26R7MQ8E_yQElz4WAgO5V0yM73TrQGkYDl4lH2gjaFzEA4iAMT06d6bs9hnfBvo4O8of4edxb3A-5cffiH0LmbrbuxrVoOkiLjtviCereskeGFMZQhGlr6HXYAByxvkbGW8CK8-fUCzoVLuM"/>
+<div class="absolute bottom-0 right-0 w-4 h-4 bg-primary rounded-full border-2 border-white online-glow"></div>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<span class="font-headline font-bold text-base truncate">Alex Chen</span>
+<span class="px-2 py-0.5 rounded-full bg-primary text-[10px] font-bold text-white uppercase tracking-wider">Top</span>
+</div>
+<p class="text-on-surface-variant text-sm truncate font-semibold">等下健身房见？我快到了。</p>
+</div>
+<div class="flex flex-col items-end gap-2">
+<span class="text-[10px] text-on-surface-variant/60 font-medium">14:20</span>
+<div class="w-5 h-5 bg-gradient-to-br from-[#7b36c2] to-[#9552dd] rounded-full flex items-center justify-center shadow-lg">
+<span class="text-[10px] text-white font-bold">2</span>
+</div>
+</div>
+</div>
+<!-- Swiped State Example -->
+<div class="relative overflow-hidden rounded-xl bg-surface-container-low">
+<!-- Action Buttons (Hidden behind) -->
+<div class="absolute inset-y-0 right-0 flex">
+<button class="bg-primary/10 backdrop-blur-md px-6 flex flex-col items-center justify-center text-primary transition-colors hover:bg-primary/20">
+<span class="material-symbols-outlined text-xl mb-1" data-icon="vertical_align_top">vertical_align_top</span>
+<span class="text-[10px] font-bold">置顶</span>
+</button>
+<button class="bg-error/10 backdrop-blur-md px-6 flex flex-col items-center justify-center text-error transition-colors hover:bg-error/20">
+<span class="material-symbols-outlined text-xl mb-1" data-icon="delete">delete</span>
+<span class="text-[10px] font-bold">删除</span>
+</button>
+</div>
+<!-- Main Card (Swiped) -->
+<div class="relative bg-surface-container-lowest p-4 flex items-center gap-4 transition-transform -translate-x-32">
+<div class="relative">
+<img alt="" class="w-14 h-14 rounded-full object-cover" data-alt="Stylish man with beard looking away" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCjqC8mQ0H7ud7WBFmXjsfhX5bfjkbrviasXac_R3Aif79ROQzE8o5Mq-CfmSxb_lof13BOnkuD6nf8MyPEti08Cwgnvc4AffhXiNOAGNnX6CsgUDSVxDHS3fEU3QQdUeCDRE1jDlb1heWJDzGeUnTX3iMuD1-KQH-nva8sOTIyOV2qotRMLr2WC_3ZRubgevtnbX2VDmssanyO31J5gPPXpRb6Ecdt_HxdAjTh-Xa3frxnKcYiiwMdPKOMbVBzVLYbSfiPCgzG9gOg"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<span class="font-headline font-bold text-base truncate">Marcus Wilde</span>
+<span class="px-2 py-0.5 rounded-full bg-secondary-container text-[10px] font-bold text-on-secondary-container uppercase tracking-wider">Side</span>
+</div>
+<p class="text-on-surface-variant/60 text-sm truncate">你上次发的那首歌叫什么名字？</p>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-[10px] text-on-surface-variant/60 font-medium">12:05</span>
+<span class="material-symbols-outlined text-primary/40 text-sm mt-2" data-icon="done_all">done_all</span>
+</div>
+</div>
+</div>
+<!-- Standard Relationship Cards -->
+<div class="bg-surface-container-lowest rounded-xl p-4 flex items-center gap-4 shadow-sm transition-all hover:bg-surface-container-low cursor-pointer">
+<div class="relative">
+<img alt="" class="w-14 h-14 rounded-full object-cover" data-alt="Portrait of a smiling man with glasses" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJGgYzS2iFxS_-dbNiW9yO-1PBH7c58hxFi4pQmzv1f67xVcZLCtNQCxIR-Dkdv-mH7lUTF-ETTE9tOJHRhr7V01OkYB-wRroYnZuxwWr74lZhrOVlaDRZM2Fj-M8hIaU1rp0msNFrOVveWfjfyg1thcyOGaKgYFdcc2WZ0Jaz5ZYp1viOkNwVIl1-JIKvjvkCMeu0--IOW3KnylPEbag65LZE-tswukJKRBbcOSiqlt8KVG0-8akIQ-se821pkd3UhtBOyng0Jjji"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<span class="font-headline font-bold text-base truncate">Jordan Lee</span>
+<span class="px-2 py-0.5 rounded-full bg-tertiary-fixed text-[10px] font-bold text-on-tertiary-fixed uppercase tracking-wider">Bottom</span>
+</div>
+<p class="text-on-surface-variant text-sm truncate font-semibold">我也很喜欢那家咖啡厅！</p>
+</div>
+<div class="flex flex-col items-end gap-2">
+<span class="text-[10px] text-on-surface-variant/60 font-medium">昨天</span>
+<div class="w-5 h-5 bg-gradient-to-br from-[#7b36c2] to-[#9552dd] rounded-full flex items-center justify-center shadow-lg">
+<span class="text-[10px] text-white font-bold">1</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest rounded-xl p-4 flex items-center gap-4 shadow-sm transition-all hover:bg-surface-container-low cursor-pointer">
+<div class="relative">
+<img alt="" class="w-14 h-14 rounded-full object-cover" data-alt="Headshot of a man with short hair" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrtQ5CnlH93evr9aqWX4rfYozEEZoP4SsVLN4FrwLtkiu2BxsKBMhOKY9DVhoFxwvuwXBH4irDIDahgn0VT-F0-Q5b0dqb4EgfhMz_bpxOyc5xMO7EtgTyMBHIVBDacy8sVBX2Lu6tpCLtV7Cz9tQAyhci651-kfjHwYFO-RuCObyydhXFmIiW5AE4wOPRBjWUsVaKdoaknaKTS3FQBfPtYUgVdqDZetUBlYcfwikPSDmTh8v5j6UwN5Mr3VRplmmes53QiUr8OhRi"/>
+</div>
+<div class="flex-1 min-w-0">
+<div class="flex items-center gap-2 mb-1">
+<span class="font-headline font-bold text-base truncate">Hiroshi Tanaka</span>
+<div class="px-2 py-0.5 rounded-full bg-gradient-to-r from-primary to-tertiary text-[10px] font-bold text-white uppercase tracking-wider">Vers</div>
+</div>
+<p class="text-on-surface-variant/60 text-sm truncate italic">已经读过的消息示例...</p>
+</div>
+<div class="flex flex-col items-end">
+<span class="text-[10px] text-on-surface-variant/60 font-medium">星期三</span>
+<span class="material-symbols-outlined text-primary/40 text-sm mt-2" data-icon="done">done</span>
+</div>
+</div>
+</section>
+<!-- Empty State Suggestion (Mental Hint Rendered) -->
+<section class="py-12 flex flex-col items-center text-center space-y-4 opacity-40">
+<div class="relative w-32 h-32 flex items-center justify-center">
+<span class="material-symbols-outlined text-7xl text-purple-200" data-icon="pets">pets</span>
+<div class="absolute -top-2 -right-2 w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-pink-300" data-icon="favorite">favorite</span>
+</div>
+</div>
+<div class="space-y-1">
+<p class="font-headline font-bold text-on-surface-variant">这里有点安静</p>
+<p class="text-sm text-on-surface-variant/60">快去打个招呼，开启一段新缘分吧</p>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-4 bg-white/70 dark:bg-slate-900/70 backdrop-blur-3xl shadow-[0_-10px_40px_rgba(125,56,196,0.12)] rounded-t-[3rem]">
+<button class="flex items-center justify-center text-slate-400 w-12 h-12 hover:text-purple-500 transition-all">
+<span class="material-symbols-outlined" data-icon="explore">explore</span>
+</button>
+<button class="flex items-center justify-center bg-gradient-to-br from-[#7b36c2] to-[#9552dd] text-white rounded-full w-12 h-12 shadow-[0_0_20px_rgba(123,54,194,0.4)] scale-110">
+<span class="material-symbols-outlined" data-icon="chat_bubble" style="font-variation-settings: 'FILL' 1;">chat_bubble</span>
+</button>
+<button class="flex items-center justify-center text-slate-400 w-12 h-12 hover:text-purple-500 transition-all">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+</button>
+<button class="flex items-center justify-center text-slate-400 w-12 h-12 hover:text-purple-500 transition-all relative">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<div class="absolute top-2 right-2 w-2 h-2 bg-pink-500 rounded-full ring-2 ring-white"></div>
+</button>
+<button class="flex items-center justify-center text-slate-400 w-12 h-12 hover:text-purple-500 transition-all">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+</button>
+</nav>
+</body></html>

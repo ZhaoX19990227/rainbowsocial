@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500;600;700&amp;family=Noto+Sans+SC:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary-container": "#8e44ad",
+            "on-error": "#ffffff",
+            "primary-fixed": "#efdbff",
+            "surface-tint": "#9b59b6",
+            "secondary-fixed-dim": "#9fcaff",
+            "on-background": "#191c1f",
+            "surface-bright": "#fafaff",
+            "inverse-on-surface": "#eff0f5",
+            "surface-container-high": "#e7e8ed",
+            "on-secondary-fixed-variant": "#00497e",
+            "primary": "#8e44ad",
+            "error": "#ba1a1a",
+            "on-tertiary-fixed-variant": "#870a5f",
+            "tertiary": "#a32975",
+            "surface-dim": "#d8dadf",
+            "surface-container-highest": "#e1e2e7",
+            "secondary-container": "#4aa5fd",
+            "tertiary-fixed": "#ffd8e8",
+            "surface-container-lowest": "#ffffff",
+            "outline": "#7d7384",
+            "inverse-surface": "#2e3134",
+            "tertiary-container": "#c2438f",
+            "on-secondary-fixed": "#001d37",
+            "on-tertiary-fixed": "#3c0028",
+            "on-tertiary-container": "#fffbff",
+            "inverse-primary": "#dbb8ff",
+            "surface-container": "#eceef3",
+            "on-primary": "#ffffff",
+            "surface-container-low": "#f2f3f8",
+            "outline-variant": "#cec2d5",
+            "secondary-fixed": "#d2e4ff",
+            "on-secondary-container": "#003964",
+            "on-surface": "#1d1b20",
+            "background": "#f8f9fe",
+            "on-surface-variant": "#49454f",
+            "on-primary-fixed": "#2b0052",
+            "surface-variant": "#e1e2e7",
+            "on-secondary": "#ffffff",
+            "tertiary-fixed-dim": "#ffafd6",
+            "surface": "#f8f9fe",
+            "secondary": "#0061a5",
+            "on-error-container": "#93000a",
+            "on-tertiary": "#ffffff",
+            "on-primary-fixed-variant": "#6417ab",
+            "on-primary-container": "#fffbff",
+            "primary-fixed-dim": "#dbb8ff",
+            "error-container": "#ffdad6"
+          },
+          fontFamily: {
+            "headline": ["Quicksand", "Noto Sans SC"],
+            "body": ["Quicksand", "Noto Sans SC"],
+            "label": ["Quicksand", "Noto Sans SC"]
+          },
+          borderRadius: {"DEFAULT": "1.25rem", "lg": "2.5rem", "xl": "4rem", "full": "9999px"},
+        },
+      },
+    }
+  </script>
+<style>
+    body { font-family: 'Quicksand', 'Noto Sans SC', sans-serif; }
+    h1, h2, h3 { font-family: 'Quicksand', 'Noto Sans SC', sans-serif; font-weight: 700; }
+    
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.4);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+    
+    .ethereal-glow {
+      background: radial-gradient(circle at 50% 50%, rgba(142, 68, 173, 0.15) 0%, rgba(142, 68, 173, 0.05) 50%, transparent 100%);
+      animation: pulse-glow 8s ease-in-out infinite alternate;
+    }
+
+    @keyframes pulse-glow {
+      0% { opacity: 0.5; transform: scale(1); }
+      100% { opacity: 0.8; transform: scale(1.1); }
+    }
+
+    .glow-heart {
+      filter: drop-shadow(0 0 20px rgba(155, 89, 182, 0.7));
+    }
+
+    .avatar-ring {
+      box-shadow: 0 0 0 4px rgba(255, 255, 255, 1), 0 0 30px rgba(155, 89, 182, 0.2);
+    }
+
+    .refined-gradient {
+      background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+    }
+
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-[#fbfcff] selection:bg-primary/20 overflow-hidden">
+<!-- Ethereal Background Layers -->
+<div class="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+<div class="absolute top-[-15%] left-[-15%] w-[80%] h-[80%] rounded-full bg-primary/10 blur-[140px]"></div>
+<div class="absolute bottom-[-15%] right-[-15%] w-[80%] h-[80%] rounded-full bg-secondary-container/10 blur-[140px]"></div>
+<div class="absolute inset-0 ethereal-glow"></div>
+</div>
+<main class="relative z-10 min-h-screen flex flex-col items-center justify-between px-8 py-20 text-center">
+<!-- Top Content -->
+<div class="mt-4 space-y-3">
+<h1 class="text-5xl md:text-6xl font-bold tracking-tight text-on-surface">
+      互相喜欢
+    </h1>
+<p class="text-lg md:text-xl font-medium text-on-surface-variant/70">
+      现在你们可以开始聊天了
+    </p>
+</div>
+<!-- Visual Center: The Connection -->
+<div class="relative w-full max-w-lg flex items-center justify-center py-16">
+<!-- Radiant Connection Lines -->
+<div class="absolute inset-0 flex items-center justify-center opacity-30">
+<!-- Animated Ring 1 -->
+<div class="absolute w-64 h-64 rounded-full border border-primary/20 animate-[ping_10s_linear_infinite]"></div>
+<!-- Animated Ring 2 -->
+<div class="absolute w-80 h-80 rounded-full border border-primary/10 animate-[pulse_6s_ease-in-out_infinite]"></div>
+<!-- Soft Connection Beam -->
+<div class="w-full h-[1px] bg-gradient-to-r from-transparent via-primary/40 to-transparent blur-[2px]"></div>
+</div>
+<!-- Connection Glow Core -->
+<div class="absolute w-48 h-48 bg-primary/15 blur-[80px] rounded-full"></div>
+<div class="relative flex items-center">
+<!-- Avatar 1 -->
+<div class="relative z-10 translate-x-4">
+<div class="w-32 h-32 md:w-40 md:h-40 rounded-full avatar-ring overflow-hidden transform -rotate-3 transition-all duration-500 hover:rotate-0 hover:scale-105">
+<img alt="Profile 1" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAMTff9CeLQlLRRgax0xiUmwXseJIY_0s_42_yWHhZbvd5qNdyhBSpRJ2M4__ZQFqXlv1-6WtNsDg_HJbxnEurm8dww-uCVGg-oy1uKpnEIm-DkQOElrpkYY1iX7UkdZJYheT5dr-UO-mDkIPZZhWPxiUuvCMwZ0hUoFhREG84N_SyiSZHp_B63kt7ori_NKvaSIUvsKr_RKPYoeKTTvw9p7X7v_lU0EkOaFUf3h9eOzrZMk8lROMs3lGlTGaRyTKgl1ZvO_W_CINUY"/>
+</div>
+</div>
+<!-- Central Glassmorphism Heart -->
+<div class="relative z-30 mx-[-2rem] flex items-center justify-center">
+<div class="w-20 h-20 rounded-full glass-effect shadow-2xl flex items-center justify-center glow-heart transform hover:scale-110 transition-transform duration-300">
+<span class="material-symbols-outlined text-primary text-4xl" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+</div>
+<!-- Avatar 2 -->
+<div class="relative z-20 -translate-x-4">
+<div class="w-32 h-32 md:w-40 md:h-40 rounded-full avatar-ring overflow-hidden transform rotate-3 transition-all duration-500 hover:rotate-0 hover:scale-105">
+<img alt="Profile 2" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuByPRnhe_6Xp9CWoe0txDg8AmwEz7a3cCUNbwYx5MKDLnPy3RtLATgFr68FuR4m6JiV5hDm3C7MPqTZ380ZOY5Ds2655PpPYLfKmdZNqDysAbwEXHY2gKUUUw8YsLSLBacP4cEDYhkiX1gxHY0kMkD3l8ZsapRus8jZqAtH0MVCtTrt5MszG9X6EUU-Jqn6p3rdOjDnLscdMyoZnj9IZQmIoGU8dNZ7vrUn-nKMpq5Yg_24uOgZa-g4_pVo9ww2pyWl8S-ImIdcIw2f"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Relationship Upgrade & Actions -->
+<div class="w-full max-w-sm space-y-12">
+<div>
+<span class="inline-block px-6 py-2 rounded-full glass-effect text-primary text-sm font-semibold tracking-wider">
+        缘分在此刻开启
+      </span>
+</div>
+<div class="flex flex-col gap-5">
+<!-- Primary Action -->
+<button class="w-full py-5 rounded-2xl refined-gradient text-white font-bold text-xl shadow-[0_20px_50px_rgba(142,68,173,0.35)] active:scale-95 transition-all flex items-center justify-center gap-3">
+        去聊天
+        <span class="material-symbols-outlined text-2xl">send</span>
+</button>
+<!-- Secondary Action -->
+<button class="w-full py-4 text-on-surface-variant/60 font-semibold text-lg hover:text-primary transition-colors active:opacity-60">
+        稍后再说
+      </button>
+</div>
+</div>
+</main>
+</body></html>

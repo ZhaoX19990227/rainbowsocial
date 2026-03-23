@@ -32,7 +32,7 @@ class _MainTabPageState extends State<MainTabPage> {
     }
     switch (index) {
       case 0:
-        return HomePage(onSwitchToNearby: () => _switchTab(1));
+        return const HomePage();
       case 1:
         return NearbyPage(onSwitchToRecommendations: () => _switchTab(0));
       case 2:

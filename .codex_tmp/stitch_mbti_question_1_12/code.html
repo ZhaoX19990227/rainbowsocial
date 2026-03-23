@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-secondary-fixed-variant": "#00497e",
+              "on-secondary": "#ffffff",
+              "background": "#f8f9fe",
+              "on-tertiary-fixed-variant": "#870a5f",
+              "error-container": "#ffdad6",
+              "surface-tint": "#7d38c4",
+              "outline": "#7d7384",
+              "on-primary-fixed-variant": "#6417ab",
+              "surface-container-low": "#f2f3f8",
+              "on-background": "#191c1f",
+              "on-tertiary-container": "#fffbff",
+              "inverse-on-surface": "#eff0f5",
+              "error": "#ba1a1a",
+              "surface-container-lowest": "#ffffff",
+              "primary-fixed-dim": "#dbb8ff",
+              "on-tertiary-fixed": "#3c0028",
+              "on-primary-container": "#fffbff",
+              "surface-container-high": "#e7e8ed",
+              "surface": "#f8f9fe",
+              "secondary-fixed": "#d2e4ff",
+              "on-tertiary": "#ffffff",
+              "surface-container-highest": "#e1e2e7",
+              "secondary": "#0061a5",
+              "primary": "#7b36c2",
+              "on-error-container": "#93000a",
+              "on-surface": "#191c1f",
+              "on-secondary-container": "#003964",
+              "tertiary": "#a32975",
+              "secondary-fixed-dim": "#9fcaff",
+              "tertiary-fixed-dim": "#ffafd6",
+              "surface-container": "#eceef3",
+              "secondary-container": "#4aa5fd",
+              "tertiary-fixed": "#ffd8e8",
+              "primary-fixed": "#efdbff",
+              "on-surface-variant": "#4c4453",
+              "inverse-surface": "#2e3134",
+              "tertiary-container": "#c2438f",
+              "on-error": "#ffffff",
+              "surface-dim": "#d8dadf",
+              "surface-bright": "#f8f9fe",
+              "inverse-primary": "#dbb8ff",
+              "on-primary-fixed": "#2b0052",
+              "primary-container": "#9552dd",
+              "on-secondary-fixed": "#001d37",
+              "outline-variant": "#cec2d5",
+              "surface-variant": "#e1e2e7",
+              "on-primary": "#ffffff"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background font-body text-on-surface antialiased">
+<!-- Top Navigation Anchor -->
+<header class="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-xl flex items-center justify-between px-6 h-16 w-full shadow-[0px_16px_40px_rgba(125,56,196,0.08)]">
+<div class="flex items-center gap-4">
+<button class="p-2 text-purple-600 hover:bg-purple-50 transition-colors rounded-full active:opacity-80 transition-all scale-95">
+<span class="material-symbols-outlined" data-icon="arrow_back">arrow_back</span>
+</button>
+</div>
+<h1 class="font-headline text-lg font-bold text-purple-600">Profile</h1>
+<button class="p-2 text-slate-500 hover:bg-purple-50 transition-colors rounded-full active:opacity-80 transition-all scale-95">
+<span class="material-symbols-outlined" data-icon="more_vert">more_vert</span>
+</button>
+</header>
+<main class="pt-24 pb-32 max-w-screen-md mx-auto px-6">
+<!-- Restructured Hero Section -->
+<section class="mb-12">
+<div class="relative group">
+<!-- Swipeable Image Gallery Container -->
+<div class="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar gap-4 pb-4">
+<div class="flex-shrink-0 w-full aspect-[4/5] snap-center rounded-xl overflow-hidden shadow-sm">
+<img alt="Profile 1" class="w-full h-full object-cover" data-alt="Modern profile portrait of a stylish person in soft lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMXLXmKp9G9rNaSQwVjwKEKHXyr08cKatDXPzJNcC67PZpMY439bjOrTHuB71ykaD36HC3PpMki__6WaQYzO0-pHtA2XZvcQtXJQii9UV-0Uyocdf_KcgkJsaEtkkmZh2PN1TDwJU9h41q0B9vOHr5DXqHL8mfxFami5px2GSu-DPTEfzM4oZB_CmUSEN2CMRoINOuyzZwdjLj4qaUpU2jSFraADPgWGu8fi1VevUKkAmRr_p02xjs_hD8tqppTeP_s1UB4-FH9GD-"/>
+</div>
+<div class="flex-shrink-0 w-full aspect-[4/5] snap-center rounded-xl overflow-hidden shadow-sm">
+<img alt="Profile 2" class="w-full h-full object-cover" data-alt="Artistic side profile of a creative professional" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAiIlTUfUMvaqbmFikisl1L7IViNRYX7YNEppdlzDeK1QLKAAc3pYs8LQaFXuXnUd6cdrzGss2eJgzFLDdYX1EKNJ6t826XX7pf-3yHeo7OMLqEgVHh_mT5olNklqfFTy3aSBl8RtCliIFj-9rUiqlPR71aTlKchE0clyPHZjDjxncZl9Vs6U-dYyU3pjE1zJJfrqoJPQVCtXnlCpfTAVERpWe6rS6GMDo-fzGnxBTBnBWynd_jDDKtVWSRwjqspPZS1JRIrMnZLyK-"/>
+</div>
+<div class="flex-shrink-0 w-full aspect-[4/5] snap-center rounded-xl overflow-hidden shadow-sm">
+<img alt="Profile 3" class="w-full h-full object-cover" data-alt="Candid lifestyle photo in a designer cafe" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB55SNnfhJ5OTsJ9hSPYEYMoxCjFSnJmKYBUOV0b-_ZJIz4jMbYWJ9Nfw3_wiEaEqotIAqskYfR7RbBTb9pIc__S9QzK8ZYeaMInq1KnvY6byJNvsX2NdEplMEXHavFgv2vkr9YD_2vOrGDNpQ7Hfw_MexqDHNFZvQ6oVPxMPthQBCTF3u07TD8ntlwkCSmqUVexDYJY15bBVl47a27bJkU3cQMReXNVj5Ct4SBqWyAzcU05DTHAyBU-jW_TerC73F1z3sGelJyX9aJ"/>
+</div>
+</div>
+<!-- Refined Gallery Indicators -->
+<div class="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-1.5 px-3 py-1.5 rounded-full bg-white/30 backdrop-blur-md">
+<div class="w-1.5 h-1.5 rounded-full bg-white"></div>
+<div class="w-1.5 h-1.5 rounded-full bg-white/40"></div>
+<div class="w-1.5 h-1.5 rounded-full bg-white/40"></div>
+</div>
+<!-- Floating Identity Tag -->
+<div class="absolute -bottom-6 left-6 right-6">
+<div class="glass-card rounded-lg p-6 shadow-[0px_16px_40px_rgba(125,56,196,0.1)] flex items-end justify-between">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<h2 class="font-headline text-3xl font-extrabold text-on-surface tracking-tight">沐风</h2>
+<span class="w-2.5 h-2.5 bg-green-400 rounded-full"></span>
+</div>
+<p class="text-on-surface-variant font-medium">今日气场: 温柔且坚定</p>
+</div>
+<div class="flex flex-col items-end gap-1">
+<span class="px-3 py-1 bg-primary/10 text-primary text-xs font-bold rounded-full">ENFP</span>
+<span class="text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">Active Now</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Modular Card Layout (Asymmetrical/Staggered) -->
+<section class="grid grid-cols-2 gap-4 mt-8">
+<!-- Left Column -->
+<div class="space-y-4">
+<!-- MBTI Card -->
+<div class="bg-surface-container-lowest p-6 rounded-lg shadow-sm">
+<div class="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-primary" data-icon="pets">pets</span>
+</div>
+<h3 class="font-headline font-bold text-on-surface mb-1">ENFP</h3>
+<p class="text-sm text-on-surface-variant">快乐小狗</p>
+</div>
+<!-- Interests Card -->
+<div class="bg-surface-container-lowest p-6 rounded-lg shadow-sm">
+<h3 class="font-headline font-bold text-on-surface mb-4">个人标签</h3>
+<div class="flex flex-wrap gap-2">
+<span class="px-4 py-2 bg-surface-container-low text-on-surface-variant text-sm font-medium rounded-full">室内设计</span>
+<span class="px-4 py-2 bg-surface-container-low text-on-surface-variant text-sm font-medium rounded-full">咖啡爱好者</span>
+<span class="px-4 py-2 bg-surface-container-low text-on-surface-variant text-sm font-medium rounded-full">夜间漫游</span>
+</div>
+</div>
+</div>
+<!-- Right Column (Staggered offset via pt) -->
+<div class="space-y-4 pt-8">
+<!-- Zodiac Card -->
+<div class="bg-surface-container-lowest p-6 rounded-lg shadow-sm">
+<div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-secondary" data-icon="balance">balance</span>
+</div>
+<h3 class="font-headline font-bold text-on-surface mb-1">天秤座</h3>
+<p class="text-sm text-on-surface-variant">平衡与美感</p>
+</div>
+<!-- Spotify/Mood Card (Example of Luxury Feel) -->
+<div class="bg-gradient-to-br from-primary to-primary-container p-6 rounded-lg shadow-[0px_8px_24px_rgba(123,54,194,0.2)] text-white">
+<div class="flex justify-between items-start mb-6">
+<span class="material-symbols-outlined opacity-80" data-icon="graphic_eq">graphic_eq</span>
+<span class="text-[10px] font-bold uppercase tracking-widest opacity-60">Currently Playing</span>
+</div>
+<p class="font-headline font-bold text-lg leading-tight">City Lights &amp; Coffee</p>
+<p class="text-sm opacity-80 mt-1">Lofi Chill • 2:40</p>
+</div>
+</div>
+</section>
+<!-- Biography Section -->
+<section class="mt-12 px-2">
+<h3 class="font-headline font-bold text-xl text-on-surface mb-4">关于我</h3>
+<p class="text-on-surface-variant leading-relaxed text-lg font-light">
+                相信设计不仅是空间的堆砌，更是灵魂的栖息。在深夜的城市街道寻找灵感，在清晨的第一杯手冲咖啡中唤醒感官。希望能在这个忙碌的世界里，与你分享一份名为“温柔”的坚持。
+            </p>
+</section>
+</main>
+<!-- Refined Action Bar -->
+<footer class="fixed bottom-0 left-0 w-full z-50 px-8 pb-10 pt-4 bg-white/70 backdrop-blur-3xl rounded-t-xl flex justify-center items-center gap-6 shadow-[0px_-10px_40px_rgba(125,56,196,0.1)]">
+<!-- Like Action -->
+<button class="flex-1 max-w-[140px] flex items-center justify-center gap-2 bg-surface-container-highest text-primary font-bold py-4 px-6 rounded-full hover:scale-105 transition-transform active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="favorite" style="font-variation-settings: 'FILL' 1;">favorite</span>
+<span>喜欢</span>
+</button>
+<!-- Primary Chat CTA -->
+<button class="flex-[1.5] max-w-[200px] flex items-center justify-center gap-2 bg-gradient-to-br from-purple-600 to-purple-400 text-white font-bold py-4 px-8 rounded-full shadow-[0px_8px_24px_rgba(123,54,194,0.3)] hover:scale-105 transition-transform active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="chat_bubble" style="font-variation-settings: 'FILL' 1;">chat_bubble</span>
+<span>打个招呼</span>
+</button>
+</footer>
+<!-- Bottom Navigation Layer (Hidden for focused detail view as per mandate) -->
+<!-- The "Destination Rule" applies: Page is a focused Task/Detail view, suppressing main navigation shell to prioritize profile content. -->
+</body></html>

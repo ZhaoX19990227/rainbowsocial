@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../controllers/auth_controller.dart';
 import '../controllers/chat_controller.dart';
@@ -9,840 +10,1251 @@ import '../controllers/nearby_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../models/app_user.dart';
 import '../models/match_summary.dart';
-import '../pages/likes_overview_page.dart';
 import '../providers/app_providers.dart';
 import '../routes/app_router.dart';
+import '../services/api_config.dart';
+import '../services/app_feedback.dart';
 import '../services/mbti_catalog.dart';
 import '../services/zodiac_utils.dart';
 import '../theme/app_theme.dart';
+import '../usecases/upload_usecases.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/app_skeleton.dart';
 import '../widgets/avatar_widget.dart';
 import '../widgets/mbti_badge.dart';
 import '../widgets/zodiac_badge.dart';
+import 'likes_overview_page.dart';
 
-class ProfilePage extends ConsumerWidget {
+class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends ConsumerState<ProfilePage> {
+  final ImagePicker _picker = ImagePicker();
+  bool _uploadingMoment = false;
+
+  @override
+  Widget build(BuildContext context) {
     final profile = ref.watch(profileControllerProvider);
     final session = ref.watch(authControllerProvider).valueOrNull;
-    final summary = ref.watch(matchSummaryControllerProvider);
+    final summary = ref.watch(matchSummaryControllerProvider).valueOrNull;
 
-    return SafeArea(
-      child: profile.when(
-        data: (user) {
-          final displayUser = user ?? session?.user;
-          if (displayUser == null) {
-            return const AppEmptyState(title: '暂未加载到个人资料');
-          }
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFFDFDFF),
+            Color(0xFFF5F0FF),
+            Color(0xFFF6FAFF),
+          ],
+        ),
+      ),
+      child: SafeArea(
+        child: profile.when(
+          data: (user) {
+            final displayUser = user ?? session?.user;
+            if (displayUser == null) {
+              return const AppEmptyState(title: '暂未加载到个人资料');
+            }
 
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 120),
-            children: [
-              Row(
+            return RefreshIndicator(
+              color: AppTheme.primary,
+              onRefresh: () =>
+                  ref.read(profileControllerProvider.notifier).load(),
+              child: ListView(
+                physics: const BouncingScrollPhysics(
+                  parent: AlwaysScrollableScrollPhysics(),
+                ),
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 120),
                 children: [
-                  Text('我的', style: Theme.of(context).textTheme.headlineMedium),
-                  const Spacer(),
-                  IconButton(
-                    onPressed: () =>
-                        ref.read(profileControllerProvider.notifier).load(),
-                    icon: const Icon(Icons.refresh_rounded),
-                  ),
-                  IconButton(
-                    onPressed: () =>
-                        Navigator.of(context).pushNamed(AppRouter.editProfile),
-                    icon: const Icon(Icons.edit_rounded),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              _ProfileHero(
-                user: displayUser,
-                summary: summary.valueOrNull,
-              ),
-              if (displayUser.photos.isNotEmpty) ...[
-                const SizedBox(height: 18),
-                Text('我的相册', style: Theme.of(context).textTheme.titleLarge),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 108,
-                  child: ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: displayUser.photos.length,
-                    separatorBuilder: (_, __) => const SizedBox(width: 12),
-                    itemBuilder: (context, index) {
-                      final photo = displayUser.photos[index];
-                      return ClipRRect(
-                        borderRadius: BorderRadius.circular(22),
-                        child: Image.network(
-                          photo,
-                          width: 108,
-                          height: 108,
-                          fit: BoxFit.cover,
-                        ),
+                  _ProfileTopBar(
+                    onEdit: () => _showProfileActions(context, ref),
+                    onMore: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('分享功能正在准备中')),
                       );
                     },
                   ),
-                ),
-              ],
-              const SizedBox(height: 20),
-              OutlinedButton.icon(
-                onPressed: () async {
-                  await ref.read(authControllerProvider.notifier).signOut();
-                  ref.invalidate(profileControllerProvider);
-                  ref.invalidate(matchesControllerProvider);
-                  ref.invalidate(matchSummaryControllerProvider);
-                  ref.invalidate(homeControllerProvider);
-                  ref.invalidate(nearbyControllerProvider);
-                  ref.invalidate(chatThreadsControllerProvider);
-                  if (!context.mounted) return;
-                  Navigator.of(context).pushNamedAndRemoveUntil(
-                    AppRouter.login,
-                    (route) => false,
-                  );
-                },
-                icon: const Icon(Icons.logout_rounded),
-                label: const Text('退出登录'),
+                  const SizedBox(height: 20),
+                  _ProfileHeroCard(
+                    user: displayUser,
+                    onEdit: () =>
+                        Navigator.of(context).pushNamed(AppRouter.editProfile),
+                    onShare: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('分享功能正在准备中')),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  _MomentsSection(
+                    user: displayUser,
+                    uploading: _uploadingMoment,
+                    onUpload: _pickAndUploadMoment,
+                  ),
+                  const SizedBox(height: 24),
+                  _SocialStatsGrid(summary: summary),
+                  const SizedBox(height: 24),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: _MbtiInsightCard(
+                          user: displayUser,
+                          onTap: () => Navigator.of(context)
+                              .pushNamed(AppRouter.mbtiTest),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: _ZodiacInsightCard(
+                          user: displayUser,
+                          onTap: () => Navigator.of(context)
+                              .pushNamed(AppRouter.birthdaySetup),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _TagsInsightCard(user: displayUser),
+                  const SizedBox(height: 16),
+                  _AboutInsightCard(user: displayUser),
+                ],
               ),
-            ],
-          );
-        },
-        loading: () => const Center(
-          child: Padding(
-            padding: EdgeInsets.all(20),
-            child: AppSkeleton(height: 420, radius: 32),
+            );
+          },
+          loading: () => const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: AppSkeleton(height: 560, radius: 36),
+            ),
           ),
-        ),
-        error: (error, _) => AppEmptyState(
-          title: '个人资料加载失败',
-          subtitle: '$error',
+          error: (error, _) => AppEmptyState(
+            title: '个人资料加载失败',
+            subtitle: '$error',
+          ),
         ),
       ),
     );
   }
-}
 
-class _ProfileHero extends StatelessWidget {
-  const _ProfileHero({
-    required this.user,
-    required this.summary,
-  });
+  Future<void> _pickAndUploadMoment() async {
+    if (_uploadingMoment) return;
+    final session = ref.read(authControllerProvider).valueOrNull;
+    final profile = ref.read(profileControllerProvider).valueOrNull;
+    if (session == null || profile == null) return;
 
-  final AppUser user;
-  final MatchSummary? summary;
-
-  @override
-  Widget build(BuildContext context) {
-    final locationText = user.locationLabel.trim().isNotEmpty
-        ? user.locationLabel.trim()
-        : user.distanceKm == null
-            ? '就在附近'
-            : '${user.distanceKm!.toStringAsFixed(1)} km';
-    final bio = user.bio.trim().isEmpty ? '留一点神秘感，等聊天时再慢慢展开。' : user.bio.trim();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.topCenter,
-          children: [
-            Container(
-              height: 154,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(34),
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF8D37C8),
-                    Color(0xFF6A41D8),
-                    Color(0xFF58C8F8),
-                  ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primary.withValues(alpha: 0.18),
-                    blurRadius: 32,
-                    offset: const Offset(0, 18),
-                  ),
-                ],
-              ),
-              child: Stack(
-                children: [
-                  Positioned(
-                    left: -18,
-                    top: -10,
-                    child: _AmbientOrb(
-                      size: 150,
-                      colors: const [Color(0x33FFFFFF), Color(0x00FFFFFF)],
-                    ),
-                  ),
-                  Positioned(
-                    right: -8,
-                    bottom: -24,
-                    child: _AmbientOrb(
-                      size: 160,
-                      colors: const [Color(0x44FFFFFF), Color(0x00FFFFFF)],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Positioned(
-              bottom: -42,
-              child: Container(
-                padding: const EdgeInsets.all(5),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primary.withValues(alpha: 0.16),
-                      blurRadius: 24,
-                      offset: const Offset(0, 12),
-                    ),
-                  ],
-                ),
-                child: AvatarWidget(
-                  imageUrl: user.avatar,
-                  radius: 42,
-                  isOnline: false,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 56),
-        Center(
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (context) {
+        return SafeArea(
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                user.nickname,
-                maxLines: 2,
-                textAlign: TextAlign.center,
-                style: Theme.of(context)
-                    .textTheme
-                    .headlineMedium
-                    ?.copyWith(fontSize: 28),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('从图库上传'),
+                onTap: () => Navigator.of(context).pop(ImageSource.gallery),
               ),
-              const SizedBox(height: 6),
-              Text(
-                bio,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  _HeroMetaPill(
-                      icon: Icons.cake_rounded, label: '${user.age} 岁'),
-                  _HeroMetaPill(
-                    icon: Icons.height_rounded,
-                    label: '${user.heightCm}cm',
-                  ),
-                  _HeroMetaPill(
-                    icon: Icons.monitor_weight_rounded,
-                    label: '${user.weightKg}kg',
-                  ),
-                  _HeroMetaPill(icon: Icons.place_rounded, label: locationText),
-                  if (user.positionRole.trim().isNotEmpty)
-                    _HeroMetaPill(
-                      icon: Icons.bolt_rounded,
-                      label: user.positionRole.trim(),
-                      accent: AppTheme.tertiary,
-                    ),
-                ],
+              ListTile(
+                leading: const Icon(Icons.photo_camera_outlined),
+                title: const Text('拍照'),
+                onTap: () => Navigator.of(context).pop(ImageSource.camera),
               ),
             ],
           ),
+        );
+      },
+    );
+    if (source == null) return;
+
+    final picked = await _picker.pickImage(
+      source: source,
+      imageQuality: 88,
+      maxWidth: 1800,
+    );
+    if (picked == null) return;
+
+    setState(() => _uploadingMoment = true);
+    try {
+      final rawUrl = await ref.read(uploadImageUseCaseProvider).call(
+            token: session.token,
+            file: picked,
+          );
+      final uploadedUrl =
+          rawUrl.startsWith('http') ? rawUrl : '${ApiConfig.baseUrl}$rawUrl';
+      final normalizedPhotos = [
+        ...profile.photos.where((item) => item.trim().isNotEmpty),
+        uploadedUrl,
+      ];
+      final updated = profile.copyWith(photos: normalizedPhotos);
+      await ref.read(profileControllerProvider.notifier).save(updated);
+      if (!mounted) return;
+      AppFeedback.showToast('感性瞬间已上传');
+    } catch (error) {
+      AppFeedback.showError('上传失败：$error');
+    } finally {
+      if (mounted) {
+        setState(() => _uploadingMoment = false);
+      }
+    }
+  }
+
+  Future<void> _showProfileActions(BuildContext context, WidgetRef ref) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return SafeArea(
+          top: false,
+          child: Container(
+            margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.92),
+              borderRadius: BorderRadius.circular(32),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primary.withValues(alpha: 0.12),
+                  blurRadius: 32,
+                  offset: const Offset(0, 18),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _ActionTile(
+                  icon: Icons.refresh_rounded,
+                  label: '刷新资料',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    ref.read(profileControllerProvider.notifier).load();
+                  },
+                ),
+                _ActionTile(
+                  icon: Icons.logout_rounded,
+                  label: '退出登录',
+                  color: AppTheme.error,
+                  onTap: () async {
+                    Navigator.of(sheetContext).pop();
+                    await _signOut(context, ref);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _signOut(BuildContext context, WidgetRef ref) async {
+    await ref.read(authControllerProvider.notifier).signOut();
+    ref.invalidate(profileControllerProvider);
+    ref.invalidate(matchesControllerProvider);
+    ref.invalidate(matchSummaryControllerProvider);
+    ref.invalidate(homeControllerProvider);
+    ref.invalidate(nearbyControllerProvider);
+    ref.invalidate(chatThreadsControllerProvider);
+    if (!context.mounted) return;
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      AppRouter.login,
+      (route) => false,
+    );
+  }
+}
+
+class _ProfileTopBar extends StatelessWidget {
+  const _ProfileTopBar({
+    required this.onEdit,
+    required this.onMore,
+  });
+
+  final VoidCallback onEdit;
+  final VoidCallback onMore;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        _IconShell(
+          icon: Icons.settings_rounded,
+          onTap: onEdit,
         ),
-        const SizedBox(height: 18),
-        _RelationshipQuickStats(summary: summary),
-        const SizedBox(height: 16),
-        _IdentityProfileCard(user: user),
-        const SizedBox(height: 14),
-        _MbtiProfileCard(user: user),
-        const SizedBox(height: 14),
-        _HoroscopeProfileCard(user: user),
+        const Spacer(),
+        Text(
+          '个人资料',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: AppTheme.textPrimary,
+              ),
+        ),
+        const Spacer(),
+        _IconShell(
+          icon: Icons.more_horiz_rounded,
+          onTap: onMore,
+        ),
       ],
     );
   }
 }
 
-class _IdentityProfileCard extends StatelessWidget {
-  const _IdentityProfileCard({required this.user});
+class _ProfileHeroCard extends StatelessWidget {
+  const _ProfileHeroCard({
+    required this.user,
+    required this.onEdit,
+    required this.onShare,
+  });
 
   final AppUser user;
+  final VoidCallback onEdit;
+  final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context) {
-    final hasPosition = user.positionRole.trim().isNotEmpty;
-    final hasTags = user.tags.isNotEmpty;
+    final bio = user.bio.trim().isEmpty
+        ? '留一点神秘感，等聊天时再慢慢展开。'
+        : '“${user.bio.trim()}”';
+    final chips = <_HeroChipData>[
+      if (user.positionRole.trim().isNotEmpty)
+        _HeroChipData(
+          label: user.positionRole.trim(),
+          highlighted: true,
+        ),
+      _HeroChipData(label: '${user.age}岁'),
+      _HeroChipData(label: '${user.heightCm}cm'),
+      _HeroChipData(label: '${user.weightKg}kg'),
+    ];
 
     return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      padding: const EdgeInsets.fromLTRB(24, 26, 24, 22),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
+        borderRadius: BorderRadius.circular(36),
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xCCFFFFFF),
-            Color(0xBFFFF6FB),
+            Colors.white.withValues(alpha: 0.95),
+            const Color(0xFFF7F2FF).withValues(alpha: 0.92),
           ],
         ),
-        border: Border.all(color: AppTheme.ghostBorder),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primary.withValues(alpha: 0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
+            color: AppTheme.primary.withValues(alpha: 0.12),
+            blurRadius: 36,
+            offset: const Offset(0, 18),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFFF6D5FF),
+                  Color(0xFFDCE7FF),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primary.withValues(alpha: 0.18),
+                  blurRadius: 30,
+                  offset: const Offset(0, 12),
+                ),
+              ],
+            ),
+            child: AvatarWidget(
+              imageUrl: user.avatarOrFallback,
+              radius: 42,
+              isOnline: user.onlineStatus,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            user.nickname.trim().isEmpty ? '还没有昵称' : user.nickname,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            bio,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.textSecondary.withValues(alpha: 0.82),
+                  fontStyle: FontStyle.italic,
+                ),
+          ),
+          const SizedBox(height: 18),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 8,
+            runSpacing: 8,
+            children: chips.map((chip) => _HeroMetaChip(data: chip)).toList(),
+          ),
+          const SizedBox(height: 22),
           Row(
             children: [
-              Text('身份档案', style: Theme.of(context).textTheme.titleMedium),
-              const Spacer(),
-              TextButton(
-                onPressed: () =>
-                    Navigator.of(context).pushNamed(AppRouter.editProfile),
-                child: const Text('去完善'),
+              Expanded(
+                child: GestureDetector(
+                  onTap: onEdit,
+                  child: Container(
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppTheme.primary,
+                          AppTheme.primaryDark,
+                        ],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppTheme.primary.withValues(alpha: 0.24),
+                          blurRadius: 22,
+                          offset: const Offset(0, 12),
+                        ),
+                      ],
+                    ),
+                    child: Text(
+                      '编辑资料',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              _IconButtonCard(
+                icon: Icons.ios_share_rounded,
+                onTap: onShare,
               ),
             ],
           ),
-          const SizedBox(height: 10),
-          if (hasPosition)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(18),
-                color: const Color(0xFFFFEEF7),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.bolt_rounded,
-                    size: 16,
-                    color: AppTheme.tertiary,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '属性：${user.positionRole}',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: AppTheme.tertiary,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-          if (hasPosition && hasTags) const SizedBox(height: 12),
-          if (hasTags)
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: user.tags
-                  .map(
-                    (tag) => Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(999),
-                        color: Colors.white,
-                        border: Border.all(color: AppTheme.ghostBorder),
-                      ),
-                      child: Text(
-                        tag,
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: AppTheme.textSecondary,
-                            ),
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-          if (!hasPosition && !hasTags)
-            Text(
-              '还没有填写属性和标签。完善后，个人中心会直接展示你的角色偏好和兴趣关键词。',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.textSecondary,
-                  ),
-            ),
         ],
       ),
     );
   }
 }
 
-class _MbtiProfileCard extends StatelessWidget {
-  const _MbtiProfileCard({required this.user});
+class _MomentsSection extends StatelessWidget {
+  const _MomentsSection({
+    required this.user,
+    required this.uploading,
+    required this.onUpload,
+  });
 
   final AppUser user;
+  final bool uploading;
+  final VoidCallback onUpload;
+
+  @override
+  Widget build(BuildContext context) {
+    final moments = user.photos
+        .where((photo) => photo.trim().isNotEmpty && photo.trim() != user.avatar.trim())
+        .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionHeader(
+          title: '感性瞬间',
+          trailingLabel: '查看全部',
+        ),
+        const SizedBox(height: 14),
+        SizedBox(
+          height: 168,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: moments.length + 1,
+            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            itemBuilder: (context, index) {
+              if (index == moments.length) {
+                return SizedBox(
+                  width: 128,
+                  child: _MomentUploadCard(
+                    onTap: uploading ? null : onUpload,
+                    uploading: uploading,
+                  ),
+                );
+              }
+              return SizedBox(
+                width: 128,
+                child: _MomentPhotoCard(
+                  imageUrl: moments[index],
+                  aspectRatio: 0.76,
+                  emptyLabel: 'MOMENT',
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SocialStatsGrid extends StatelessWidget {
+  const _SocialStatsGrid({required this.summary});
+
+  final MatchSummary? summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final safeSummary = summary ?? const MatchSummary.empty();
+    final items = [
+      _SocialStatData(
+        label: '喜欢我的',
+        value: safeSummary.received.length,
+        icon: Icons.star_rounded,
+        accent: const LinearGradient(
+          colors: [Color(0xFFF4DAFF), Color(0xFFFFE2EE)],
+        ),
+        iconColor: AppTheme.primary,
+        type: LikeOverviewType.received,
+      ),
+      _SocialStatData(
+        label: '我喜欢的',
+        value: safeSummary.sent.length,
+        icon: Icons.favorite_rounded,
+        accent: const LinearGradient(
+          colors: [Color(0xFFE0EEFF), Color(0xFFF0E6FF)],
+        ),
+        iconColor: AppTheme.secondary,
+        type: LikeOverviewType.sent,
+      ),
+      _SocialStatData(
+        label: '互相喜欢',
+        value: safeSummary.mutual.length,
+        icon: Icons.auto_awesome_rounded,
+        accent: const LinearGradient(
+          colors: [AppTheme.primary, AppTheme.tertiary],
+        ),
+        iconColor: Colors.white,
+        type: LikeOverviewType.mutual,
+      ),
+    ];
+
+    return Row(
+      children: [
+        for (var i = 0; i < items.length; i++) ...[
+          Expanded(
+            child: _SocialStatCard(
+              data: items[i],
+              summary: safeSummary,
+            ),
+          ),
+          if (i != items.length - 1) const SizedBox(width: 12),
+        ],
+      ],
+    );
+  }
+}
+
+class _MbtiInsightCard extends StatelessWidget {
+  const _MbtiInsightCard({
+    required this.user,
+    required this.onTap,
+  });
+
+  final AppUser user;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final hasMbti = user.mbtiType.trim().isNotEmpty;
     final mbti = hasMbti ? MbtiCatalog.resolve(user.mbtiType) : null;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xCCFFFFFF),
-            Color(0xBFF6F1FF),
-          ],
-        ),
-        border: Border.all(color: AppTheme.ghostBorder),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primary.withValues(alpha: 0.06),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Text('人格档案', style: Theme.of(context).textTheme.titleMedium),
-              const Spacer(),
-              TextButton(
-                onPressed: () =>
-                    Navigator.of(context).pushNamed(AppRouter.mbtiTest),
-                child: Text(hasMbti ? '重新测试' : '立即测试'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          if (mbti == null)
-            Text(
-              '还没有人格结果。完成 12 道轻量测试后，会在这里展示你的 MBTI、人格总结和专属人格徽章。',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.textSecondary,
-                  ),
-            )
-          else
-            Row(
+    return _InsightShell(
+      title: '人格档案',
+      subtitle: hasMbti ? 'MBTI' : 'MBTI',
+      accent: const [Color(0xFFF4E6FF), Color(0xFFFFFFFF)],
+      onTap: !hasMbti ? onTap : null,
+      child: hasMbti && mbti != null
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                MbtiAvatarBadge(type: mbti.type, size: 72),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      MbtiBadge(type: mbti.type),
-                      const SizedBox(height: 8),
-                      Text(mbti.name,
-                          style: Theme.of(context).textTheme.titleLarge),
-                      const SizedBox(height: 4),
-                      Text(
-                        mbti.oneLiner,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppTheme.textSecondary,
-                            ),
+                MbtiBadge(type: mbti.type, compact: true),
+                const SizedBox(height: 10),
+                Text(
+                  mbti.name,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
                       ),
-                    ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  mbti.oneLiner,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.textSecondary,
+                      ),
+                ),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: AppTheme.primary.withValues(alpha: 0.08),
+                  ),
+                  child: Icon(
+                    Icons.psychology_alt_rounded,
+                    color: AppTheme.primary.withValues(alpha: 0.35),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const _MissingContent(
+                  title: '尚未解锁人格',
+                  subtitle: '点我去测试，解锁你的 MBTI 档案。',
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  width: double.infinity,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(999),
+                    color: AppTheme.primary.withValues(alpha: 0.08),
+                  ),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Container(
+                      width: 42,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(999),
+                        color: AppTheme.primary.withValues(alpha: 0.28),
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
-        ],
-      ),
     );
   }
 }
 
-class _HoroscopeProfileCard extends ConsumerWidget {
-  const _HoroscopeProfileCard({required this.user});
+class _ZodiacInsightCard extends StatelessWidget {
+  const _ZodiacInsightCard({
+    required this.user,
+    required this.onTap,
+  });
+
+  final AppUser user;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final sign = user.zodiacSign.trim();
+
+    return _InsightShell(
+      title: '星座档案',
+      subtitle: 'ARIES',
+      accent: const [Color(0xFFFFF0F6), Color(0xFFFFFFFF)],
+      onTap: sign.isEmpty ? onTap : null,
+      child: sign.isNotEmpty
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ZodiacBadge(sign: sign, compact: true),
+                const SizedBox(height: 10),
+                Text(
+                  ZodiacUtils.displayName(sign),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 10,
+                  runSpacing: 10,
+                  children: [
+                    _MiniMetric(label: '缘分', value: '${72 + user.age % 19}'),
+                    _MiniMetric(label: '心动', value: '${80 + user.id % 15}'),
+                  ],
+                ),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    color: AppTheme.tertiary.withValues(alpha: 0.08),
+                  ),
+                  child: Icon(
+                    Icons.auto_awesome_rounded,
+                    color: AppTheme.tertiary.withValues(alpha: 0.35),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const _MissingContent(
+                  title: '等你填写生日',
+                  subtitle: '点我去编辑生日，解锁你的星座档案。',
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: List.generate(
+                    4,
+                    (index) => Container(
+                      width: 8,
+                      height: 8,
+                      margin: const EdgeInsets.only(right: 6),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppTheme.tertiary.withValues(
+                          alpha: index == 0 ? 0.28 : 0.12,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+}
+
+class _TagsInsightCard extends StatelessWidget {
+  const _TagsInsightCard({required this.user});
 
   final AppUser user;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final sign = user.zodiacSign.trim();
-    final hasZodiac = sign.isNotEmpty;
-    final token = ref.watch(authControllerProvider).valueOrNull?.token ?? '';
+  Widget build(BuildContext context) {
+    return _InsightShell(
+      title: '兴趣标签',
+      subtitle: 'HEADLINES',
+      accent: const [Color(0xFFF8F4FF), Color(0xFFFFFFFF)],
+      fullWidth: true,
+      child: user.tags.isEmpty && user.positionRole.trim().isEmpty
+          ? _MissingContent(
+              title: '还没有点亮你的偏好',
+              subtitle: '标签和属性补充后，这里会更像你的名片。',
+            )
+          : Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                if (user.positionRole.trim().isNotEmpty)
+                  _SoftTagChip(
+                    label: user.positionRole.trim(),
+                    highlighted: true,
+                  ),
+                ...user.tags.map((tag) => _SoftTagChip(label: tag)),
+              ],
+            ),
+    );
+  }
+}
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(
+class _AboutInsightCard extends StatelessWidget {
+  const _AboutInsightCard({required this.user});
+
+  final AppUser user;
+
+  @override
+  Widget build(BuildContext context) {
+    final about = user.bio.trim().isEmpty
+        ? '还没有填写自我介绍，去写一点你喜欢的节奏、偏爱的聊天方式，或者理想型。'
+        : user.bio.trim();
+
+    return _InsightShell(
+      title: '关于我',
+      subtitle: 'ABOUT',
+      accent: const [Color(0xFFFFFFFF), Color(0xFFF7F3FF)],
+      fullWidth: true,
+      child: user.bio.trim().isEmpty
+          ? Column(
+              children: [
+                Container(
+                  width: 82,
+                  height: 82,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppTheme.primary.withValues(alpha: 0.14),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    size: 34,
+                    color: AppTheme.primary.withValues(alpha: 0.38),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _MissingContent(
+                  title: '还没有写下关于我',
+                  subtitle: '写一点你的性格、节奏和想认识怎样的人，这里就会亮起来。',
+                ),
+              ],
+            )
+          : Text(
+              about,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.textSecondary,
+                    height: 1.7,
+                  ),
+            ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({
+    required this.title,
+    required this.trailingLabel,
+  });
+
+  final String title;
+  final String trailingLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 4,
+          height: 18,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            gradient: const LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [AppTheme.tertiary, AppTheme.primary],
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+        ),
+        const Spacer(),
+        Text(
+          trailingLabel,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: AppTheme.primary,
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MomentPhotoCard extends StatelessWidget {
+  const _MomentPhotoCard({
+    required this.imageUrl,
+    required this.aspectRatio,
+    this.emptyLabel,
+    this.emptyHint,
+    this.extraCount = 0,
+  });
+
+  final String? imageUrl;
+  final double aspectRatio;
+  final String? emptyLabel;
+  final String? emptyHint;
+  final int extraCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasImage = imageUrl != null && imageUrl!.trim().isNotEmpty;
+
+    return AspectRatio(
+      aspectRatio: aspectRatio,
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(26),
+          gradient: hasImage
+              ? null
+              : const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFFFFF1E3),
+                    Color(0xFFF8EED8),
+                  ],
+                ),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primary.withValues(alpha: 0.08),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: hasImage
+            ? Stack(
+                fit: StackFit.expand,
+                children: [
+                  Image.network(
+                    imageUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _MomentFallback(
+                      emptyLabel: emptyLabel,
+                      emptyHint: emptyHint,
+                    ),
+                  ),
+                  if (extraCount > 0)
+                    Container(
+                      color: Colors.black.withValues(alpha: 0.24),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '+$extraCount',
+                        style:
+                            Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                      ),
+                    ),
+                ],
+              )
+            : _MomentFallback(
+                emptyLabel: emptyLabel,
+                emptyHint: emptyHint,
+              ),
+      ),
+    );
+  }
+}
+
+class _MomentFallback extends StatelessWidget {
+  const _MomentFallback({
+    this.emptyLabel,
+    this.emptyHint,
+  });
+
+  final String? emptyLabel;
+  final String? emptyHint;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFFFFF0F7),
-            Color(0xFFF5ECFF),
-            Color(0xFFEAF4FF),
+            Color(0xFFFFF4E8),
+            Color(0xFFF8EFDB),
           ],
         ),
-        border: Border.all(
-          color: Colors.white.withValues(alpha: 0.78),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              emptyLabel ?? 'MOMENT',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: const Color(0xFFC9A884),
+                    letterSpacing: 2,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            if (emptyHint != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                emptyHint!,
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: const Color(0xFFC9A884).withValues(alpha: 0.75),
+                      fontSize: 10,
+                    ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MomentUploadCard extends StatelessWidget {
+  const _MomentUploadCard({
+    required this.onTap,
+    this.uploading = false,
+  });
+
+  final VoidCallback? onTap;
+  final bool uploading;
+
+  @override
+  Widget build(BuildContext context) {
+    return AspectRatio(
+      aspectRatio: 0.76,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(26),
+            color: Colors.white.withValues(alpha: 0.65),
+            border: Border.all(
+              color: AppTheme.primary.withValues(alpha: 0.15),
+              style: BorderStyle.solid,
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppTheme.primary.withValues(alpha: 0.08),
+                ),
+                child: uploading
+                    ? const Padding(
+                        padding: EdgeInsets.all(10),
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(
+                        Icons.add_rounded,
+                        color: AppTheme.primary,
+                      ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                uploading ? '上传中' : '上传',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: AppTheme.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SocialStatCard extends StatelessWidget {
+  const _SocialStatCard({
+    required this.data,
+    required this.summary,
+  });
+
+  final _SocialStatData data;
+  final MatchSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(28),
+      onTap: () {
+        Navigator.of(context).pushNamed(
+          AppRouter.likesOverview,
+          arguments: LikesOverviewArgs(
+            type: data.type,
+            summary: summary,
+          ),
+        );
+      },
+      child: Ink(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(28),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white.withValues(alpha: 0.92),
+              const Color(0xFFF8F5FF).withValues(alpha: 0.9),
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppTheme.primary.withValues(alpha: 0.08),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: data.accent,
+              ),
+              child: Icon(
+                data.icon,
+                color: data.iconColor,
+                size: 22,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              '${data.value}',
+              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: data.type == LikeOverviewType.mutual
+                        ? AppTheme.primary
+                        : AppTheme.textPrimary,
+                  ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              data.label,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: AppTheme.textSecondary.withValues(alpha: 0.75),
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InsightShell extends StatelessWidget {
+  const _InsightShell({
+    required this.title,
+    required this.subtitle,
+    required this.child,
+    required this.accent,
+    this.fullWidth = false,
+    this.onTap,
+  });
+
+  final String title;
+  final String subtitle;
+  final Widget child;
+  final List<Color> accent;
+  final bool fullWidth;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final content = Container(
+      width: fullWidth ? double.infinity : null,
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: accent,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.tertiary.withValues(alpha: 0.12),
-            blurRadius: 28,
-            offset: const Offset(0, 12),
-          ),
-          BoxShadow(
-            color: AppTheme.secondary.withValues(alpha: 0.08),
-            blurRadius: 32,
-            offset: const Offset(0, 12),
+            color: AppTheme.primary.withValues(alpha: 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Text('星座档案', style: Theme.of(context).textTheme.titleMedium),
-              const Spacer(),
-              TextButton(
-                onPressed: () =>
-                    Navigator.of(context).pushNamed(AppRouter.birthdaySetup),
-                child: Text(hasZodiac ? '修改生日' : '填写生日'),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          if (!hasZodiac)
-            Text(
-              '输入生日后，会自动换算你的星座，并在这里展示今日情绪气场、社交节奏和桃花提示。',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.textSecondary,
-                  ),
-            )
-          else ...[
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ZodiacBadge(sign: sign),
-                    const SizedBox(height: 8),
-                    Text(
-                      user.birthday.trim().isEmpty
-                          ? '已解锁今日运势'
-                          : '${user.birthday} · ${ZodiacUtils.displayName(sign)}',
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: AppTheme.textSecondary,
-                          ),
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                FilledButton.tonalIcon(
-                  onPressed: () => Navigator.of(context)
-                      .pushNamed(AppRouter.horoscopeDetail),
-                  icon: const Icon(Icons.auto_awesome_rounded),
-                  label: const Text('查看今日运势'),
-                ),
-              ],
-            ),
-            if (token.trim().isNotEmpty) ...[
-              const SizedBox(height: 14),
-              FutureBuilder(
-                future: ref.read(horoscopeServiceProvider).getToday(token),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState != ConnectionState.done) {
-                    return const AppSkeleton(height: 120, radius: 24);
-                  }
-                  if (snapshot.hasError || !snapshot.hasData) {
-                    return Text(
-                      '今日运势生成中，稍后再来看看。',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppTheme.textSecondary,
-                          ),
-                    );
-                  }
-                  final horoscope = snapshot.data!;
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        horoscope.title,
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        horoscope.summary,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppTheme.textSecondary,
-                              height: 1.5,
-                            ),
-                      ),
-                      const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _MiniScore(
-                                label: '桃花', value: horoscope.scores.romance),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _MiniScore(
-                                label: '主动',
-                                value: horoscope.scores.initiative),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: _MiniScore(
-                                label: '幸运', value: horoscope.scores.luck),
-                          ),
-                        ],
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ],
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _MiniScore extends StatelessWidget {
-  const _MiniScore({
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final int value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        color: AppTheme.surfaceHighest,
-      ),
-      child: Column(
-        children: [
           Text(
-            '$value',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                  color: AppTheme.textPrimary,
-                ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
+            subtitle,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppTheme.textSecondary,
+                  color: AppTheme.tertiary.withValues(alpha: 0.68),
+                  letterSpacing: 1.6,
                 ),
           ),
+          const SizedBox(height: 8),
+          Text(
+            title,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+          const SizedBox(height: 14),
+          child,
         ],
       ),
     );
-  }
-}
-
-class _RelationshipQuickStats extends StatelessWidget {
-  const _RelationshipQuickStats({required this.summary});
-
-  final MatchSummary? summary;
-
-  @override
-  Widget build(BuildContext context) {
-    final items = [
-      (
-        label: '喜欢我的',
-        count: summary?.received.length ?? 0,
-        type: LikeOverviewType.received,
-        icon: Icons.favorite_border_rounded,
-        gradient: const [Color(0xFFFFC2DB), Color(0xFFFFE3EF)],
-      ),
-      (
-        label: '我喜欢的',
-        count: summary?.sent.length ?? 0,
-        type: LikeOverviewType.sent,
-        icon: Icons.arrow_upward_rounded,
-        gradient: const [Color(0xFFD9D6FF), Color(0xFFF1EEFF)],
-      ),
-      (
-        label: '互相喜欢',
-        count: summary?.mutual.length ?? 0,
-        type: LikeOverviewType.mutual,
-        icon: Icons.favorite_rounded,
-        gradient: const [Color(0xFFE6D2FF), Color(0xFFFFD9ED)],
-      ),
-    ];
-
-    return Row(
-      children: items
-          .map(
-            (item) => Expanded(
-              child: Padding(
-                padding: EdgeInsets.only(
-                  right: item == items.last ? 0 : 10,
-                ),
-                child: _QuickStatButton(
-                  label: item.label,
-                  count: item.count,
-                  icon: item.icon,
-                  gradient: item.gradient,
-                  onTap: summary == null
-                      ? null
-                      : () => Navigator.of(context).pushNamed(
-                            AppRouter.likesOverview,
-                            arguments: LikesOverviewArgs(
-                              type: item.type,
-                              summary: summary!,
-                            ),
-                          ),
-                ),
-              ),
-            ),
-          )
-          .toList(),
+    if (onTap == null) return content;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(30),
+      child: content,
     );
   }
 }
 
-class _QuickStatButton extends StatelessWidget {
-  const _QuickStatButton({
+class _MissingContent extends StatelessWidget {
+  const _MissingContent({
+    required this.title,
+    required this.subtitle,
+  });
+
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          subtitle,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: AppTheme.textSecondary,
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SoftTagChip extends StatelessWidget {
+  const _SoftTagChip({
     required this.label,
-    required this.count,
-    required this.icon,
-    required this.gradient,
-    required this.onTap,
+    this.highlighted = false,
   });
 
   final String label;
-  final int count;
-  final IconData icon;
-  final List<Color> gradient;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(18),
-        child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            color: Colors.white.withValues(alpha: 0.9),
-            border: Border.all(color: AppTheme.ghostBorder),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.primary.withValues(alpha: 0.05),
-                blurRadius: 18,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: LinearGradient(colors: gradient),
-                ),
-                child: Icon(
-                  icon,
-                  size: 18,
-                  color: AppTheme.primaryDark,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '$count',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontSize: 21,
-                      color: AppTheme.primary,
-                    ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: AppTheme.textSecondary,
-                    ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AmbientOrb extends StatelessWidget {
-  const _AmbientOrb({
-    required this.size,
-    required this.colors,
-  });
-
-  final double size;
-  final List<Color> colors;
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(colors: colors),
-        ),
-      ),
-    );
-  }
-}
-
-class _HeroMetaPill extends StatelessWidget {
-  const _HeroMetaPill({
-    required this.icon,
-    required this.label,
-    this.accent = AppTheme.primary,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color accent;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
@@ -850,23 +1262,213 @@ class _HeroMetaPill extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
-        color: Colors.white,
-        border: Border.all(color: AppTheme.ghostBorder),
+        gradient: highlighted
+            ? const LinearGradient(
+                colors: [AppTheme.primary, AppTheme.primaryDark],
+              )
+            : null,
+        color: highlighted ? null : const Color(0xFFF4F1FB),
+      ),
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: highlighted ? Colors.white : AppTheme.primary,
+              fontWeight: FontWeight.w700,
+            ),
+      ),
+    );
+  }
+}
+
+class _MiniMetric extends StatelessWidget {
+  const _MiniMetric({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: Colors.white.withValues(alpha: 0.7),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: accent),
-          const SizedBox(width: 6),
           Text(
             label,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   color: AppTheme.textSecondary,
-                  letterSpacing: 0.2,
+                ),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            value,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: AppTheme.primary,
+                  fontWeight: FontWeight.w800,
                 ),
           ),
         ],
       ),
     );
   }
+}
+
+class _ActionTile extends StatelessWidget {
+  const _ActionTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.color = AppTheme.textPrimary,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(22),
+      ),
+      leading: Icon(icon, color: color),
+      title: Text(
+        label,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
+      ),
+      onTap: onTap,
+    );
+  }
+}
+
+class _IconShell extends StatelessWidget {
+  const _IconShell({
+    required this.icon,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Ink(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          color: Colors.white.withValues(alpha: 0.72),
+        ),
+        child: Icon(icon, color: AppTheme.primary),
+      ),
+    );
+  }
+}
+
+class _IconButtonCard extends StatelessWidget {
+  const _IconButtonCard({
+    required this.icon,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(18),
+      child: Ink(
+        width: 56,
+        height: 56,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          color: Colors.white.withValues(alpha: 0.74),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 14,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Icon(icon, color: AppTheme.primary),
+      ),
+    );
+  }
+}
+
+class _HeroMetaChip extends StatelessWidget {
+  const _HeroMetaChip({required this.data});
+
+  final _HeroChipData data;
+
+  @override
+  Widget build(BuildContext context) {
+    final highlighted = data.highlighted;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        gradient: highlighted
+            ? const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [AppTheme.primary, AppTheme.primaryDark],
+              )
+            : null,
+        color: highlighted ? null : Colors.white.withValues(alpha: 0.62),
+      ),
+      child: Text(
+        data.label,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: highlighted ? Colors.white : AppTheme.textSecondary,
+              fontWeight: FontWeight.w800,
+            ),
+      ),
+    );
+  }
+}
+
+class _HeroChipData {
+  const _HeroChipData({
+    required this.label,
+    this.highlighted = false,
+  });
+
+  final String label;
+  final bool highlighted;
+}
+
+class _SocialStatData {
+  const _SocialStatData({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.accent,
+    required this.iconColor,
+    required this.type,
+  });
+
+  final String label;
+  final int value;
+  final IconData icon;
+  final Gradient accent;
+  final Color iconColor;
+  final LikeOverviewType type;
 }

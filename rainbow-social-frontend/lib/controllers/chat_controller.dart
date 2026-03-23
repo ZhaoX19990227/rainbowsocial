@@ -156,6 +156,21 @@ class ChatThreadsController extends StateNotifier<ChatListState> {
     }
   }
 
+  void deleteThread(ChatThread thread) {
+    final updatedThreads = state.threads
+        .where((item) => item.peer.id != thread.peer.id)
+        .toList();
+    state = state.copyWith(threads: updatedThreads, clearError: true);
+  }
+
+  void deleteThreadsByPeerIds(Set<int> peerIds) {
+    if (peerIds.isEmpty) return;
+    final updatedThreads = state.threads
+        .where((item) => !peerIds.contains(item.peer.id))
+        .toList();
+    state = state.copyWith(threads: updatedThreads, clearError: true);
+  }
+
   Future<void> refreshAfterRead(int peerId) async {
     final updatedThreads = state.threads
         .map((item) =>

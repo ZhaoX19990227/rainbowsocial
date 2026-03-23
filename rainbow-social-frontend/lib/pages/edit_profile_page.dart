@@ -16,7 +16,6 @@ import '../theme/app_theme.dart';
 import '../usecases/upload_usecases.dart';
 import '../usecases/user_usecases.dart';
 import '../widgets/glass_card.dart';
-import '../widgets/gradient_button.dart';
 import '../widgets/inline_birthday_picker.dart';
 import '../widgets/luminous_background.dart';
 
@@ -92,18 +91,22 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
 
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: !isOnboardingFlow,
+        leading: IconButton(
+          onPressed: () => Navigator.of(context).maybePop(),
+          icon: const Icon(Icons.close_rounded),
+        ),
         title: Text(isOnboardingFlow ? '完善资料' : '编辑资料'),
         actions: [
-          if (!isOnboardingFlow)
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('预览'),
-            ),
+          TextButton(
+            onPressed: profile == null || _uploading
+                ? null
+                : () => _saveProfile(profile, isOnboardingFlow),
+            child: Text(_uploading ? '上传中...' : '保存'),
+          ),
         ],
       ),
       body: PopScope(
-        canPop: !isOnboardingFlow,
+        canPop: true,
         child: LuminousBackground(
           child: SafeArea(
             child: ListView(
@@ -529,67 +532,53 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 22),
-                GradientButton(
-                  label: _uploading ? '上传中...' : '保存修改',
-                  icon: Icons.check_rounded,
-                  onPressed: profile == null || _uploading
-                      ? null
-                      : () async {
-                          final updated = AppUser(
-                            id: profile.id,
-                            email: profile.email,
-                            nickname: _nickname.text.trim(),
-                            avatar: _avatar.text.trim(),
-                            photos: _normalizePhotos(
-                              _photos,
-                              avatarUrl: _avatar.text.trim(),
-                            ),
-                            age: int.tryParse(_age.text.trim()) ?? profile.age,
-                            heightCm: int.tryParse(_heightCm.text.trim()) ??
-                                profile.heightCm,
-                            weightKg: int.tryParse(_weightKg.text.trim()) ??
-                                profile.weightKg,
-                            birthday: _birthday.text.trim(),
-                            zodiacSign: ZodiacUtils.zodiacFromBirthday(
-                                  ZodiacUtils.tryParseBirthday(
-                                      _birthday.text.trim()),
-                                ) ??
-                                '',
-                            mbtiType: profile.mbtiType,
-                            bio: _bio.text.trim(),
-                            tags: _parseTags(_tags.text),
-                            positionRole: _selectedPositionRole.trim(),
-                            lat: _lat,
-                            lng: _lng,
-                            locationLabel: _locationLabel.trim(),
-                            onlineStatus: profile.onlineStatus,
-                            distanceKm: profile.distanceKm,
-                          );
-                          await ref
-                              .read(profileControllerProvider.notifier)
-                              .save(updated);
-                          if (context.mounted) {
-                            AppFeedback.showToast(
-                              isOnboardingFlow ? '资料已完善，开始探索吧' : '资料已更新',
-                            );
-                            if (isOnboardingFlow) {
-                              Navigator.of(context).pushNamedAndRemoveUntil(
-                                AppRouter.main,
-                                (route) => false,
-                              );
-                            } else {
-                              Navigator.of(context).pop();
-                            }
-                          }
-                        },
-                ),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _saveProfile(AppUser profile, bool isOnboardingFlow) async {
+    final updated = AppUser(
+      id: profile.id,
+      email: profile.email,
+      nickname: _nickname.text.trim(),
+      avatar: _avatar.text.trim(),
+      photos: _normalizePhotos(
+        _photos,
+        avatarUrl: _avatar.text.trim(),
+      ),
+      age: int.tryParse(_age.text.trim()) ?? profile.age,
+      heightCm: int.tryParse(_heightCm.text.trim()) ?? profile.heightCm,
+      weightKg: int.tryParse(_weightKg.text.trim()) ?? profile.weightKg,
+      birthday: _birthday.text.trim(),
+      zodiacSign: ZodiacUtils.zodiacFromBirthday(
+            ZodiacUtils.tryParseBirthday(_birthday.text.trim()),
+          ) ??
+          '',
+      mbtiType: profile.mbtiType,
+      bio: _bio.text.trim(),
+      tags: _parseTags(_tags.text),
+      positionRole: _selectedPositionRole.trim(),
+      lat: _lat,
+      lng: _lng,
+      locationLabel: _locationLabel.trim(),
+      onlineStatus: profile.onlineStatus,
+      distanceKm: profile.distanceKm,
+    );
+    await ref.read(profileControllerProvider.notifier).save(updated);
+    if (!mounted) return;
+    AppFeedback.showToast(isOnboardingFlow ? '资料已完善，开始探索吧' : '资料已更新');
+    if (isOnboardingFlow) {
+      Navigator.of(context).pushNamedAndRemoveUntil(
+        AppRouter.main,
+        (route) => false,
+      );
+    } else {
+      Navigator.of(context).pop();
+    }
   }
 
   Future<void> _resolveCurrentLocation() async {

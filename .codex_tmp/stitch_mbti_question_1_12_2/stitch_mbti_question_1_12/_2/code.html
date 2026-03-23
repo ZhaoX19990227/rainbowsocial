@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+<title>个人中心 - Luminous Identity</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@700;800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-tertiary-container": "#fffbff",
+              "on-error": "#ffffff",
+              "on-secondary-fixed-variant": "#00497e",
+              "on-primary": "#ffffff",
+              "secondary": "#0061a5",
+              "on-tertiary-fixed": "#3c0028",
+              "primary-fixed-dim": "#dbb8ff",
+              "inverse-surface": "#2e3134",
+              "on-tertiary": "#ffffff",
+              "surface-container-low": "#f2f3f8",
+              "outline-variant": "#cec2d5",
+              "surface-container-high": "#e7e8ed",
+              "outline": "#7d7384",
+              "error-container": "#ffdad6",
+              "surface-bright": "#f8f9fe",
+              "on-error-container": "#93000a",
+              "tertiary": "#a32975",
+              "primary-fixed": "#efdbff",
+              "surface-container-lowest": "#ffffff",
+              "secondary-fixed-dim": "#9fcaff",
+              "on-primary-fixed": "#2b0052",
+              "primary": "#7b36c2",
+              "on-secondary-container": "#003964",
+              "inverse-primary": "#dbb8ff",
+              "on-primary-fixed-variant": "#6417ab",
+              "secondary-fixed": "#d2e4ff",
+              "primary-container": "#9552dd",
+              "inverse-on-surface": "#eff0f5",
+              "error": "#ba1a1a",
+              "surface-dim": "#d8dadf",
+              "on-background": "#191c1f",
+              "background": "#f8f9fe",
+              "on-tertiary-fixed-variant": "#870a5f",
+              "surface-container-highest": "#e1e2e7",
+              "on-surface-variant": "#4c4453",
+              "surface-variant": "#e1e2e7",
+              "on-secondary-fixed": "#001d37",
+              "on-secondary": "#ffffff",
+              "surface-tint": "#7d38c4",
+              "surface": "#f8f9fe",
+              "tertiary-fixed-dim": "#ffafd6",
+              "tertiary-fixed": "#ffd8e8",
+              "secondary-container": "#4aa5fd",
+              "on-surface": "#191c1f",
+              "tertiary-container": "#c2438f",
+              "on-primary-container": "#fffbff",
+              "surface-container": "#eceef3"
+            },
+            fontFamily: {
+              "headline": ["Plus Jakarta Sans", "sans-serif"],
+              "body": ["Manrope", "sans-serif"],
+              "label": ["Manrope", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .material-symbols-outlined.fill {
+        font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        background-color: #f6f7fb;
+        background-image: 
+            radial-gradient(circle at 10% 10%, rgba(123, 54, 194, 0.05) 0%, transparent 40%),
+            radial-gradient(circle at 90% 10%, rgba(194, 67, 143, 0.05) 0%, transparent 40%),
+            radial-gradient(circle at 50% 50%, rgba(149, 82, 221, 0.03) 0%, transparent 60%);
+        min-height: 100vh;
+      }
+      .glass-card {
+        background: rgba(255, 255, 255, 0.45);
+        backdrop-filter: blur(30px);
+        -webkit-backdrop-filter: blur(30px);
+        border: 1px solid rgba(255, 255, 255, 0.5);
+      }
+      .social-jewelry {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.4));
+        box-shadow: 0 10px 25px -5px rgba(123, 54, 194, 0.1), inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+      }
+      .text-gradient {
+        background: linear-gradient(135deg, #7b36c2, #c2438f);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .premium-glow {
+        box-shadow: 0 15px 40px -10px rgba(123, 54, 194, 0.15);
+      }
+      .icon-glow-purple {
+        filter: drop-shadow(0 0 8px rgba(123, 54, 194, 0.4));
+      }
+      .icon-glow-pink {
+        filter: drop-shadow(0 0 8px rgba(194, 67, 143, 0.4));
+      }
+      .shimmer {
+        background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.4) 50%, rgba(255,255,255,0) 100%);
+        background-size: 200% 100%;
+        animation: shimmer 4s infinite linear;
+      }
+      @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+      }
+      .card-hover:active {
+        transform: scale(0.98);
+        transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      .hide-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+      .hide-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .gallery-item {
+        transition: transform 0.3s ease;
+      }
+      .gallery-item:hover {
+        transform: translateY(-4px);
+      }
+    </style>
+</head>
+<body class="font-body text-on-surface antialiased pb-28">
+<!-- Top AppBar -->
+<header class="fixed top-0 w-full z-50 h-16 bg-white/30 backdrop-blur-xl border-b border-white/20">
+<div class="flex justify-between items-center px-6 h-full w-full max-w-7xl mx-auto">
+<button class="text-primary active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<h1 class="font-headline font-extrabold text-base tracking-tight text-on-surface">个人资料</h1>
+<button class="text-primary active:scale-95 duration-200">
+<span class="material-symbols-outlined" data-icon="more_horiz">more_horiz</span>
+</button>
+</div>
+</header>
+<main class="pt-20 px-5 max-w-2xl mx-auto space-y-8">
+<!-- Hero Card -->
+<section class="glass-card rounded-[3rem] p-8 premium-glow relative overflow-hidden text-center">
+<div class="absolute inset-0 shimmer opacity-10 pointer-events-none"></div>
+<div class="relative z-10">
+<!-- Avatar with Glow -->
+<div class="relative inline-block mb-6">
+<div class="absolute -inset-3 bg-gradient-to-tr from-primary to-tertiary rounded-full blur-xl opacity-20"></div>
+<div class="relative w-32 h-32 rounded-full overflow-hidden ring-[6px] ring-white shadow-xl">
+<img alt="Avatar" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_I9MH5-XaAT-zNftOCah67AIDeV0H5DZiQu4UZp9pxDawD1On-RKfHd1I8fHnpkG5K38zt9clPeMlwHMJAGtq60T3y6GZh1mkN4U38ZP-ro3oWYq-uuhmCNYc45UkJ5M_KrH1LtT_7aLjQ034EOnjI0MJm_nnNGkAAnXC6J6-oSYzRrb3fATNaJbMQrUgMQu62UPoofSLe4hL_hij39X3fj307_1IgI0tXoZu9RzXHAmyIgnLYZ4RdleDPlOtaNhoUnuJBPbFHSUq"/>
+</div>
+<div class="absolute bottom-2 right-2 w-6 h-6 bg-green-500 border-[3px] border-white rounded-full shadow-sm"></div>
+</div>
+<div class="space-y-2 mb-6">
+<h2 class="font-headline text-2xl font-black tracking-tight text-on-surface">小胖123</h2>
+<p class="text-on-surface-variant font-medium text-xs px-10 italic leading-relaxed opacity-80">“留一点神秘感，等聊天时再慢慢展开。”</p>
+</div>
+<!-- Combined Attributes Row -->
+<div class="flex flex-wrap justify-center gap-2 mb-8">
+<span class="px-3 py-1 bg-gradient-to-r from-primary to-primary-container text-white rounded-full text-[10px] font-black tracking-widest uppercase shadow-sm">VERS</span>
+<span class="px-3 py-1 bg-white/40 backdrop-blur-md rounded-full text-[10px] font-bold text-on-surface-variant border border-white/50">18岁</span>
+<span class="px-3 py-1 bg-white/40 backdrop-blur-md rounded-full text-[10px] font-bold text-on-surface-variant border border-white/50">175cm</span>
+<span class="px-3 py-1 bg-white/40 backdrop-blur-md rounded-full text-[10px] font-bold text-on-surface-variant border border-white/50">70kg</span>
+</div>
+<div class="flex gap-4">
+<button class="flex-1 py-4 bg-gradient-to-r from-primary to-primary-container text-white font-bold rounded-2xl shadow-xl shadow-primary/25 active:scale-[0.98] transition-all text-sm tracking-wide">
+                        编辑资料
+                    </button>
+<button class="w-14 h-14 flex items-center justify-center bg-white/60 backdrop-blur-md border border-white text-primary rounded-2xl active:scale-95 shadow-lg shadow-black/5">
+<span class="material-symbols-outlined text-2xl">share</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Refined Horizontal Gallery -->
+<section class="space-y-4">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-2.5">
+<div class="w-1.5 h-5 bg-gradient-to-b from-tertiary to-primary rounded-full"></div>
+<h3 class="font-headline text-base text-on-surface font-extrabold tracking-tight">感性瞬间</h3>
+</div>
+<button class="text-[11px] font-bold text-primary flex items-center gap-0.5 opacity-80">
+                    查看全部 <span class="material-symbols-outlined text-[14px]">chevron_right</span>
+</button>
+</div>
+<!-- Horizontal Scroll Container -->
+<div class="flex gap-4 overflow-x-auto hide-scrollbar -mx-5 px-5 pb-2">
+<div class="flex-none w-36 aspect-[3/4] rounded-2xl overflow-hidden shadow-md gallery-item border-4 border-white">
+<img alt="Moment 1" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBuITk5tyhaHAhrz_9eQ8M0Qfyulpje3I1yjgdSuruMH4iO_ALMmRdiaSrOquk4hzY91pDDFlT7nVpPukMiYMsxAFHASGV8pfZgxeuDFigd4UKtJIAvevxnfvJ4siMFBtIo80qcNdrrnOJ3Ck1uh2nTq_LGEdJEslkPmEEcacHDyE4qnHhNygCi7yi-vtXgjT1pgFlLjUaq_fwcCRxX1W7XngBexyQpyyAJN0XM8SZRO_Njq-J4hoh9Uaf4_Jh1XkGsa8YObD1VH9DZ"/>
+</div>
+<div class="flex-none w-36 aspect-[3/4] rounded-2xl overflow-hidden shadow-md gallery-item border-4 border-white">
+<img alt="Moment 2" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvFHpPwYq4zcQ1dDRE7iU8c9xb8nC6nShhDKfUX2_PMo8CCxDkIG3tuo3hLzTOG17XSQ_NtoDQKS0s5S2BylL_NDVusYW-1zCuillV29JanSVDpUmID6gm1gaUQE9muMKyJ6puFeL5-bfKENAryfadpGi76e7i86-eJWUfmhc22m3kJZnRvf6b975MNmXMCyl5o3VYlWpEMxbckW17PwZ_aMxAi_BotbiOlwPCsfJ68I0F96a1gHynS5hODC5zoezQfvxPqGTXE-gJ"/>
+</div>
+<div class="flex-none w-36 aspect-[3/4] bg-white/40 backdrop-blur-xl rounded-2xl border-2 border-dashed border-primary/20 flex flex-col items-center justify-center gap-2 gallery-item cursor-pointer active:scale-95 transition-all">
+<div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-2xl">add</span>
+</div>
+<span class="text-[11px] font-bold text-primary tracking-widest">上传</span>
+</div>
+</div>
+</section>
+<!-- Social Assets - Jewelry Style -->
+<section class="grid grid-cols-3 gap-4">
+<div class="social-jewelry rounded-[2.5rem] p-5 flex flex-col items-center text-center card-hover">
+<div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#E9D5FF] to-[#FBCFE8] flex items-center justify-center mb-3 shadow-inner">
+<span class="material-symbols-outlined text-primary text-2xl fill icon-glow-purple" data-icon="star_rate">star_rate</span>
+</div>
+<span class="font-headline text-xl font-black text-primary">128</span>
+<span class="text-[10px] font-bold text-on-surface-variant/70 mt-1 uppercase tracking-tighter">喜欢我的</span>
+</div>
+<div class="social-jewelry rounded-[2.5rem] p-5 flex flex-col items-center text-center card-hover">
+<div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#DBEAFE] to-[#E9D5FF] flex items-center justify-center mb-3 shadow-inner">
+<span class="material-symbols-outlined text-secondary text-2xl fill icon-glow-purple" data-icon="favorite">favorite</span>
+</div>
+<span class="font-headline text-xl font-black text-secondary">42</span>
+<span class="text-[10px] font-bold text-on-surface-variant/70 mt-1 uppercase tracking-tighter">我喜欢的</span>
+</div>
+<div class="social-jewelry rounded-[2.5rem] p-5 flex flex-col items-center text-center card-hover ring-2 ring-primary/20">
+<div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-tertiary flex items-center justify-center mb-3 shadow-lg">
+<span class="material-symbols-outlined text-white text-2xl fill icon-glow-pink" data-icon="auto_awesome">auto_awesome</span>
+</div>
+<span class="font-headline text-xl font-black text-gradient">12</span>
+<span class="text-[10px] font-bold text-on-surface-variant/70 mt-1 uppercase tracking-tighter font-black">互相喜欢</span>
+</div>
+</section>
+<!-- Insights Grid with Placeholder States -->
+<div class="grid grid-cols-2 gap-5">
+<section class="glass-card p-6 rounded-[2.5rem] space-y-3 card-hover cursor-pointer shadow-sm relative overflow-hidden group">
+<div class="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-50"></div>
+<div class="flex justify-between items-start relative z-10">
+<div class="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary/40 text-xl">psychology_alt</span>
+</div>
+<span class="text-[10px] font-black text-primary/30 uppercase">MBTI</span>
+</div>
+<div class="pt-2 relative z-10">
+<h3 class="font-headline text-base text-on-surface/80 font-extrabold mb-1">人格档案</h3>
+<div class="text-[11px] text-primary/60 font-bold mb-4">尚未解锁人格</div>
+<div class="w-full h-1 bg-primary/10 rounded-full overflow-hidden">
+<div class="w-1/3 h-full bg-primary/30 rounded-full"></div>
+</div>
+</div>
+</section>
+<section class="glass-card p-6 rounded-[2.5rem] space-y-3 card-hover cursor-pointer shadow-sm relative overflow-hidden group">
+<div class="absolute inset-0 bg-gradient-to-br from-tertiary/5 to-transparent opacity-50"></div>
+<div class="flex justify-between items-start relative z-10">
+<div class="w-9 h-9 rounded-xl bg-tertiary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-tertiary/40 text-xl">lock_open</span>
+</div>
+<span class="text-[10px] font-black text-tertiary/30 uppercase">Aries</span>
+</div>
+<div class="pt-2 relative z-10">
+<h3 class="font-headline text-base text-on-surface/80 font-extrabold mb-1">星座档案</h3>
+<div class="text-[11px] text-tertiary/60 font-bold mb-4">完善资料解锁运势</div>
+<div class="flex gap-1">
+<div class="w-4 h-4 rounded-full bg-tertiary/10"></div>
+<div class="w-4 h-4 rounded-full bg-tertiary/10"></div>
+<div class="w-4 h-4 rounded-full bg-tertiary/10"></div>
+</div>
+</div>
+</section>
+</div>
+<!-- About & Interests with Placeholder State -->
+<section class="glass-card rounded-[2.5rem] p-8 space-y-6 shadow-sm">
+<div class="space-y-4">
+<div class="flex items-center gap-2.5">
+<div class="w-1.5 h-5 bg-primary rounded-full"></div>
+<h3 class="font-headline text-base text-on-surface font-extrabold tracking-tight">兴趣标签</h3>
+</div>
+<div class="flex flex-wrap gap-2.5">
+<span class="px-4 py-2 bg-white/60 backdrop-blur-md text-primary text-[11px] font-bold rounded-2xl border border-white/50 shadow-sm">摄影</span>
+<span class="px-4 py-2 bg-white/60 backdrop-blur-md text-primary text-[11px] font-bold rounded-2xl border border-white/50 shadow-sm">游泳</span>
+<span class="px-4 py-2 bg-white/60 backdrop-blur-md text-primary text-[11px] font-bold rounded-2xl border border-white/50 shadow-sm">猫奴</span>
+<span class="px-4 py-2 bg-white/60 backdrop-blur-md text-primary text-[11px] font-bold rounded-2xl border border-white/50 shadow-sm">咖啡</span>
+</div>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-2.5">
+<div class="w-1.5 h-5 bg-primary-container rounded-full"></div>
+<h3 class="font-headline text-base text-on-surface font-extrabold tracking-tight">关于我</h3>
+</div>
+<div class="bg-white/30 backdrop-blur-sm p-8 rounded-[2.5rem] border border-white/40 flex flex-col items-center justify-center text-center group transition-all cursor-pointer">
+<div class="w-12 h-12 rounded-full bg-primary/5 flex items-center justify-center mb-3">
+<span class="material-symbols-outlined text-primary/40 text-2xl">edit_note</span>
+</div>
+<p class="text-on-surface-variant/50 text-xs font-bold">还没写自我介绍</p>
+<p class="text-[10px] text-primary/40 mt-1">写点什么让大家更了解你吧</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom NavBar -->
+<nav class="fixed bottom-0 left-0 w-full rounded-t-[3rem] z-50 bg-white/40 backdrop-blur-2xl h-20 flex justify-around items-center px-10 pb-safe border-t border-white/30 shadow-[0_-15px_40px_rgba(0,0,0,0.03)]">
+<a class="flex flex-col items-center justify-center text-slate-400/80 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="explore">explore</span>
+<span class="font-label text-[10px] font-bold mt-1">推荐</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400/80 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="location_on">location_on</span>
+<span class="font-label text-[10px] font-bold mt-1">附近</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400/80 hover:text-primary transition-all active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined text-2xl" data-icon="chat_bubble">chat_bubble</span>
+<span class="font-label text-[10px] font-bold mt-1">消息</span>
+</a>
+<a class="flex flex-col items-center justify-center text-primary relative active:scale-90 duration-200" href="#">
+<span class="material-symbols-outlined text-2xl fill" data-icon="person">person</span>
+<span class="font-label text-[10px] font-black mt-1">我的</span>
+<div class="absolute -bottom-1.5 w-1.5 h-1.5 bg-primary rounded-full shadow-lg shadow-primary/40"></div>
+</a>
+</nav>
+</body></html>
