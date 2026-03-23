@@ -42,9 +42,100 @@ class UserCard extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppTheme.primary.withValues(alpha: 0.16),
+                        AppTheme.secondary.withValues(alpha: 0.12),
+                        AppTheme.surfaceHighest,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
               Hero(
                 tag: 'match-avatar-${user.id}',
-                child: Image.network(heroImage, fit: BoxFit.cover),
+                child: Image.network(
+                  heroImage,
+                  fit: BoxFit.cover,
+                  filterQuality: FilterQuality.low,
+                  frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+                    if (wasSynchronouslyLoaded || frame != null) {
+                      return AnimatedOpacity(
+                        opacity: 1,
+                        duration: const Duration(milliseconds: 180),
+                        child: child,
+                      );
+                    }
+                    return const SizedBox.expand();
+                  },
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                AppTheme.primary.withValues(alpha: 0.14),
+                                AppTheme.tertiary.withValues(alpha: 0.08),
+                                AppTheme.surfaceHighest,
+                              ],
+                            ),
+                          ),
+                        ),
+                        Center(
+                          child: Container(
+                            width: 54,
+                            height: 54,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white.withValues(alpha: 0.72),
+                            ),
+                            child: const Padding(
+                              padding: EdgeInsets.all(14),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3,
+                                valueColor: AlwaysStoppedAnimation(
+                                  AppTheme.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                  errorBuilder: (context, error, stackTrace) {
+                    return DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            AppTheme.primary.withValues(alpha: 0.16),
+                            AppTheme.secondary.withValues(alpha: 0.1),
+                            AppTheme.surfaceHighest,
+                          ],
+                        ),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          Icons.image_not_supported_rounded,
+                          color: AppTheme.primary.withValues(alpha: 0.58),
+                          size: 34,
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
               DecoratedBox(
                 decoration: BoxDecoration(

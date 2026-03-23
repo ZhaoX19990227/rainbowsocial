@@ -21,6 +21,7 @@ class HomePage extends ConsumerStatefulWidget {
 
 class _HomePageState extends ConsumerState<HomePage> {
   final _deckKey = GlobalKey<_SwipeDeckState>();
+  final Set<String> _primedImages = <String>{};
   AppUser? _matchUser;
 
   @override
@@ -82,6 +83,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 Expanded(
                   child: state.when(
                     data: (users) {
+                      _primeImages(users);
                       if (users.isEmpty) {
                         return AppEmptyState(
                           title: '暂时没有更多推荐了',
@@ -235,6 +237,21 @@ class _HomePageState extends ConsumerState<HomePage> {
       AppFeedback.showError('撤销失败：$error');
     }
   }
+
+  void _primeImages(List<AppUser> users) {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      for (final user in users.take(2)) {
+        final imageUrl =
+            user.photos.isNotEmpty ? user.photos.first : user.avatarOrFallback;
+        if (imageUrl.trim().isEmpty || !_primedImages.add(imageUrl)) {
+          continue;
+        }
+        precacheImage(NetworkImage(imageUrl), context);
+      }
+    });
+  }
 }
 
 enum _SwipeDecision {
@@ -346,12 +363,25 @@ class _SwipeDeckState extends State<_SwipeDeck>
         return Stack(
           clipBehavior: Clip.none,
           children: [
-            for (int index = visible.length - 1; index >= 0; index--)
+            if (visible.length > 1)
+              Positioned.fill(
+                top: 18,
+                child: IgnorePointer(
+                  child: Transform.scale(
+                    scale: 0.972,
+                    alignment: Alignment.topCenter,
+                    child: Opacity(
+                      opacity: 0.72,
+                      child: const _DeckBackdropPlate(),
+                    ),
+                  ),
+                ),
+              ),
+            if (visible.isNotEmpty)
               _buildCard(
                 context,
                 constraints,
-                visible[index],
-                index,
+                visible.first,
                 dxProgress: dxProgress,
                 upProgress: upProgress,
               ),
@@ -365,38 +395,21 @@ class _SwipeDeckState extends State<_SwipeDeck>
     BuildContext context,
     BoxConstraints constraints,
     AppUser user,
-    int index, {
+    {
     required double dxProgress,
     required double upProgress,
   }) {
-    final isTop = index == 0;
-    final scale = isTop ? 1.0 : 0.965;
-    final topOffset = isTop ? 0.0 : 18.0;
-
     Widget child = Positioned.fill(
-      top: topOffset,
-      child: Transform.scale(
-        scale: scale,
-        alignment: Alignment.topCenter,
-        child: Opacity(
-          opacity: isTop ? 1 : 0.76,
-          child: UserCard(
-            user: user,
-            onTap: () => widget.onCardTap(user),
-            overlayBuilder: isTop
-                ? (_) => _SwipeOverlay(
-                      likeOpacity: _effectiveOffset.dx > 0 ? dxProgress : 0,
-                      passOpacity: _effectiveOffset.dx < 0 ? dxProgress : 0,
-                      superLikeOpacity:
-                          _effectiveOffset.dy < 0 ? upProgress : 0,
-                    )
-                : null,
-          ),
+      child: UserCard(
+        user: user,
+        onTap: () => widget.onCardTap(user),
+        overlayBuilder: (_) => _SwipeOverlay(
+          likeOpacity: _effectiveOffset.dx > 0 ? dxProgress : 0,
+          passOpacity: _effectiveOffset.dx < 0 ? dxProgress : 0,
+          superLikeOpacity: _effectiveOffset.dy < 0 ? upProgress : 0,
         ),
       ),
     );
-
-    if (!isTop) return child;
 
     final rotation = (_effectiveOffset.dx / constraints.maxWidth) * 0.18;
 
@@ -449,6 +462,35 @@ class _SwipeDeckState extends State<_SwipeDeck>
       return _SwipeDecision.pass;
     }
     return null;
+  }
+}
+
+class _DeckBackdropPlate extends StatelessWidget {
+  const _DeckBackdropPlate();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            AppTheme.primary.withValues(alpha: 0.14),
+            AppTheme.tertiary.withValues(alpha: 0.08),
+            Colors.black.withValues(alpha: 0.18),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withValues(alpha: 0.12),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -932,19 +974,16 @@ class _HomeSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      children: const [
+      children: [
         Expanded(
           child: Stack(
-            children: [
+            children: const [
               Positioned.fill(
-                top: 24,
-                child: AppSkeleton(height: double.infinity, radius: 30),
-              ),
-              Positioned.fill(
-                top: 12,
-                left: 8,
-                right: 8,
-                child: AppSkeleton(height: double.infinity, radius: 30),
+                top: 18,
+                child: Opacity(
+                  opacity: 0.68,
+                  child: _DeckBackdropPlate(),
+                ),
               ),
               Positioned.fill(
                 child: AppSkeleton(height: double.infinity, radius: 30),

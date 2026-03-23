@@ -36,7 +36,7 @@ class _MainTabPageState extends State<MainTabPage> {
       case 1:
         return NearbyPage(onSwitchToRecommendations: () => _switchTab(0));
       case 2:
-        return const ChatListPage();
+        return ChatListPage(onDiscoverFriends: () => _switchTab(0));
       case 3:
         return const ProfilePage();
       default:

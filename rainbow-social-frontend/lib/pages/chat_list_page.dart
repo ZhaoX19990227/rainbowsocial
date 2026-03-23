@@ -15,7 +15,12 @@ import '../widgets/app_skeleton.dart';
 import '../widgets/avatar_widget.dart';
 
 class ChatListPage extends ConsumerStatefulWidget {
-  const ChatListPage({super.key});
+  const ChatListPage({
+    super.key,
+    this.onDiscoverFriends,
+  });
+
+  final VoidCallback? onDiscoverFriends;
 
   @override
   ConsumerState<ChatListPage> createState() => _ChatListPageState();
@@ -93,6 +98,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage> {
                 onOpenThread: _openThread,
                 onDeleteThread: _deleteThread,
                 onTogglePinned: _togglePinned,
+                onDiscoverFriends: widget.onDiscoverFriends,
               ),
             ),
             if (threadsState.errorMessage != null && threadsState.threads.isNotEmpty)
@@ -212,7 +218,7 @@ class _ChatHeader extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Chats',
+                  '消息',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         color: AppTheme.primary,
                         fontWeight: FontWeight.w800,
@@ -314,6 +320,7 @@ class _ChatListBody extends ConsumerWidget {
     required this.onOpenThread,
     required this.onDeleteThread,
     required this.onTogglePinned,
+    this.onDiscoverFriends,
   });
 
   final ChatListState state;
@@ -325,6 +332,7 @@ class _ChatListBody extends ConsumerWidget {
   final ValueChanged<ChatThread> onOpenThread;
   final ValueChanged<ChatThread> onDeleteThread;
   final ValueChanged<ChatThread> onTogglePinned;
+  final VoidCallback? onDiscoverFriends;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -342,14 +350,21 @@ class _ChatListBody extends ConsumerWidget {
         title: '会话列表加载失败',
         subtitle: state.errorMessage!,
         icon: Icons.wifi_off_rounded,
+        actionLabel: '重新加载',
+        onAction: () => ref
+            .read(chatThreadsControllerProvider.notifier)
+            .loadThreads(),
       );
     }
 
     if (state.threads.isEmpty) {
-      return const _ChatsEmptyState(
-        title: '这里有点安静',
-        subtitle: '快去打个招呼，开启一段新缘分吧',
-        icon: Icons.pets_rounded,
+      return _ChatsEmptyState(
+        title: '暂无新消息',
+        subtitle: '时光静好，正在等待一份缘分。',
+        highlight: '开启一段新的心动对话吧',
+        icon: Icons.forum_rounded,
+        actionLabel: '去发现新朋友',
+        onAction: onDiscoverFriends,
       );
     }
 
@@ -839,14 +854,21 @@ class _ChatsEmptyState extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.icon,
+    this.highlight,
+    this.actionLabel,
+    this.onAction,
   });
 
   final String title;
   final String subtitle;
   final IconData icon;
+  final String? highlight;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 120),
       child: Column(
@@ -856,70 +878,164 @@ class _ChatsEmptyState extends StatelessWidget {
             clipBehavior: Clip.none,
             children: [
               Container(
-                width: 126,
-                height: 126,
+                width: 176,
+                height: 176,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      AppTheme.primary.withValues(alpha: 0.14),
-                      AppTheme.tertiary.withValues(alpha: 0.06),
+                      AppTheme.primary.withValues(alpha: 0.10),
+                      AppTheme.primaryDark.withValues(alpha: 0.06),
                       Colors.transparent,
                     ],
                   ),
                 ),
               ),
-              Positioned.fill(
-                child: Align(
-                  alignment: Alignment.center,
-                  child: Icon(
-                    icon,
-                    size: 70,
-                    color: AppTheme.primary.withValues(alpha: 0.24),
-                  ),
+              Container(
+                width: 136,
+                height: 136,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.82),
+                  borderRadius: BorderRadius.circular(36),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.primary.withValues(alpha: 0.10),
+                      blurRadius: 36,
+                      offset: const Offset(0, 18),
+                    ),
+                  ],
+                ),
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned(
+                      top: 20,
+                      left: 20,
+                      child: Container(
+                        width: 34,
+                        height: 34,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: const Color(0xFFE8F0FF),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primary.withValues(alpha: 0.08),
+                              blurRadius: 16,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.favorite_rounded,
+                          color: AppTheme.primary,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                    Center(
+                      child: Icon(
+                        icon,
+                        size: 56,
+                        color: AppTheme.primary.withValues(alpha: 0.42),
+                      ),
+                    ),
+                  ],
                 ),
               ),
               Positioned(
-                top: 6,
-                right: 2,
+                right: -8,
+                bottom: 10,
                 child: Container(
-                  width: 40,
-                  height: 40,
+                  width: 48,
+                  height: 48,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: const Color(0xFFFFEFF5),
+                    color: Colors.white.withValues(alpha: 0.88),
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.tertiary.withValues(alpha: 0.12),
-                        blurRadius: 16,
-                        offset: const Offset(0, 8),
+                        color: AppTheme.primary.withValues(alpha: 0.10),
+                        blurRadius: 20,
+                        offset: const Offset(0, 12),
                       ),
                     ],
                   ),
                   child: const Icon(
-                    Icons.favorite_rounded,
-                    color: Color(0xFFFF9FB7),
+                    Icons.auto_awesome_rounded,
+                    color: Color(0xFFC23E93),
+                    size: 22,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 28),
           Text(
             title,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            style: textTheme.headlineSmall?.copyWith(
                   color: AppTheme.textSecondary.withValues(alpha: 0.88),
                   fontWeight: FontWeight.w800,
                 ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            subtitle,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          const SizedBox(height: 10),
+          DefaultTextStyle(
+            style: textTheme.bodyMedium?.copyWith(
                   color: AppTheme.textSecondary.withValues(alpha: 0.58),
-                ),
+                  height: 1.55,
+                ) ??
+                const TextStyle(),
+            textAlign: TextAlign.center,
+            child: Column(
+              children: [
+                Text(subtitle),
+                if (highlight != null)
+                  Text(
+                    highlight!,
+                    style: textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+              ],
+            ),
           ),
+          if (actionLabel != null && onAction != null) ...[
+            const SizedBox(height: 28),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [AppTheme.primary, AppTheme.primaryDark],
+                ),
+                borderRadius: BorderRadius.circular(999),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primary.withValues(alpha: 0.26),
+                    blurRadius: 24,
+                    offset: const Offset(0, 14),
+                  ),
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(999),
+                  onTap: onAction,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 30,
+                      vertical: 16,
+                    ),
+                    child: Text(
+                      actionLabel!,
+                      style: textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
           const Spacer(flex: 2),
         ],
       ),

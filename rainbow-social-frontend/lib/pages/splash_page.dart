@@ -19,7 +19,7 @@ class SplashPage extends ConsumerStatefulWidget {
 }
 
 class _SplashPageState extends ConsumerState<SplashPage> {
-  static const Duration _minimumShowDuration = Duration(milliseconds: 1900);
+  static const Duration _minimumShowDuration = Duration(milliseconds: 3200);
 
   bool _navigated = false;
   AsyncValue? _latestAuthState;
@@ -165,17 +165,15 @@ class _SplashPageState extends ConsumerState<SplashPage> {
                           repeatForever: false,
                           totalRepeatCount: 1,
                           animatedTexts: [
-                            FadeAnimatedText(
-                              '让真实连接，自然发生。',
-                              duration: const Duration(milliseconds: 1200),
-                              fadeInEnd: 0.35,
-                              fadeOutBegin: 1,
-                            ),
-                            FadeAnimatedText(
-                              '在柔和光感里，遇见更懂你的人。',
-                              duration: const Duration(milliseconds: 1400),
-                              fadeInEnd: 0.35,
-                              fadeOutBegin: 1,
+                            TypewriterAnimatedText(
+                              '期待与你相识的那一刻',
+                              speed: const Duration(milliseconds: 96),
+                              cursor: ' |',
+                              textStyle: textTheme.bodyLarge!.copyWith(
+                                color: AppTheme.textSecondary,
+                                fontWeight: FontWeight.w600,
+                                height: 1.45,
+                              ),
                             ),
                           ],
                         ),
@@ -189,7 +187,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
                         const _FlowingLoadingBar(),
                         const SizedBox(height: 14),
                         Text(
-                          '正在点亮今日的社交宇宙',
+                          '正在为你酝酿一次更温柔的相遇',
                           style: textTheme.labelLarge?.copyWith(
                             color:
                                 AppTheme.textSecondary.withValues(alpha: 0.82),

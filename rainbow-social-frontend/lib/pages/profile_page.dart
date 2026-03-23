@@ -842,6 +842,7 @@ class _MbtiInsightCard extends StatelessWidget {
       title: '人格档案',
       subtitle: hasMbti ? 'MBTI' : 'MBTI',
       accent: const [Color(0xFFF4E6FF), Color(0xFFFFFFFF)],
+      compactHeight: 214,
       onTap: !hasMbti ? onTap : null,
       child: hasMbti && mbti != null
           ? Column(
@@ -858,7 +859,7 @@ class _MbtiInsightCard extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   mbti.oneLiner,
-                  maxLines: 3,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppTheme.textSecondary,
@@ -928,6 +929,7 @@ class _ZodiacInsightCard extends StatelessWidget {
       title: '星座档案',
       subtitle: 'ARIES',
       accent: const [Color(0xFFFFF0F6), Color(0xFFFFFFFF)],
+      compactHeight: 214,
       onTap: sign.isEmpty ? onTap : null,
       child: sign.isNotEmpty
           ? Column(
@@ -941,12 +943,14 @@ class _ZodiacInsightCard extends StatelessWidget {
                         fontWeight: FontWeight.w800,
                       ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
-                  '生日已经点亮，今天的星座能量也同步好了。',
+                  '生日已点亮。',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppTheme.textSecondary,
-                        height: 1.45,
+                        height: 1.35,
                       ),
                 ),
               ],
@@ -1008,62 +1012,50 @@ class _TagsInsightCard extends StatelessWidget {
       fullWidth: true,
       child: user.tags.isEmpty && user.positionRole.trim().isEmpty
           ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 58,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(18),
-                          gradient: LinearGradient(
-                            colors: [
-                              const Color(0xFFF7E7D4),
-                              const Color(0xFFFFF6E8).withValues(alpha: 0.92),
-                            ],
+                Container(
+                  width: 76,
+                  height: 76,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: [
+                        AppTheme.primary.withValues(alpha: 0.12),
+                        AppTheme.primary.withValues(alpha: 0.03),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                  child: Center(
+                    child: Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.8),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppTheme.primary.withValues(alpha: 0.1),
+                            blurRadius: 16,
+                            offset: const Offset(0, 8),
                           ),
-                          border: Border.all(
-                            color: const Color(0xFFE7D8BF),
-                          ),
-                        ),
-                        child: Center(
-                          child: Text(
-                            'GALLERY',
-                            style:
-                                Theme.of(context).textTheme.labelLarge?.copyWith(
-                                      letterSpacing: 1.2,
-                                      color: const Color(0xFFC7A477),
-                                    ),
-                          ),
-                        ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.auto_fix_high_rounded,
+                        color: AppTheme.primary.withValues(alpha: 0.72),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Container(
-                        height: 58,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(18),
-                          gradient: RadialGradient(
-                            colors: [
-                              const Color(0xFFF7EED7),
-                              const Color(0xFFFFFCF5).withValues(alpha: 0.9),
-                            ],
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.auto_awesome_rounded,
-                          color: const Color(0xFFE7C993),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
-                const SizedBox(height: 14),
-                const _MissingContent(
-                  title: '还没有点亮你的偏好',
-                  subtitle: '标签和属性补充后，这里会更像你的名片。',
+                const SizedBox(height: 16),
+                Text(
+                  '快去添加你的兴趣标签吧，让合拍的人更快找到你',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.textSecondary.withValues(alpha: 0.86),
+                        height: 1.6,
+                      ),
                 ),
               ],
             )
@@ -1464,6 +1456,7 @@ class _InsightShell extends StatelessWidget {
     required this.child,
     required this.accent,
     this.fullWidth = false,
+    this.compactHeight,
     this.onTap,
   });
 
@@ -1472,12 +1465,16 @@ class _InsightShell extends StatelessWidget {
   final Widget child;
   final List<Color> accent;
   final bool fullWidth;
+  final double? compactHeight;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final content = Container(
       width: fullWidth ? double.infinity : null,
+      constraints: compactHeight == null
+          ? null
+          : BoxConstraints(minHeight: compactHeight!),
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
