@@ -1,0 +1,35 @@
+services:
+  api:
+    build:
+      context: ../../rainbow-social-backend
+      dockerfile: Dockerfile
+    container_name: rainbowsocial-api
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+    environment:
+      APP_ENV: production
+      GIN_MODE: release
+      SERVER_PORT: "8088"
+      DATABASE_PATH: /data/social_app.db
+      UPLOAD_DIR: /data/uploads
+      ALLOWED_ORIGINS: "*"
+      JWT_SECRET: ${JWT_SECRET}
+      IOS_DOWNLOAD_URL: ${IOS_DOWNLOAD_URL:-}
+      ANDROID_DOWNLOAD_URL: ${ANDROID_DOWNLOAD_URL:-/downloads/rainbow-social.apk}
+      SHARE_SUBTITLE: ${SHARE_SUBTITLE:-给想认真认识彼此的人，一个更轻松也更有感觉的开始。}
+      SMTP_ENABLED: ${SMTP_ENABLED:-false}
+      SMTP_HOST: ${SMTP_HOST:-smtp.qq.com}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      DASHSCOPE_API_KEY: ${DASHSCOPE_API_KEY:-}
+      DASHSCOPE_BASE_URL: ${DASHSCOPE_BASE_URL:-https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions}
+      DASHSCOPE_MODEL: ${DASHSCOPE_MODEL:-qwen-plus}
+      AI_TIMEOUT_SECONDS: ${AI_TIMEOUT_SECONDS:-25}
+    volumes:
+      - oracle_data:/data
+
+volumes:
+  oracle_data:

@@ -1,0 +1,14 @@
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+.idea
+social_app.db
+social_app.db-shm
+social_app.db-wal
+uploads
+tmp
+build
+dist
+*.log

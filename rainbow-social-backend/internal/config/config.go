@@ -40,7 +40,7 @@ func Load() (*Config, error) {
 
 	cfg := &Config{
 		AppEnv:             getEnv("APP_ENV", "development"),
-		ServerPort:         getEnv("SERVER_PORT", "8088"),
+		ServerPort:         getEnv("SERVER_PORT", getEnv("PORT", "8088")),
 		DatabasePath:       getEnv("DATABASE_PATH", "./social_app.db"),
 		UploadDir:          getEnv("UPLOAD_DIR", "./uploads"),
 		DownloadDir:        getEnv("DOWNLOAD_DIR", "./downloads"),
