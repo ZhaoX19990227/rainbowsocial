@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../controllers/auth_controller.dart';
 import '../routes/app_router.dart';
+import '../services/profile_completion.dart';
 import '../theme/app_theme.dart';
 import '../widgets/luminous_background.dart';
 
@@ -70,7 +71,11 @@ class _SplashPageState extends ConsumerState<SplashPage> {
     }
     _navigated = true;
     Navigator.of(context).pushReplacementNamed(
-      state.valueOrNull == null ? AppRouter.login : AppRouter.main,
+      state.valueOrNull == null
+          ? AppRouter.login
+          : ProfileCompletion.needsOnboarding(state.valueOrNull!.user)
+              ? AppRouter.editProfile
+              : AppRouter.main,
     );
   }
 

@@ -86,13 +86,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   const SizedBox(height: 20),
                   _ProfileHeroCard(
                     user: displayUser,
+                    summary: summary,
                     onEdit: () =>
                         Navigator.of(context).pushNamed(AppRouter.editProfile),
-                    onShare: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('分享功能正在准备中')),
-                      );
-                    },
                     onStatusTap: () => _showStatusSheet(displayUser),
                   ),
                   const SizedBox(height: 24),
@@ -103,8 +99,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     onViewAll: () => Navigator.of(context)
                         .pushNamed(AppRouter.moments, arguments: displayUser),
                   ),
-                  const SizedBox(height: 24),
-                  _SocialStatsGrid(summary: summary),
                   const SizedBox(height: 24),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -763,21 +757,18 @@ class _ProfileTopBar extends StatelessWidget {
 class _ProfileHeroCard extends StatelessWidget {
   const _ProfileHeroCard({
     required this.user,
+    required this.summary,
     required this.onEdit,
-    required this.onShare,
     required this.onStatusTap,
   });
 
   final AppUser user;
+  final MatchSummary? summary;
   final VoidCallback onEdit;
-  final VoidCallback onShare;
   final VoidCallback onStatusTap;
 
   @override
   Widget build(BuildContext context) {
-    final bio = user.bio.trim().isEmpty
-        ? '留一点神秘感，等聊天时再慢慢展开。'
-        : '“${user.bio.trim()}”';
     final activeStatus = UserStatusCatalog.isActive(user.statusExpiresAt)
         ? UserStatusCatalog.byId(user.statusId)
         : null;
@@ -791,6 +782,7 @@ class _ProfileHeroCard extends StatelessWidget {
       _HeroChipData(label: '${user.heightCm}cm'),
       _HeroChipData(label: '${user.weightKg}kg'),
     ];
+    final visibleTags = user.tags.where((tag) => tag.trim().isNotEmpty).toList();
 
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 26, 24, 22),
@@ -834,23 +826,26 @@ class _ProfileHeroCard extends StatelessWidget {
                 ),
               ],
             ),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                AvatarWidget(
-                  imageUrl: user.avatarOrFallback,
-                  radius: 42,
-                  isOnline: user.onlineStatus,
-                ),
-                Positioned(
-                  right: -2,
-                  bottom: -2,
-                  child: GestureDetector(
-                    onTap: onStatusTap,
-                    child: _ProfileStatusBubble(status: activeStatus),
+            child: GestureDetector(
+              onTap: onEdit,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  AvatarWidget(
+                    imageUrl: user.avatarOrFallback,
+                    radius: 42,
+                    isOnline: user.onlineStatus,
                   ),
-                ),
-              ],
+                  Positioned(
+                    right: -2,
+                    bottom: -2,
+                    child: GestureDetector(
+                      onTap: onStatusTap,
+                      child: _ProfileStatusBubble(status: activeStatus),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 16),
@@ -862,19 +857,6 @@ class _ProfileHeroCard extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            bio,
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppTheme.textSecondary.withValues(alpha: 0.82),
-                  fontStyle: FontStyle.italic,
-              ),
-          ),
-          if (activeStatus != null) ...[
-            const SizedBox(height: 14),
-            _ProfileStatusPill(status: activeStatus),
-          ],
           const SizedBox(height: 18),
           Wrap(
             alignment: WrapAlignment.center,
@@ -882,50 +864,19 @@ class _ProfileHeroCard extends StatelessWidget {
             runSpacing: 8,
             children: chips.map((chip) => _HeroMetaChip(data: chip)).toList(),
           ),
-          const SizedBox(height: 22),
-          Row(
-            children: [
-              Expanded(
-                child: GestureDetector(
-                  onTap: onEdit,
-                  child: Container(
-                    alignment: Alignment.center,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(18),
-                      gradient: const LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          AppTheme.primary,
-                          AppTheme.primaryDark,
-                        ],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primary.withValues(alpha: 0.24),
-                          blurRadius: 22,
-                          offset: const Offset(0, 12),
-                        ),
-                      ],
-                    ),
-                    child: Text(
-                      '编辑资料',
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                          ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              _IconButtonCard(
-                icon: Icons.ios_share_rounded,
-                onTap: onShare,
-              ),
-            ],
-          ),
+          if (visibleTags.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 8,
+              runSpacing: 8,
+              children: visibleTags
+                  .map((tag) => _SoftTagChip(label: tag))
+                  .toList(),
+            ),
+          ],
+          const SizedBox(height: 16),
+          _ProfileLikesStrip(summary: summary),
         ],
       ),
     );
@@ -987,6 +938,70 @@ class _MomentsSection extends StatelessWidget {
             },
           ),
         ),
+      ],
+    );
+  }
+}
+
+class _ProfileLikesStrip extends StatelessWidget {
+  const _ProfileLikesStrip({required this.summary});
+
+  final MatchSummary? summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final safeSummary = summary ?? const MatchSummary.empty();
+    final items = [
+      ('喜欢我的', safeSummary.received.length, LikeOverviewType.received),
+      ('我喜欢的', safeSummary.sent.length, LikeOverviewType.sent),
+      ('互相喜欢', safeSummary.mutual.length, LikeOverviewType.mutual),
+    ];
+
+    return Row(
+      children: [
+        for (var i = 0; i < items.length; i++) ...[
+          Expanded(
+            child: GestureDetector(
+              onTap: () => Navigator.of(context).pushNamed(
+                AppRouter.likesOverview,
+                arguments: LikesOverviewArgs(
+                  type: items[i].$3,
+                  summary: safeSummary,
+                ),
+              ),
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(18),
+                  color: Colors.white.withValues(alpha: 0.6),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      '${items[i].$2}',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: items[i].$3 == LikeOverviewType.mutual
+                                ? AppTheme.primary
+                                : AppTheme.textPrimary,
+                          ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      items[i].$1,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: AppTheme.textSecondary.withValues(alpha: 0.74),
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (i != items.length - 1) const SizedBox(width: 10),
+        ],
       ],
     );
   }
@@ -1940,14 +1955,20 @@ class _ProfileStatusBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasStatus = status != null;
     return Container(
-      width: 28,
-      height: 28,
+      width: 32,
+      height: 32,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: hasStatus ? UserStatusCatalog.gradientFor(status!.id) : null,
         color: hasStatus ? null : Colors.white,
         border: Border.all(color: Colors.white, width: 2),
         boxShadow: [
+          if (hasStatus)
+            BoxShadow(
+              color: AppTheme.primary.withValues(alpha: 0.22),
+              blurRadius: 18,
+              spreadRadius: 3,
+            ),
           BoxShadow(
             color: AppTheme.primary.withValues(alpha: hasStatus ? 0.32 : 0.14),
             blurRadius: 14,
@@ -1957,7 +1978,7 @@ class _ProfileStatusBubble extends StatelessWidget {
       ),
       child: Icon(
         hasStatus ? status!.icon : Icons.add_rounded,
-        size: 16,
+        size: hasStatus ? 17 : 18,
         color: hasStatus ? Colors.white : AppTheme.primary,
       ),
     );
