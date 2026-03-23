@@ -496,15 +496,23 @@ class _HoroscopeProfileCard extends ConsumerWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xCCFFFFFF),
-            Color(0xBFF4F7FF),
+            Color(0xFFFFF0F7),
+            Color(0xFFF5ECFF),
+            Color(0xFFEAF4FF),
           ],
         ),
-        border: Border.all(color: AppTheme.ghostBorder),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.78),
+        ),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primary.withValues(alpha: 0.06),
-            blurRadius: 24,
+            color: AppTheme.tertiary.withValues(alpha: 0.12),
+            blurRadius: 28,
+            offset: const Offset(0, 12),
+          ),
+          BoxShadow(
+            color: AppTheme.secondary.withValues(alpha: 0.08),
+            blurRadius: 32,
             offset: const Offset(0, 12),
           ),
         ],
