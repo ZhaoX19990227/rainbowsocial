@@ -35,13 +35,24 @@ class ProfileController extends StateNotifier<AsyncValue<AppUser?>> {
 
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      final updatedUser = await _ref.read(updateProfileUseCaseProvider)(
+      final remoteUser = await _ref.read(updateProfileUseCaseProvider)(
         session.token,
         user.copyWith(
           lat: user.lat == 0 ? Defaults.fallbackLat : user.lat,
           lng: user.lng == 0 ? Defaults.fallbackLng : user.lng,
           avatar: user.avatarOrFallback,
         ),
+      );
+      final updatedUser = remoteUser.copyWith(
+        statusId: remoteUser.statusId.trim().isEmpty
+            ? user.statusId
+            : remoteUser.statusId,
+        statusLabel: remoteUser.statusLabel.trim().isEmpty
+            ? user.statusLabel
+            : remoteUser.statusLabel,
+        statusExpiresAt: remoteUser.statusExpiresAt.trim().isEmpty
+            ? user.statusExpiresAt
+            : remoteUser.statusExpiresAt,
       );
       _ref.read(authControllerProvider.notifier).updateSessionUser(updatedUser);
       return updatedUser;

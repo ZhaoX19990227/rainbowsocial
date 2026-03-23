@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/app_user.dart';
+import '../services/user_status_catalog.dart';
 import '../theme/app_theme.dart';
 import 'tag_chip.dart';
 
@@ -20,6 +21,9 @@ class UserCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final heroImage =
         user.photos.isNotEmpty ? user.photos.first : user.avatarOrFallback;
+    final status = UserStatusCatalog.isActive(user.statusExpiresAt)
+        ? UserStatusCatalog.byId(user.statusId)
+        : null;
 
     return GestureDetector(
       onTap: onTap,
@@ -170,6 +174,45 @@ class UserCard extends StatelessWidget {
                               height: 1.45,
                             ),
                       ),
+                      if (status != null) ...[
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(999),
+                            gradient: UserStatusCatalog.gradientFor(status.id),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.primary.withValues(alpha: 0.14),
+                                blurRadius: 18,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(status.icon, size: 15, color: Colors.white),
+                              const SizedBox(width: 7),
+                              Text(
+                                status.label,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelMedium
+                                    ?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                      if (user.tags.isNotEmpty)
+                        const SizedBox(height: 10),
                       if (user.tags.isNotEmpty)
                         Wrap(
                           spacing: 8,

@@ -16,6 +16,9 @@ class AppUser {
     required this.bio,
     required this.tags,
     this.positionRole = '',
+    this.statusId = '',
+    this.statusLabel = '',
+    this.statusExpiresAt = '',
     required this.lat,
     required this.lng,
     required this.onlineStatus,
@@ -37,6 +40,9 @@ class AppUser {
   final String bio;
   final List<String> tags;
   final String positionRole;
+  final String statusId;
+  final String statusLabel;
+  final String statusExpiresAt;
   final double lat;
   final double lng;
   final bool onlineStatus;
@@ -63,6 +69,12 @@ class AppUser {
       tags: rawTags is List ? rawTags.cast<String>() : const [],
       positionRole:
           '${json['position_role'] ?? json['position'] ?? json['attribute'] ?? ''}',
+      statusId:
+          '${json['status_id'] ?? json['mood_id'] ?? json['current_status_id'] ?? ''}',
+      statusLabel:
+          '${json['status_label'] ?? json['mood'] ?? json['current_status'] ?? ''}',
+      statusExpiresAt:
+          '${json['status_expires_at'] ?? json['mood_expires_at'] ?? ''}',
       lat: ((json['lat'] ?? 0) as num).toDouble(),
       lng: ((json['lng'] ?? 0) as num).toDouble(),
       locationLabel: '${json['location_label'] ?? ''}',
@@ -89,6 +101,9 @@ class AppUser {
       'bio': bio,
       'tags': tags,
       'position_role': positionRole,
+      'status_id': statusId,
+      'status_label': statusLabel,
+      'status_expires_at': statusExpiresAt,
       'lat': lat,
       'lng': lng,
       'location_label': locationLabel,
@@ -101,6 +116,8 @@ class AppUser {
   String get basicsLine => '$age 岁 · ${heightCm}cm · ${weightKg}kg';
   String get avatarOrFallback =>
       avatar.trim().isEmpty ? Defaults.fallbackAvatar : avatar;
+  bool get hasStatus =>
+      statusId.trim().isNotEmpty && statusExpiresAt.trim().isNotEmpty;
 
   AppUser copyWith({
     int? id,
@@ -117,6 +134,9 @@ class AppUser {
     String? bio,
     List<String>? tags,
     String? positionRole,
+    String? statusId,
+    String? statusLabel,
+    String? statusExpiresAt,
     double? lat,
     double? lng,
     bool? onlineStatus,
@@ -138,6 +158,9 @@ class AppUser {
       bio: bio ?? this.bio,
       tags: tags ?? this.tags,
       positionRole: positionRole ?? this.positionRole,
+      statusId: statusId ?? this.statusId,
+      statusLabel: statusLabel ?? this.statusLabel,
+      statusExpiresAt: statusExpiresAt ?? this.statusExpiresAt,
       lat: lat ?? this.lat,
       lng: lng ?? this.lng,
       locationLabel: locationLabel ?? this.locationLabel,

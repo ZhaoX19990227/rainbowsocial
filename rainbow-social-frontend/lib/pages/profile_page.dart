@@ -15,6 +15,7 @@ import '../routes/app_router.dart';
 import '../services/api_config.dart';
 import '../services/app_feedback.dart';
 import '../services/mbti_catalog.dart';
+import '../services/user_status_catalog.dart';
 import '../services/zodiac_utils.dart';
 import '../theme/app_theme.dart';
 import '../usecases/upload_usecases.dart';
@@ -90,6 +91,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         const SnackBar(content: Text('分享功能正在准备中')),
                       );
                     },
+                    onStatusTap: () => _showStatusSheet(displayUser),
                   ),
                   const SizedBox(height: 24),
                   _MomentsSection(
@@ -254,6 +256,237 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
   }
 
+  Future<void> _showStatusSheet(AppUser user) async {
+    String selectedId = UserStatusCatalog.isActive(user.statusExpiresAt)
+        ? user.statusId.trim()
+        : '';
+
+    final result = await showModalBottomSheet<String?>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final selected = UserStatusCatalog.byId(selectedId);
+            return SafeArea(
+              top: false,
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.96),
+                  borderRadius: BorderRadius.circular(34),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 40,
+                      offset: const Offset(0, -14),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 46,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: AppTheme.ghostBorder.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          '今日状态',
+                          style:
+                              Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '状态仅生效24小时，到期自动结束',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: AppTheme.textSecondary.withValues(alpha: 0.72),
+                          ),
+                    ),
+                    const SizedBox(height: 20),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.48,
+                      ),
+                      child: SingleChildScrollView(
+                        child: GridView.builder(
+                          itemCount: UserStatusCatalog.options.length,
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 4,
+                            mainAxisSpacing: 12,
+                            crossAxisSpacing: 12,
+                            childAspectRatio: 0.9,
+                          ),
+                          itemBuilder: (context, index) {
+                            final option = UserStatusCatalog.options[index];
+                            final isSelected = selectedId == option.id;
+                            return GestureDetector(
+                              onTap: () => setSheetState(() {
+                                selectedId = option.id;
+                              }),
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 180),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 12,
+                                ),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(22),
+                                  gradient: isSelected
+                                      ? UserStatusCatalog.gradientFor(option.id)
+                                      : null,
+                                  color: isSelected
+                                      ? null
+                                      : Colors.white.withValues(alpha: 0.88),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? AppTheme.primary.withValues(alpha: 0.16)
+                                        : AppTheme.ghostBorder.withValues(
+                                            alpha: 0.48,
+                                          ),
+                                    width: isSelected ? 1.6 : 1,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: isSelected
+                                          ? AppTheme.primary.withValues(alpha: 0.2)
+                                          : Colors.black.withValues(alpha: 0.03),
+                                      blurRadius: isSelected ? 20 : 12,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      option.icon,
+                                      size: 27,
+                                      color: isSelected
+                                          ? Colors.white
+                                          : AppTheme.primary,
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      option.label,
+                                      textAlign: TextAlign.center,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelMedium
+                                          ?.copyWith(
+                                            color: isSelected
+                                                ? Colors.white
+                                                : AppTheme.textSecondary,
+                                            fontWeight: FontWeight.w800,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    GestureDetector(
+                      onTap: selected == null
+                          ? null
+                          : () => Navigator.of(sheetContext).pop(selected.id),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        height: 56,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(22),
+                          gradient: selected == null
+                              ? null
+                              : const LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  colors: [
+                                    AppTheme.primary,
+                                    AppTheme.primaryDark,
+                                  ],
+                                ),
+                          color: selected == null
+                              ? AppTheme.surfaceHighest
+                              : null,
+                          boxShadow: selected == null
+                              ? null
+                              : [
+                                  BoxShadow(
+                                    color: AppTheme.primary.withValues(alpha: 0.28),
+                                    blurRadius: 22,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                        ),
+                        alignment: Alignment.center,
+                        child: Text(
+                          '保存状态',
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: selected == null
+                                    ? AppTheme.textSecondary.withValues(alpha: 0.5)
+                                    : Colors.white,
+                                fontWeight: FontWeight.w800,
+                              ),
+                        ),
+                      ),
+                    ),
+                    if (user.statusId.trim().isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 12),
+                        child: TextButton.icon(
+                          onPressed: () => Navigator.of(sheetContext).pop(''),
+                          icon: const Icon(Icons.restart_alt_rounded),
+                          label: const Text('恢复默认'),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    if (result == null) return;
+    final profile = ref.read(profileControllerProvider).valueOrNull;
+    if (profile == null) return;
+    final option = UserStatusCatalog.byId(result);
+    final updated = option == null
+        ? profile.copyWith(
+            statusId: '',
+            statusLabel: '',
+            statusExpiresAt: '',
+          )
+        : profile.copyWith(
+            statusId: option.id,
+            statusLabel: option.label,
+            statusExpiresAt: UserStatusCatalog.expiresAtFromNow(),
+          );
+    await ref.read(profileControllerProvider.notifier).save(updated);
+    if (!mounted) return;
+    AppFeedback.showToast(option == null ? '今日状态已恢复默认' : '今日状态已更新');
+  }
+
   Future<void> _signOut(BuildContext context, WidgetRef ref) async {
     await ref.read(authControllerProvider.notifier).signOut();
     ref.invalidate(profileControllerProvider);
@@ -310,17 +543,22 @@ class _ProfileHeroCard extends StatelessWidget {
     required this.user,
     required this.onEdit,
     required this.onShare,
+    required this.onStatusTap,
   });
 
   final AppUser user;
   final VoidCallback onEdit;
   final VoidCallback onShare;
+  final VoidCallback onStatusTap;
 
   @override
   Widget build(BuildContext context) {
     final bio = user.bio.trim().isEmpty
         ? '留一点神秘感，等聊天时再慢慢展开。'
         : '“${user.bio.trim()}”';
+    final activeStatus = UserStatusCatalog.isActive(user.statusExpiresAt)
+        ? UserStatusCatalog.byId(user.statusId)
+        : null;
     final chips = <_HeroChipData>[
       if (user.positionRole.trim().isNotEmpty)
         _HeroChipData(
@@ -374,10 +612,23 @@ class _ProfileHeroCard extends StatelessWidget {
                 ),
               ],
             ),
-            child: AvatarWidget(
-              imageUrl: user.avatarOrFallback,
-              radius: 42,
-              isOnline: user.onlineStatus,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                AvatarWidget(
+                  imageUrl: user.avatarOrFallback,
+                  radius: 42,
+                  isOnline: user.onlineStatus,
+                ),
+                Positioned(
+                  right: -2,
+                  bottom: -2,
+                  child: GestureDetector(
+                    onTap: onStatusTap,
+                    child: _ProfileStatusBubble(status: activeStatus),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 16),
@@ -396,8 +647,12 @@ class _ProfileHeroCard extends StatelessWidget {
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: AppTheme.textSecondary.withValues(alpha: 0.82),
                   fontStyle: FontStyle.italic,
-                ),
+              ),
           ),
+          if (activeStatus != null) ...[
+            const SizedBox(height: 14),
+            _ProfileStatusPill(status: activeStatus),
+          ],
           const SizedBox(height: 18),
           Wrap(
             alignment: WrapAlignment.center,
@@ -687,13 +942,12 @@ class _ZodiacInsightCard extends StatelessWidget {
                       ),
                 ),
                 const SizedBox(height: 8),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 10,
-                  children: [
-                    _MiniMetric(label: '缘分', value: '${72 + user.age % 19}'),
-                    _MiniMetric(label: '心动', value: '${80 + user.id % 15}'),
-                  ],
+                Text(
+                  '生日已经点亮，今天的星座能量也同步好了。',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppTheme.textSecondary,
+                        height: 1.45,
+                      ),
                 ),
               ],
             )
@@ -753,9 +1007,65 @@ class _TagsInsightCard extends StatelessWidget {
       accent: const [Color(0xFFF8F4FF), Color(0xFFFFFFFF)],
       fullWidth: true,
       child: user.tags.isEmpty && user.positionRole.trim().isEmpty
-          ? _MissingContent(
-              title: '还没有点亮你的偏好',
-              subtitle: '标签和属性补充后，这里会更像你的名片。',
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 58,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(18),
+                          gradient: LinearGradient(
+                            colors: [
+                              const Color(0xFFF7E7D4),
+                              const Color(0xFFFFF6E8).withValues(alpha: 0.92),
+                            ],
+                          ),
+                          border: Border.all(
+                            color: const Color(0xFFE7D8BF),
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            'GALLERY',
+                            style:
+                                Theme.of(context).textTheme.labelLarge?.copyWith(
+                                      letterSpacing: 1.2,
+                                      color: const Color(0xFFC7A477),
+                                    ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Container(
+                        height: 58,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(18),
+                          gradient: RadialGradient(
+                            colors: [
+                              const Color(0xFFF7EED7),
+                              const Color(0xFFFFFCF5).withValues(alpha: 0.9),
+                            ],
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.auto_awesome_rounded,
+                          color: const Color(0xFFE7C993),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                const _MissingContent(
+                  title: '还没有点亮你的偏好',
+                  subtitle: '标签和属性补充后，这里会更像你的名片。',
+                ),
+              ],
             )
           : Wrap(
               spacing: 10,
@@ -1374,6 +1684,77 @@ class _IconShell extends StatelessWidget {
           color: Colors.white.withValues(alpha: 0.72),
         ),
         child: Icon(icon, color: AppTheme.primary),
+      ),
+    );
+  }
+}
+
+class _ProfileStatusBubble extends StatelessWidget {
+  const _ProfileStatusBubble({required this.status});
+
+  final UserStatusOption? status;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasStatus = status != null;
+    return Container(
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: hasStatus ? UserStatusCatalog.gradientFor(status!.id) : null,
+        color: hasStatus ? null : Colors.white,
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withValues(alpha: hasStatus ? 0.32 : 0.14),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Icon(
+        hasStatus ? status!.icon : Icons.add_rounded,
+        size: 16,
+        color: hasStatus ? Colors.white : AppTheme.primary,
+      ),
+    );
+  }
+}
+
+class _ProfileStatusPill extends StatelessWidget {
+  const _ProfileStatusPill({required this.status});
+
+  final UserStatusOption status;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        gradient: UserStatusCatalog.gradientFor(status.id),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withValues(alpha: 0.18),
+            blurRadius: 20,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(status.icon, size: 16, color: Colors.white),
+          const SizedBox(width: 8),
+          Text(
+            status.label,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+        ],
       ),
     );
   }
