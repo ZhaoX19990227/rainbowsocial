@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/app_flags.dart';
+import '../services/api_client.dart';
 import '../models/app_user.dart';
 import '../models/auth_session.dart';
 import '../usecases/auth_usecases.dart';
 import '../usecases/session_usecases.dart';
+import '../usecases/user_usecases.dart';
 
 final authControllerProvider =
     StateNotifierProvider<AuthController, AsyncValue<AuthSession?>>((ref) {
@@ -21,7 +23,35 @@ class AuthController extends StateNotifier<AsyncValue<AuthSession?>> {
   Future<void> restoreSession() async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(
-      () => _ref.read(loadSessionUseCaseProvider)(),
+      () async {
+        final savedSession = await _ref.read(loadSessionUseCaseProvider)();
+        if (savedSession == null) {
+          return null;
+        }
+        if (savedSession.token.isEmpty) {
+          await _ref.read(clearSessionUseCaseProvider)();
+          return null;
+        }
+        if (savedSession.token == 'demo-token' && !AppFlags.useMockFallbacks) {
+          await _ref.read(clearSessionUseCaseProvider)();
+          return null;
+        }
+
+        try {
+          final user =
+              await _ref.read(getProfileUseCaseProvider)(savedSession.token);
+          final refreshedSession =
+              AuthSession(token: savedSession.token, user: user);
+          await _ref.read(saveSessionUseCaseProvider)(refreshedSession);
+          return refreshedSession;
+        } on ApiException catch (error) {
+          if (error.statusCode == 401) {
+            await _ref.read(clearSessionUseCaseProvider)();
+            return null;
+          }
+          rethrow;
+        }
+      },
     );
   }
 

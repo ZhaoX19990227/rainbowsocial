@@ -3,6 +3,16 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
+class ApiException implements Exception {
+  const ApiException(this.message, {required this.statusCode});
+
+  final String message;
+  final int statusCode;
+
+  @override
+  String toString() => message;
+}
+
 class MultipartUploadFile {
   const MultipartUploadFile({
     required this.field,
@@ -110,7 +120,10 @@ class ApiClient {
         ? <String, dynamic>{}
         : jsonDecode(response.body) as Map<String, dynamic>;
     if (response.statusCode >= 400) {
-      throw Exception(payload['error'] ?? 'Request failed');
+      throw ApiException(
+        '${payload['error'] ?? 'Request failed'}',
+        statusCode: response.statusCode,
+      );
     }
     return payload;
   }

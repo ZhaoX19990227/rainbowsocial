@@ -138,7 +138,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         ),
         actions: [
           IconButton(
-            tooltip: '查看熊猴互动设计稿',
+            tooltip: '查看 Lune 互动设计稿',
             onPressed: () => Navigator.of(context).pushNamed(AppRouter.flirtyDesign),
             icon: const Icon(Icons.design_services_rounded),
           ),

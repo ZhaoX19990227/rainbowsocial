@@ -5,13 +5,13 @@ import 'routes/app_router.dart';
 import 'services/app_feedback.dart';
 import 'theme/app_theme.dart';
 
-class RainbowSocialApp extends StatelessWidget {
-  const RainbowSocialApp({super.key});
+class LuneApp extends StatelessWidget {
+  const LuneApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: '熊猴',
+      title: 'Lune',
       debugShowCheckedModeBanner: false,
       navigatorKey: AppFeedback.navigatorKey,
       scaffoldMessengerKey: AppFeedback.messengerKey,

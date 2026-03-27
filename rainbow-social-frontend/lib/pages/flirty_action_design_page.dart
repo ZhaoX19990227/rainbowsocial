@@ -16,7 +16,7 @@ class FlirtyActionDesignPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
-        title: const Text('熊猴互动设计稿'),
+        title: const Text('Lune 互动设计稿'),
       ),
       body: LuminousBackground(
         child: SafeArea(
@@ -179,7 +179,7 @@ class _ShowcaseHero extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            '明亮紫霓虹里的熊猴互动',
+            '月光氛围里的 Lune 互动',
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
                   color: const Color(0xFF2B214D),
                   fontSize: 34,

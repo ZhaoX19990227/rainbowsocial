@@ -5,7 +5,7 @@ import 'package:rainbow_social_frontend/app.dart';
 
 void main() {
   testWidgets('renders splash experience', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: RainbowSocialApp()));
-    expect(find.text('Luminous'), findsOneWidget);
+    await tester.pumpWidget(const ProviderScope(child: LuneApp()));
+    expect(find.text('Lune'), findsOneWidget);
   });
 }

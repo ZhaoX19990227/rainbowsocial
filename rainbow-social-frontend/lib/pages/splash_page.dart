@@ -161,7 +161,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
                         ),
                     const SizedBox(height: 30),
                     Text(
-                      '灵感相约',
+                      'Lune',
                       style: textTheme.displayLarge?.copyWith(
                         fontSize: 42,
                         color: AppTheme.textPrimary,
@@ -185,7 +185,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
                           totalRepeatCount: 1,
                           animatedTexts: [
                             TypewriterAnimatedText(
-                              '期待与你相识的那一刻',
+                              'Moonlit, softer, closer.',
                               speed: const Duration(milliseconds: 140),
                               cursor: '▋',
                               textStyle: textTheme.bodyLarge!.copyWith(
@@ -206,7 +206,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
                         const _FlowingLoadingBar(),
                         const SizedBox(height: 14),
                         Text(
-                          '正在为你酝酿一次更温柔的相遇~',
+                          '正在把今晚的相遇轻轻点亮',
                           style: textTheme.labelLarge?.copyWith(
                             color:
                                 AppTheme.textSecondary.withValues(alpha: 0.82),
@@ -267,15 +267,7 @@ class _SplashBrandMark extends StatelessWidget {
               height: 108,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    AppTheme.primary,
-                    AppTheme.tertiary,
-                    AppTheme.secondary,
-                  ],
-                ),
+                color: Colors.white.withValues(alpha: 0.08),
                 border: Border.all(
                   color: Colors.white.withValues(alpha: 0.56),
                   width: 1.4,
@@ -288,10 +280,14 @@ class _SplashBrandMark extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.favorite_rounded,
-                size: 48,
-                color: Color(0xFFFDF7FF),
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: ClipOval(
+                  child: Image.asset(
+                    'assets/branding/lune_logo.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
             ),
           ),

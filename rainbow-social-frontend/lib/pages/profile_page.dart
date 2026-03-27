@@ -1718,32 +1718,48 @@ class _InsightShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final body = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          subtitle,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: AppTheme.tertiary.withValues(alpha: 0.68),
-                letterSpacing: 1.6,
+    final header = [
+      Text(
+        subtitle,
+        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: AppTheme.tertiary.withValues(alpha: 0.68),
+              letterSpacing: 1.6,
+            ),
+      ),
+      const SizedBox(height: 8),
+      Text(
+        title,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+      ),
+      const SizedBox(height: 14),
+    ];
+
+    final body = compactHeight == null
+        ? Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ...header,
+              Align(
+                alignment: Alignment.topLeft,
+                child: child,
               ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          title,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
+            ],
+          )
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ...header,
+              Expanded(
+                child: Align(
+                  alignment: Alignment.topLeft,
+                  child: child,
+                ),
               ),
-        ),
-        const SizedBox(height: 14),
-        Expanded(
-          child: Align(
-            alignment: Alignment.topLeft,
-            child: child,
-          ),
-        ),
-      ],
-    );
+            ],
+          );
 
     final content = Container(
       width: fullWidth ? double.infinity : null,
@@ -1946,13 +1962,15 @@ class _ProfileStatusBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasStatus = status != null;
+    final currentStatus = status;
+    final hasStatus = currentStatus != null;
     return Container(
       width: 32,
       height: 32,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: hasStatus ? UserStatusCatalog.gradientFor(status!.id) : null,
+        gradient:
+            hasStatus ? UserStatusCatalog.gradientFor(currentStatus.id) : null,
         color: hasStatus ? null : Colors.white,
         border: Border.all(color: Colors.white, width: 2),
         boxShadow: [
@@ -1970,7 +1988,7 @@ class _ProfileStatusBubble extends StatelessWidget {
         ],
       ),
       child: Icon(
-        hasStatus ? status!.icon : Icons.add_rounded,
+        hasStatus ? currentStatus.icon : Icons.add_rounded,
         size: hasStatus ? 17 : 18,
         color: hasStatus ? Colors.white : AppTheme.primary,
       ),

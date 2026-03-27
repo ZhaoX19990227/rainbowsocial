@@ -68,8 +68,33 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             padding: const EdgeInsets.fromLTRB(24, 48, 24, 24),
             children: [
               const SizedBox(height: 24),
+              Center(
+                child: Container(
+                  width: 92,
+                  height: 92,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.48),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primary.withValues(alpha: 0.22),
+                        blurRadius: 28,
+                        spreadRadius: 2,
+                      ),
+                    ],
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(
+                    'assets/branding/lune_logo.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
               Text(
-                _isRegisterMode ? '先领一个\n熊猴账号' : '回到你的\n熊猴主场',
+                _isRegisterMode ? '先领一个\nLune 账号' : '回到你的\nLune 主场',
                 style: Theme.of(context).textTheme.displayLarge,
               ),
               const SizedBox(height: 18),

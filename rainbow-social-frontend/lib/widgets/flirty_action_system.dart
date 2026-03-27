@@ -532,14 +532,14 @@ class _PickerHeader extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '熊猴互动',
+                    'Lune 互动',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           color: const Color(0xFF2E2550),
                         ),
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    '用小熊和小猴承载暧昧动作，气质更轻松，也更有记忆点。',
+                    '用更轻盈的月光气质承载暧昧动作，记忆点会更柔和也更独特。',
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                           color: const Color(0xFF7D739B),
                         ),
