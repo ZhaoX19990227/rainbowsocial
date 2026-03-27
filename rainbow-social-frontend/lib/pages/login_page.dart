@@ -85,83 +85,97 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             const _BreathingBackground(),
             const _SubtleCurves(),
             SafeArea(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-                children: [
-                  _LoginHero(
-                    isRegisterMode: _isRegisterMode,
-                    registerPreparedLogin: _registerPreparedLogin,
-                    onRegisterTap: () => setState(() => _isRegisterMode = true),
-                    onHelpTap: () => AppFeedback.showToast('帮助功能即将上线'),
-                  ),
-                  const SizedBox(height: 24),
-                  _SegmentedAuthSwitch(
-                    isRegisterMode: _isRegisterMode,
-                    onChanged: (value) =>
-                        setState(() => _isRegisterMode = value),
-                  ),
-                  const SizedBox(height: 18),
-                  _FrostedFormCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _PillInputField(
-                          controller: _accountController,
-                          hintText: '手机号、邮箱或账号',
-                          prefixIcon: Icons.person_outline_rounded,
-                          textInputAction: TextInputAction.next,
-                          autocorrect: false,
-                        ),
-                        const SizedBox(height: 12),
-                        _PillInputField(
-                          controller: _passwordController,
-                          hintText: '密码',
-                          prefixIcon: Icons.lock_outline_rounded,
-                          obscureText: true,
-                          textInputAction: _isRegisterMode
-                              ? TextInputAction.next
-                              : TextInputAction.done,
-                          onSubmitted: (_) {
-                            if (!_isRegisterMode) {
-                              _submitLogin(loading);
-                            }
-                          },
-                        ),
-                        if (_isRegisterMode) ...[
-                          const SizedBox(height: 12),
-                          _PillInputField(
-                            controller: _confirmPasswordController,
-                            hintText: '确认密码',
-                            prefixIcon: Icons.verified_user_outlined,
-                            obscureText: true,
-                            textInputAction: TextInputAction.done,
-                            onSubmitted: (_) => _submitRegister(loading),
-                          ),
-                        ],
-                        const SizedBox(height: 22),
-                        _RippleActionButton(
-                          label: _isRegisterMode
-                              ? '创建账号'
-                              : _registerPreparedLogin
-                                  ? '直接登录'
-                                  : '进入 Lune',
-                          loading: loading,
-                          pressed: _buttonPressed,
-                          onTapDown: () =>
-                              setState(() => _buttonPressed = true),
-                          onTapUp: () => setState(() => _buttonPressed = false),
-                          onTapCancel: () =>
-                              setState(() => _buttonPressed = false),
-                          onTap: loading
-                              ? null
-                              : () => _isRegisterMode
-                                  ? _submitRegister(loading)
-                                  : _submitLogin(loading),
-                        ),
-                      ],
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final compact = constraints.maxWidth < 390;
+                  return ListView(
+                    padding: EdgeInsets.fromLTRB(
+                      compact ? 18 : 24,
+                      compact ? 18 : 28,
+                      compact ? 18 : 24,
+                      compact ? 18 : 24,
                     ),
-                  ),
-                ],
+                    children: [
+                      _LoginHero(
+                        isRegisterMode: _isRegisterMode,
+                        registerPreparedLogin: _registerPreparedLogin,
+                        compact: compact,
+                        onRegisterTap: () =>
+                            setState(() => _isRegisterMode = true),
+                        onHelpTap: () => AppFeedback.showToast('帮助功能即将上线'),
+                      ),
+                      SizedBox(height: compact ? 18 : 24),
+                      _SegmentedAuthSwitch(
+                        isRegisterMode: _isRegisterMode,
+                        onChanged: (value) =>
+                            setState(() => _isRegisterMode = value),
+                      ),
+                      SizedBox(height: compact ? 14 : 18),
+                      _FrostedFormCard(
+                        compact: compact,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _PillInputField(
+                              controller: _accountController,
+                              hintText: '手机号、邮箱或账号',
+                              prefixIcon: Icons.person_outline_rounded,
+                              textInputAction: TextInputAction.next,
+                              autocorrect: false,
+                            ),
+                            const SizedBox(height: 12),
+                            _PillInputField(
+                              controller: _passwordController,
+                              hintText: '密码',
+                              prefixIcon: Icons.lock_outline_rounded,
+                              obscureText: true,
+                              textInputAction: _isRegisterMode
+                                  ? TextInputAction.next
+                                  : TextInputAction.done,
+                              onSubmitted: (_) {
+                                if (!_isRegisterMode) {
+                                  _submitLogin(loading);
+                                }
+                              },
+                            ),
+                            if (_isRegisterMode) ...[
+                              const SizedBox(height: 12),
+                              _PillInputField(
+                                controller: _confirmPasswordController,
+                                hintText: '确认密码',
+                                prefixIcon: Icons.verified_user_outlined,
+                                obscureText: true,
+                                textInputAction: TextInputAction.done,
+                                onSubmitted: (_) => _submitRegister(loading),
+                              ),
+                            ],
+                            SizedBox(height: compact ? 18 : 22),
+                            _RippleActionButton(
+                              label: _isRegisterMode
+                                  ? '创建账号'
+                                  : _registerPreparedLogin
+                                      ? '直接登录'
+                                      : '进入 Lune',
+                              loading: loading,
+                              pressed: _buttonPressed,
+                              onTapDown: () =>
+                                  setState(() => _buttonPressed = true),
+                              onTapUp: () =>
+                                  setState(() => _buttonPressed = false),
+                              onTapCancel: () =>
+                                  setState(() => _buttonPressed = false),
+                              onTap: loading
+                                  ? null
+                                  : () => _isRegisterMode
+                                      ? _submitRegister(loading)
+                                      : _submitLogin(loading),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ],
@@ -226,12 +240,14 @@ class _LoginHero extends StatelessWidget {
   const _LoginHero({
     required this.isRegisterMode,
     required this.registerPreparedLogin,
+    required this.compact,
     required this.onRegisterTap,
     required this.onHelpTap,
   });
 
   final bool isRegisterMode;
   final bool registerPreparedLogin;
+  final bool compact;
   final VoidCallback onRegisterTap;
   final VoidCallback onHelpTap;
 
@@ -241,7 +257,12 @@ class _LoginHero extends StatelessWidget {
     final subtitle = isRegisterMode ? '建立属于你的连接入口' : '遇见 柔光里的呼吸';
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(22, 18, 22, 20),
+      padding: EdgeInsets.fromLTRB(
+        compact ? 18 : 22,
+        compact ? 16 : 18,
+        compact ? 18 : 22,
+        compact ? 18 : 20,
+      ),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(36),
         gradient: LinearGradient(
@@ -289,9 +310,9 @@ class _LoginHero extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 34),
+          SizedBox(height: compact ? 24 : 34),
           SizedBox(
-            height: 178,
+            height: compact ? 148 : 178,
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -329,8 +350,8 @@ class _LoginHero extends StatelessWidget {
                       ),
                       child: ClipOval(
                         child: SizedBox(
-                          width: 128,
-                          height: 128,
+                          width: compact ? 110 : 128,
+                          height: compact ? 110 : 128,
                           child: Image.asset(
                             'assets/branding/lune_logo_circle.png',
                             fit: BoxFit.cover,
@@ -343,48 +364,54 @@ class _LoginHero extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 18),
-          Wrap(
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 18,
-            runSpacing: 6,
-            children: [
-              Text(
-                titleLead,
-                style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                      color: AppTheme.textPrimary,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 1.2,
-                      fontFamily: 'PingFang SC',
-                    ),
-              ),
-              ShaderMask(
-                shaderCallback: (bounds) => const LinearGradient(
-                  colors: [
-                    Color(0xFF6F33B7),
-                    Color(0xFF8F4BE6),
-                    Color(0xFFBE6AF8),
-                  ],
-                ).createShader(bounds),
-                child: Text(
-                  'Lune',
+          SizedBox(height: compact ? 12 : 18),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  titleLead,
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w400,
-                        letterSpacing: 5.5,
+                        color: AppTheme.textPrimary,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: compact ? 0.4 : 1.2,
                         fontFamily: 'PingFang SC',
+                        fontSize: compact ? 40 : null,
                       ),
                 ),
-              ),
-            ],
+                SizedBox(width: compact ? 14 : 18),
+                ShaderMask(
+                  shaderCallback: (bounds) => const LinearGradient(
+                    colors: [
+                      Color(0xFF6F33B7),
+                      Color(0xFF8F4BE6),
+                      Color(0xFFBE6AF8),
+                    ],
+                  ).createShader(bounds),
+                  child: Text(
+                    'Lune',
+                    style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w400,
+                          letterSpacing: compact ? 3.6 : 5.5,
+                          fontFamily: 'PingFang SC',
+                          fontSize: compact ? 40 : null,
+                        ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: compact ? 10 : 14),
           Text(
             subtitle,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: AppTheme.textSecondary,
                   fontWeight: FontWeight.w600,
-                  letterSpacing: 2,
+                  letterSpacing: compact ? 1.2 : 2,
+                  fontSize: compact ? 18 : null,
                 ),
           ),
         ],
@@ -692,9 +719,10 @@ class _SegmentedTab extends StatelessWidget {
 }
 
 class _FrostedFormCard extends StatelessWidget {
-  const _FrostedFormCard({required this.child});
+  const _FrostedFormCard({required this.child, required this.compact});
 
   final Widget child;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -703,7 +731,12 @@ class _FrostedFormCard extends StatelessWidget {
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          padding: EdgeInsets.fromLTRB(
+            compact ? 14 : 16,
+            compact ? 14 : 16,
+            compact ? 14 : 16,
+            compact ? 14 : 16,
+          ),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(34),
             color: Colors.white.withValues(alpha: 0.42),
