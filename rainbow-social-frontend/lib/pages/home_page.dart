@@ -138,15 +138,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                     ),
                     const SizedBox(width: 14),
                     _ActionCircle(
-                      icon: Icons.star_rounded,
-                      color: AppTheme.secondary,
-                      size: 54,
-                      onTap: () => _deckKey.currentState?.triggerSwipe(
-                        _SwipeDecision.superLike,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    _ActionCircle(
                       icon: Icons.favorite_rounded,
                       color: const Color(0xFFB874F6),
                       size: 60,
@@ -190,14 +181,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     if (decision == _SwipeDecision.pass) {
       result = await ref.read(homeControllerProvider.notifier).passTopCard();
     } else {
-      result = await ref.read(homeControllerProvider.notifier).likeTopCard(
-            isSuperLike: decision == _SwipeDecision.superLike,
-          );
-      if (decision == _SwipeDecision.superLike) {
-        AppFeedback.showLikeSentToast(
-          title: '已送出超级喜欢',
-        );
-      }
+      result = await ref.read(homeControllerProvider.notifier).likeTopCard();
     }
 
     if (!mounted || result == null) return;
@@ -213,11 +197,7 @@ class _HomePageState extends ConsumerState<HomePage> {
       setState(() => _matchUser = matchedUser);
       return;
     }
-    if (decision == _SwipeDecision.superLike) {
-      AppFeedback.showLikeSentToast(
-        title: RelationshipCopy.superLikeSent(result.user.nickname),
-      );
-    } else if (decision == _SwipeDecision.like) {
+    if (decision == _SwipeDecision.like) {
       AppFeedback.showLikeSentToast(
         title: RelationshipCopy.likeSent(result.user.nickname),
       );
@@ -258,7 +238,6 @@ class _HomePageState extends ConsumerState<HomePage> {
 enum _SwipeDecision {
   like,
   pass,
-  superLike,
 }
 
 class _SwipeDeck extends StatefulWidget {
@@ -280,7 +259,6 @@ class _SwipeDeck extends StatefulWidget {
 class _SwipeDeckState extends State<_SwipeDeck>
     with SingleTickerProviderStateMixin {
   static const _horizontalThreshold = 118.0;
-  static const _verticalThreshold = 138.0;
 
   late final AnimationController _controller;
   Animation<Offset>? _offsetAnimation;
@@ -323,7 +301,6 @@ class _SwipeDeckState extends State<_SwipeDeck>
     final target = switch (decision) {
       _SwipeDecision.like => Offset(size.width * 1.2, -20),
       _SwipeDecision.pass => Offset(-size.width * 1.2, -20),
-      _SwipeDecision.superLike => Offset(0, -size.height * 0.95),
     };
     await _animateTo(target, curve: Curves.easeInCubic);
     await widget.onSwipe(decision);
@@ -355,9 +332,6 @@ class _SwipeDeckState extends State<_SwipeDeck>
     final dxProgress = (_effectiveOffset.dx.abs() / _horizontalThreshold)
         .clamp(0.0, 1.0)
         .toDouble();
-    final upProgress = ((_effectiveOffset.dy * -1) / _verticalThreshold)
-        .clamp(0.0, 1.0)
-        .toDouble();
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -384,7 +358,6 @@ class _SwipeDeckState extends State<_SwipeDeck>
                 constraints,
                 visible.first,
                 dxProgress: dxProgress,
-                upProgress: upProgress,
               ),
           ],
         );
@@ -395,10 +368,8 @@ class _SwipeDeckState extends State<_SwipeDeck>
   Widget _buildCard(
     BuildContext context,
     BoxConstraints constraints,
-    AppUser user,
-    {
+    AppUser user, {
     required double dxProgress,
-    required double upProgress,
   }) {
     Widget child = Positioned.fill(
       child: UserCard(
@@ -407,7 +378,6 @@ class _SwipeDeckState extends State<_SwipeDeck>
         overlayBuilder: (_) => _SwipeOverlay(
           likeOpacity: _effectiveOffset.dx > 0 ? dxProgress : 0,
           passOpacity: _effectiveOffset.dx < 0 ? dxProgress : 0,
-          superLikeOpacity: _effectiveOffset.dy < 0 ? upProgress : 0,
         ),
       ),
     );
@@ -452,10 +422,6 @@ class _SwipeDeckState extends State<_SwipeDeck>
   }
 
   _SwipeDecision? _decisionForCurrentOffset() {
-    if (_effectiveOffset.dy <= -_verticalThreshold &&
-        _effectiveOffset.dx.abs() < _horizontalThreshold) {
-      return _SwipeDecision.superLike;
-    }
     if (_effectiveOffset.dx >= _horizontalThreshold) {
       return _SwipeDecision.like;
     }
@@ -499,12 +465,10 @@ class _SwipeOverlay extends StatelessWidget {
   const _SwipeOverlay({
     required this.likeOpacity,
     required this.passOpacity,
-    required this.superLikeOpacity,
   });
 
   final double likeOpacity;
   final double passOpacity;
-  final double superLikeOpacity;
 
   @override
   Widget build(BuildContext context) {
@@ -531,21 +495,6 @@ class _SwipeOverlay extends StatelessWidget {
               label: '喜欢',
               color: AppTheme.primary,
               angle: 0.16,
-            ),
-          ),
-        ),
-        Positioned(
-          left: 0,
-          right: 0,
-          top: 52,
-          child: Opacity(
-            opacity: superLikeOpacity,
-            child: const Center(
-              child: _Badge(
-                label: '超级喜欢',
-                color: AppTheme.secondary,
-                angle: 0,
-              ),
             ),
           ),
         ),

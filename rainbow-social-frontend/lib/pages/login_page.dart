@@ -91,6 +91,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   _LoginHero(
                     isRegisterMode: _isRegisterMode,
                     registerPreparedLogin: _registerPreparedLogin,
+                    onRegisterTap: () => setState(() => _isRegisterMode = true),
+                    onHelpTap: () => AppFeedback.showToast('帮助功能即将上线'),
                   ),
                   const SizedBox(height: 24),
                   _SegmentedAuthSwitch(
@@ -224,14 +226,19 @@ class _LoginHero extends StatelessWidget {
   const _LoginHero({
     required this.isRegisterMode,
     required this.registerPreparedLogin,
+    required this.onRegisterTap,
+    required this.onHelpTap,
   });
 
   final bool isRegisterMode;
   final bool registerPreparedLogin;
+  final VoidCallback onRegisterTap;
+  final VoidCallback onHelpTap;
 
   @override
   Widget build(BuildContext context) {
-    final title = isRegisterMode ? '注册 Lune' : '登录 Lune';
+    final titleLead = isRegisterMode ? '开启你的' : '回到你的';
+    final subtitle = isRegisterMode ? '建立属于你的连接入口' : '遇见 柔光里的呼吸';
 
     return Container(
       padding: const EdgeInsets.fromLTRB(22, 18, 22, 20),
@@ -258,8 +265,31 @@ class _LoginHero extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              Text(
+                'LUNE',
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: const Color(0xFF6F33B7),
+                      letterSpacing: 10,
+                      fontWeight: FontWeight.w400,
+                    ),
+              ),
+              const Spacer(),
+              _HeroTopLink(
+                label: '注册',
+                onTap: onRegisterTap,
+              ),
+              const SizedBox(width: 18),
+              _HeroTopLink(
+                label: '帮助',
+                onTap: onHelpTap,
+              ),
+            ],
+          ),
+          const SizedBox(height: 34),
           SizedBox(
-            height: 214,
+            height: 178,
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -284,34 +314,25 @@ class _LoginHero extends StatelessWidget {
                 Align(
                   alignment: Alignment.center,
                   child: _BreathingLogoHalo(
-                    child: Container(
-                      width: 132,
-                      height: 132,
+                    child: DecoratedBox(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFFF8F6FF),
-                            Color(0xFFF2F4FF),
-                            Color(0xFFE8EDFF),
-                          ],
-                        ),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.82),
-                          width: 1.2,
-                        ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppTheme.primary.withValues(alpha: 0.14),
-                            blurRadius: 44,
-                            offset: const Offset(0, 18),
+                            color: AppTheme.primary.withValues(alpha: 0.12),
+                            blurRadius: 42,
+                            spreadRadius: 4,
                           ),
                         ],
                       ),
                       child: ClipOval(
-                        child: Image.asset(
-                          'assets/branding/lune_logo_circle.png',
-                          fit: BoxFit.cover,
+                        child: SizedBox(
+                          width: 128,
+                          height: 128,
+                          child: Image.asset(
+                            'assets/branding/lune_logo_circle.png',
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     ),
@@ -320,8 +341,63 @@ class _LoginHero extends StatelessWidget {
               ],
             ),
           ),
-          Text(title, style: Theme.of(context).textTheme.displayLarge),
+          const SizedBox(height: 18),
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: '$titleLead ',
+                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                        color: AppTheme.textPrimary,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.2,
+                      ),
+                ),
+                TextSpan(
+                  text: 'Lune',
+                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                        color: AppTheme.textPrimary,
+                        fontWeight: FontWeight.w300,
+                        letterSpacing: 6,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            subtitle,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppTheme.textSecondary,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 2,
+                ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _HeroTopLink extends StatelessWidget {
+  const _HeroTopLink({
+    required this.label,
+    required this.onTap,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Text(
+        label,
+        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: AppTheme.textPrimary.withValues(alpha: 0.82),
+              fontWeight: FontWeight.w600,
+            ),
       ),
     );
   }

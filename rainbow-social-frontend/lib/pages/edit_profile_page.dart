@@ -618,27 +618,25 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     final session = ref.read(authControllerProvider).valueOrNull;
     if (session == null || _uploading) return;
 
-    final source = await showModalBottomSheet<ImageSource>(
+    final source = await AppFeedback.showJellySheet<ImageSource>(
       context: context,
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library_outlined),
-                title: const Text('从相册选择'),
-                onTap: () => Navigator.of(context).pop(ImageSource.gallery),
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_camera_outlined),
-                title: const Text('打开相机'),
-                onTap: () => Navigator.of(context).pop(ImageSource.camera),
-              ),
-            ],
-          ),
-        );
-      },
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('从相册选择'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('打开相机'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
+            ),
+          ],
+        ),
+      ),
     );
     if (source == null) return;
 

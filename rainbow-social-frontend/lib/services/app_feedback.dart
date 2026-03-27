@@ -50,7 +50,7 @@ class AppFeedback {
 
   static Future<T?> showJellyDialog<T>({
     required BuildContext context,
-    required Widget child,
+    required WidgetBuilder builder,
     bool barrierDismissible = true,
   }) {
     return showGeneralDialog<T>(
@@ -64,7 +64,10 @@ class AppFeedback {
           child: Center(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: _JellyDialogFrame(child: child),
+              child: Builder(
+                builder: (dialogContext) =>
+                    _JellyDialogFrame(child: builder(dialogContext)),
+              ),
             ),
           ),
         );
@@ -87,14 +90,15 @@ class AppFeedback {
 
   static Future<T?> showJellySheet<T>({
     required BuildContext context,
-    required Widget child,
+    required WidgetBuilder builder,
     bool isScrollControlled = true,
   }) {
     return showModalBottomSheet<T>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: isScrollControlled,
-      builder: (_) => _JellyBottomSheetFrame(child: child),
+      builder: (sheetContext) =>
+          _JellyBottomSheetFrame(child: builder(sheetContext)),
     );
   }
 
@@ -119,7 +123,7 @@ class AppFeedback {
           behavior: SnackBarBehavior.floating,
           elevation: 0,
           backgroundColor: Colors.transparent,
-          margin: const EdgeInsets.fromLTRB(20, 0, 20, 120),
+          margin: const EdgeInsets.fromLTRB(20, 0, 20, 156),
           padding: EdgeInsets.zero,
           content: Align(
             alignment: Alignment.bottomCenter,
@@ -426,26 +430,28 @@ class _FeedbackToastStyle {
 
   const _FeedbackToastStyle.toast()
       : this(
-          backgroundColor: const Color(0x52FFFFFF),
-          borderColor: const Color(0x8AFFFFFF),
-          shadowColor: const Color(0x149B63FF),
+          backgroundColor: const Color(0x66FFFFFF),
+          borderColor: const Color(0x99FFFFFF),
+          shadowColor: const Color(0x1A7B36C2),
           titleColor: AppTheme.textPrimary,
           subtitleColor: AppTheme.textSecondary,
           icon: Icons.favorite_rounded,
-          iconColor: const Color(0xFF7B36C2),
-          iconBackgroundColor: const Color(0x1A7B36C2),
-          iconGradient: null,
-          radius: 20,
-          blur: 15,
-          shadowBlur: 18,
-          maxWidth: 280,
+          iconColor: Colors.white,
+          iconBackgroundColor: Colors.transparent,
+          iconGradient: const LinearGradient(
+            colors: [Color(0xFFC8B6FF), Color(0xFFA78BFA), Color(0xFFF0ABFC)],
+          ),
+          radius: 22,
+          blur: 16,
+          shadowBlur: 20,
+          maxWidth: 300,
         );
 
   const _FeedbackToastStyle.likeSent()
       : this(
-          backgroundColor: const Color(0x5EFFFFFF),
+          backgroundColor: const Color(0x66FFFFFF),
           borderColor: const Color(0x96FFFFFF),
-          shadowColor: const Color(0x1FA78BFA),
+          shadowColor: const Color(0x267B36C2),
           titleColor: AppTheme.textPrimary,
           subtitleColor: AppTheme.textSecondary,
           icon: Icons.favorite_rounded,
@@ -462,20 +468,21 @@ class _FeedbackToastStyle {
 
   const _FeedbackToastStyle.undo()
       : this(
-          backgroundColor: const Color(0x45FFFFFF),
-          borderColor: const Color(0x7DFFFFFF),
-          shadowColor: const Color(0x12000000),
-          titleColor: AppTheme.textSecondary,
+          backgroundColor: const Color(0x60FFFFFF),
+          borderColor: const Color(0x92FFFFFF),
+          shadowColor: const Color(0x1F7B36C2),
+          titleColor: AppTheme.textPrimary,
           subtitleColor: AppTheme.textSecondary,
-          icon: Icons.undo_rounded,
-          iconColor: const Color(0xFF8F8CA3),
-          iconBackgroundColor: const Color(0x22FFFFFF),
-          iconGradient: null,
-          radius: 18,
-          blur: 14,
-          shadowBlur: 16,
-          maxWidth: 240,
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          icon: Icons.favorite_rounded,
+          iconColor: Colors.white,
+          iconBackgroundColor: Colors.transparent,
+          iconGradient: const LinearGradient(
+            colors: [Color(0xFFC8B6FF), Color(0xFFA78BFA), Color(0xFFF0ABFC)],
+          ),
+          radius: 22,
+          blur: 16,
+          shadowBlur: 20,
+          maxWidth: 280,
         );
 
   const _FeedbackToastStyle.error()

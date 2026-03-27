@@ -1,9 +1,5 @@
 class RelationshipCopy {
-  static String likeSent(String nickname) =>
-      '已送出喜欢';
-
-  static String superLikeSent(String nickname) =>
-      '已送出超级喜欢';
+  static String likeSent(String nickname) => '已送出喜欢';
 
   static String mutualLike(String nickname) => '你和 $nickname 互相关注了，现在可以展开聊天。';
 

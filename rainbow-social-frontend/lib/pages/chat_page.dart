@@ -139,7 +139,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         actions: [
           IconButton(
             tooltip: '查看 Lune 互动设计稿',
-            onPressed: () => Navigator.of(context).pushNamed(AppRouter.flirtyDesign),
+            onPressed: () =>
+                Navigator.of(context).pushNamed(AppRouter.flirtyDesign),
             icon: const Icon(Icons.design_services_rounded),
           ),
         ],
@@ -172,8 +173,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                                       roomState.hasMore &&
                                       !roomState.isLoadingMore) {
                                     ref
-                                        .read(chatControllerProvider(widget.peer)
-                                            .notifier)
+                                        .read(
+                                            chatControllerProvider(widget.peer)
+                                                .notifier)
                                         .loadMoreHistory();
                                   }
                                   return false;
@@ -232,7 +234,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                                         ),
                                       );
                                     }
-                                    final message = roomState.messages[index - 2];
+                                    final message =
+                                        roomState.messages[index - 2];
                                     return MessageBubble(
                                       message: message,
                                       isMine: message.isMine(
@@ -307,9 +310,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                                 textAlignVertical: TextAlignVertical.center,
                                 onChanged: (_) => setState(() {}),
                                 decoration: InputDecoration(
-                                  hintText: _isRecording
-                                      ? '松开发送，向上取消'
-                                      : '输入消息',
+                                  hintText: _isRecording ? '松开发送，向上取消' : '输入消息',
                                   border: InputBorder.none,
                                   enabledBorder: InputBorder.none,
                                   focusedBorder: InputBorder.none,
@@ -452,10 +453,9 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   }
 
   Future<void> _openMediaActions() async {
-    final mode = await showModalBottomSheet<String>(
+    final mode = await AppFeedback.showJellySheet<String>(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) => const _MediaActionsSheet(),
+      builder: (_) => const _MediaActionsSheet(),
     );
     if (mode == null || !mounted) return;
     if (mode == 'flash') {
@@ -486,11 +486,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   }
 
   Future<void> _openFlirtyActions() async {
-    final action = await showModalBottomSheet<FlirtyAction>(
+    final action = await AppFeedback.showJellySheet<FlirtyAction>(
       context: context,
-      backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (context) => const FlirtyActionPickerSheet(),
+      builder: (_) => const FlirtyActionPickerSheet(),
     );
     if (action == null || !mounted) return;
     await ref
@@ -509,9 +508,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     _triggerFlirtyHaptics(action.id);
     setState(() {
       _activeBurst = FlirtyReplayData(
-        instanceKey: isReplay
-            ? '${key}_${DateTime.now().microsecondsSinceEpoch}'
-            : key,
+        instanceKey:
+            isReplay ? '${key}_${DateTime.now().microsecondsSinceEpoch}' : key,
         action: action,
         preview: message.content,
         isMine: message.isMine(
@@ -753,7 +751,7 @@ class _ChatCircleButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-        child: Container(
+      child: Container(
         width: 42,
         height: 42,
         decoration: BoxDecoration(

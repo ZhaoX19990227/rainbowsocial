@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../controllers/auth_controller.dart';
 import '../controllers/profile_controller.dart';
+import '../providers/app_providers.dart';
 import '../routes/app_router.dart';
 import '../services/app_feedback.dart';
-import '../theme/app_theme.dart';
 import '../services/zodiac_utils.dart';
+import '../theme/app_theme.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/gradient_button.dart';
 import '../widgets/inline_birthday_picker.dart';
@@ -156,10 +158,16 @@ class _BirthdaySetupPageState extends ConsumerState<BirthdaySetupPage> {
             ),
           );
       if (!mounted) return;
+      final token = ref.read(authControllerProvider).valueOrNull?.token ?? '';
+      if (token.trim().isEmpty) {
+        throw Exception('登录状态已失效');
+      }
+      await ref.read(horoscopeServiceProvider).getToday(token);
+      if (!mounted) return;
       AppFeedback.showToast('生日与星座已更新');
       Navigator.of(context).pushReplacementNamed(AppRouter.horoscopeDetail);
     } catch (error) {
-      AppFeedback.showError('保存生日失败：$error');
+      AppFeedback.showError('星座信息更新失败：$error');
     } finally {
       if (mounted) {
         setState(() => _saving = false);

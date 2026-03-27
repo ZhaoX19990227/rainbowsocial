@@ -150,27 +150,25 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final profile = ref.read(profileControllerProvider).valueOrNull;
     if (session == null || profile == null) return;
 
-    final source = await showModalBottomSheet<ImageSource>(
+    final source = await AppFeedback.showJellySheet<ImageSource>(
       context: context,
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library_outlined),
-                title: const Text('从图库上传'),
-                onTap: () => Navigator.of(context).pop(ImageSource.gallery),
-              ),
-              ListTile(
-                leading: const Icon(Icons.photo_camera_outlined),
-                title: const Text('拍照'),
-                onTap: () => Navigator.of(context).pop(ImageSource.camera),
-              ),
-            ],
-          ),
-        );
-      },
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('从图库上传'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('拍照'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
+            ),
+          ],
+        ),
+      ),
     );
     if (source == null) return;
 
@@ -207,51 +205,33 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   Future<void> _showProfileActions(BuildContext context, WidgetRef ref) async {
-    await showModalBottomSheet<void>(
+    await AppFeedback.showJellySheet<void>(
       context: context,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return SafeArea(
-          top: false,
-          child: Container(
-            margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.92),
-              borderRadius: BorderRadius.circular(32),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primary.withValues(alpha: 0.12),
-                  blurRadius: 32,
-                  offset: const Offset(0, 18),
-                ),
-              ],
+      builder: (sheetContext) => SafeArea(
+        top: false,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _ActionTile(
+              icon: Icons.refresh_rounded,
+              label: '刷新资料',
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                ref.read(profileControllerProvider.notifier).load();
+              },
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _ActionTile(
-                  icon: Icons.refresh_rounded,
-                  label: '刷新资料',
-                  onTap: () {
-                    Navigator.of(sheetContext).pop();
-                    ref.read(profileControllerProvider.notifier).load();
-                  },
-                ),
-                _ActionTile(
-                  icon: Icons.logout_rounded,
-                  label: '退出登录',
-                  color: AppTheme.error,
-                  onTap: () async {
-                    Navigator.of(sheetContext).pop();
-                    await _signOut(context, ref);
-                  },
-                ),
-              ],
+            _ActionTile(
+              icon: Icons.logout_rounded,
+              label: '退出登录',
+              color: AppTheme.error,
+              onTap: () async {
+                Navigator.of(sheetContext).pop();
+                await _signOut(this.context, ref);
+              },
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 
@@ -260,210 +240,212 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         ? user.statusId.trim()
         : '';
 
-    final result = await showModalBottomSheet<String?>(
+    final result = await AppFeedback.showJellySheet<String?>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            final selected = UserStatusCatalog.byId(selectedId);
-            return SafeArea(
-              top: false,
-              child: Container(
-                margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.96),
-                  borderRadius: BorderRadius.circular(34),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 40,
-                      offset: const Offset(0, -14),
+      builder: (_) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          final selected = UserStatusCatalog.byId(selectedId);
+          return SafeArea(
+            top: false,
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 18),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.96),
+                borderRadius: BorderRadius.circular(34),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 40,
+                    offset: const Offset(0, -14),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 46,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: AppTheme.ghostBorder.withValues(alpha: 0.3),
+                      borderRadius: BorderRadius.circular(999),
                     ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 46,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: AppTheme.ghostBorder.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(999),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '今日状态',
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.w900,
+                            ),
                       ),
-                    ),
-                    const SizedBox(height: 18),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '今日状态',
-                          style:
-                              Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                    fontWeight: FontWeight.w900,
-                                  ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '状态仅生效24小时，到期自动结束',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: AppTheme.textSecondary.withValues(alpha: 0.72),
                         ),
-                      ],
+                  ),
+                  const SizedBox(height: 20),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.48,
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '状态仅生效24小时，到期自动结束',
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: AppTheme.textSecondary.withValues(alpha: 0.72),
-                          ),
-                    ),
-                    const SizedBox(height: 20),
-                    ConstrainedBox(
-                      constraints: BoxConstraints(
-                        maxHeight: MediaQuery.of(context).size.height * 0.48,
-                      ),
-                      child: SingleChildScrollView(
-                        child: GridView.builder(
-                          itemCount: UserStatusCatalog.options.length,
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate:
-                              const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 4,
-                            mainAxisSpacing: 12,
-                            crossAxisSpacing: 12,
-                            childAspectRatio: 0.9,
-                          ),
-                          itemBuilder: (context, index) {
-                            final option = UserStatusCatalog.options[index];
-                            final isSelected = selectedId == option.id;
-                            return GestureDetector(
-                              onTap: () => setSheetState(() {
-                                selectedId = option.id;
-                              }),
-                              child: AnimatedContainer(
-                                duration: const Duration(milliseconds: 180),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 12,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(22),
-                                  gradient: isSelected
-                                      ? UserStatusCatalog.gradientFor(option.id)
-                                      : null,
-                                  color: isSelected
-                                      ? null
-                                      : Colors.white.withValues(alpha: 0.88),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? AppTheme.primary.withValues(alpha: 0.16)
-                                        : AppTheme.ghostBorder.withValues(
-                                            alpha: 0.48,
-                                          ),
-                                    width: isSelected ? 1.6 : 1,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: isSelected
-                                          ? AppTheme.primary.withValues(alpha: 0.2)
-                                          : Colors.black.withValues(alpha: 0.03),
-                                      blurRadius: isSelected ? 20 : 12,
-                                      offset: const Offset(0, 8),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      option.icon,
-                                      size: 27,
-                                      color: isSelected
-                                          ? Colors.white
-                                          : AppTheme.primary,
-                                    ),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                      option.label,
-                                      textAlign: TextAlign.center,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .labelMedium
-                                          ?.copyWith(
-                                            color: isSelected
-                                                ? Colors.white
-                                                : AppTheme.textSecondary,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                    ),
-                                  ],
-                                ),
+                    child: SingleChildScrollView(
+                      child: GridView.builder(
+                        itemCount: UserStatusCatalog.options.length,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 0.9,
+                        ),
+                        itemBuilder: (context, index) {
+                          final option = UserStatusCatalog.options[index];
+                          final isSelected = selectedId == option.id;
+                          return GestureDetector(
+                            onTap: () => setSheetState(() {
+                              selectedId = option.id;
+                            }),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 180),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 12,
                               ),
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    GestureDetector(
-                      onTap: selected == null
-                          ? null
-                          : () => Navigator.of(sheetContext).pop(selected.id),
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        height: 56,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(22),
-                          gradient: selected == null
-                              ? null
-                              : const LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  colors: [
-                                    AppTheme.primary,
-                                    AppTheme.primaryDark,
-                                  ],
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(22),
+                                gradient: isSelected
+                                    ? UserStatusCatalog.gradientFor(option.id)
+                                    : null,
+                                color: isSelected
+                                    ? null
+                                    : Colors.white.withValues(alpha: 0.88),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppTheme.primary.withValues(alpha: 0.16)
+                                      : AppTheme.ghostBorder.withValues(
+                                          alpha: 0.48,
+                                        ),
+                                  width: isSelected ? 1.6 : 1,
                                 ),
-                          color: selected == null
-                              ? AppTheme.surfaceHighest
-                              : null,
-                          boxShadow: selected == null
-                              ? null
-                              : [
+                                boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.primary.withValues(alpha: 0.28),
-                                    blurRadius: 22,
-                                    offset: const Offset(0, 10),
+                                    color: isSelected
+                                        ? AppTheme.primary
+                                            .withValues(alpha: 0.2)
+                                        : Colors.black.withValues(alpha: 0.03),
+                                    blurRadius: isSelected ? 20 : 12,
+                                    offset: const Offset(0, 8),
                                   ),
                                 ],
-                        ),
-                        alignment: Alignment.center,
-                        child: Text(
-                          '保存状态',
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: selected == null
-                                    ? AppTheme.textSecondary.withValues(alpha: 0.5)
-                                    : Colors.white,
-                                fontWeight: FontWeight.w800,
                               ),
-                        ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    option.icon,
+                                    size: 27,
+                                    color: isSelected
+                                        ? Colors.white
+                                        : AppTheme.primary,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    option.label,
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium
+                                        ?.copyWith(
+                                          color: isSelected
+                                              ? Colors.white
+                                              : AppTheme.textSecondary,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
-                    if (user.statusId.trim().isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: TextButton.icon(
-                          onPressed: () => Navigator.of(sheetContext).pop(''),
-                          icon: const Icon(Icons.restart_alt_rounded),
-                          label: const Text('恢复默认'),
-                        ),
+                  ),
+                  const SizedBox(height: 16),
+                  GestureDetector(
+                    onTap: selected == null
+                        ? null
+                        : () => Navigator.of(sheetContext).pop(selected.id),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      height: 56,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(22),
+                        gradient: selected == null
+                            ? null
+                            : const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  AppTheme.primary,
+                                  AppTheme.primaryDark,
+                                ],
+                              ),
+                        color:
+                            selected == null ? AppTheme.surfaceHighest : null,
+                        boxShadow: selected == null
+                            ? null
+                            : [
+                                BoxShadow(
+                                  color:
+                                      AppTheme.primary.withValues(alpha: 0.28),
+                                  blurRadius: 22,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
                       ),
-                  ],
-                ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '保存状态',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: selected == null
+                                      ? AppTheme.textSecondary
+                                          .withValues(alpha: 0.5)
+                                      : Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                      ),
+                    ),
+                  ),
+                  if (user.statusId.trim().isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: TextButton.icon(
+                        onPressed: () => Navigator.of(sheetContext).pop(''),
+                        icon: const Icon(Icons.restart_alt_rounded),
+                        label: const Text('恢复默认'),
+                      ),
+                    ),
+                ],
               ),
-            );
-          },
-        );
-      },
+            ),
+          );
+        },
+      ),
     );
 
     if (result == null) return;
@@ -488,127 +470,130 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   Future<void> _showTagPicker(AppUser user) async {
     List<String> draft = [...user.tags];
-    final result = await showModalBottomSheet<List<String>>(
+    final result = await AppFeedback.showJellySheet<List<String>>(
       context: context,
-      backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (sheetContext) {
-        return StatefulBuilder(
-          builder: (context, setSheetState) {
-            return SafeArea(
-              top: false,
-              child: Container(
-                margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 22),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.96),
-                  borderRadius: BorderRadius.circular(32),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppTheme.primary.withValues(alpha: 0.12),
-                      blurRadius: 34,
-                      offset: const Offset(0, -12),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 46,
-                        height: 5,
-                        decoration: BoxDecoration(
-                          color: AppTheme.ghostBorder.withValues(alpha: 0.34),
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Text(
-                      '选择兴趣标签',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      '最多选择 $_maxTags 个，让合拍的人更快找到你',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: AppTheme.textSecondary,
-                          ),
-                    ),
-                    const SizedBox(height: 18),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: profileTagOptions.map((tag) {
-                        final selected = draft.contains(tag);
-                        return GestureDetector(
-                          onTap: () {
-                            setSheetState(() {
-                              if (selected) {
-                                draft = draft.where((item) => item != tag).toList();
-                              } else if (draft.length < _maxTags) {
-                                draft = [...draft, tag];
-                              } else {
-                                AppFeedback.showToast('最多选择 $_maxTags 个标签');
-                              }
-                            });
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 9,
-                            ),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(999),
-                              gradient: selected
-                                  ? const LinearGradient(
-                                      colors: [
-                                        AppTheme.primary,
-                                        AppTheme.primaryDark,
-                                      ],
-                                    )
-                                  : null,
-                              color: selected ? null : const Color(0xFFF4F1FB),
-                            ),
-                            child: Text(
-                              tag,
-                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                    color: selected ? Colors.white : AppTheme.primary,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 22),
-                    SizedBox(
-                      width: double.infinity,
-                      child: FilledButton(
-                        onPressed: () => Navigator.of(sheetContext).pop(draft),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppTheme.primary,
-                          foregroundColor: Colors.white,
-                          minimumSize: const Size.fromHeight(54),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                        ),
-                        child: const Text('保存标签'),
-                      ),
-                    ),
-                  ],
-                ),
+      builder: (_) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) {
+          return SafeArea(
+            top: false,
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 22),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.96),
+                borderRadius: BorderRadius.circular(32),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primary.withValues(alpha: 0.12),
+                    blurRadius: 34,
+                    offset: const Offset(0, -12),
+                  ),
+                ],
               ),
-            );
-          },
-        );
-      },
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 46,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: AppTheme.ghostBorder.withValues(alpha: 0.34),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    '选择兴趣标签',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '最多选择 $_maxTags 个，让合拍的人更快找到你',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: AppTheme.textSecondary,
+                        ),
+                  ),
+                  const SizedBox(height: 18),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
+                    children: profileTagOptions.map((tag) {
+                      final selected = draft.contains(tag);
+                      return GestureDetector(
+                        onTap: () {
+                          setSheetState(() {
+                            if (selected) {
+                              draft =
+                                  draft.where((item) => item != tag).toList();
+                            } else if (draft.length < _maxTags) {
+                              draft = [...draft, tag];
+                            } else {
+                              AppFeedback.showToast('最多选择 $_maxTags 个标签');
+                            }
+                          });
+                        },
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 9,
+                          ),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(999),
+                            gradient: selected
+                                ? const LinearGradient(
+                                    colors: [
+                                      AppTheme.primary,
+                                      AppTheme.primaryDark,
+                                    ],
+                                  )
+                                : null,
+                            color: selected ? null : const Color(0xFFF4F1FB),
+                          ),
+                          child: Text(
+                            tag,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(
+                                  color: selected
+                                      ? Colors.white
+                                      : AppTheme.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 22),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () => Navigator.of(sheetContext).pop(draft),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppTheme.primary,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size.fromHeight(54),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: const Text('保存标签'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
     );
 
     if (result == null) return;
@@ -623,68 +608,60 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   Future<void> _showAboutEditor(AppUser user) async {
     final controller = TextEditingController(text: user.bio.trim());
-    final result = await showDialog<String>(
+    final result = await AppFeedback.showJellyDialog<String>(
       context: context,
-      builder: (dialogContext) {
-        return Dialog(
-          backgroundColor: Colors.white.withValues(alpha: 0.96),
-          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '填写关于我',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '写一点你的性格、节奏和想认识怎样的人',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: controller,
-                  minLines: 4,
-                  maxLines: 6,
-                  maxLength: 120,
-                  decoration: const InputDecoration(
-                    hintText: '例如：慢热但真诚，喜欢轻松有分寸的聊天。',
+      builder: (dialogContext) => Padding(
+        padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '填写关于我',
+              style: Theme.of(dialogContext).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
                   ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '写一点你的性格、节奏和想认识怎样的人',
+              style: Theme.of(dialogContext).textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.textSecondary,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              minLines: 4,
+              maxLines: 6,
+              maxLength: 120,
+              decoration: const InputDecoration(
+                hintText: '例如：慢热但真诚，喜欢轻松有分寸的聊天。',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('取消'),
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.of(dialogContext).pop(),
-                      child: const Text('取消'),
-                    ),
-                    const Spacer(),
-                    FilledButton(
-                      onPressed: () => Navigator.of(dialogContext)
-                          .pop(controller.text.trim()),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppTheme.primary,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('保存'),
-                    ),
-                  ],
+                const Spacer(),
+                FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(
+                    controller.text.trim(),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('保存'),
                 ),
               ],
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
     controller.dispose();
 
@@ -775,7 +752,8 @@ class _ProfileHeroCard extends StatelessWidget {
       _HeroChipData(label: '${user.heightCm}cm'),
       _HeroChipData(label: '${user.weightKg}kg'),
     ];
-    final visibleTags = user.tags.where((tag) => tag.trim().isNotEmpty).toList();
+    final visibleTags =
+        user.tags.where((tag) => tag.trim().isNotEmpty).toList();
 
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 26, 24, 22),
@@ -863,9 +841,8 @@ class _ProfileHeroCard extends StatelessWidget {
               alignment: WrapAlignment.center,
               spacing: 8,
               runSpacing: 8,
-              children: visibleTags
-                  .map((tag) => _SoftTagChip(label: tag))
-                  .toList(),
+              children:
+                  visibleTags.map((tag) => _SoftTagChip(label: tag)).toList(),
             ),
           ],
           const SizedBox(height: 16),
@@ -892,7 +869,8 @@ class _MomentsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final moments = user.photos
-        .where((photo) => photo.trim().isNotEmpty && photo.trim() != user.avatar.trim())
+        .where((photo) =>
+            photo.trim().isNotEmpty && photo.trim() != user.avatar.trim())
         .toList();
 
     return Column(
@@ -984,7 +962,8 @@ class _ProfileLikesStrip extends StatelessWidget {
                       items[i].$1,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                            color: AppTheme.textSecondary.withValues(alpha: 0.74),
+                            color:
+                                AppTheme.textSecondary.withValues(alpha: 0.74),
                             fontWeight: FontWeight.w700,
                           ),
                     ),
@@ -1247,7 +1226,8 @@ class _TagsInsightCard extends StatelessWidget {
       subtitle: 'HEADLINES',
       accent: const [Color(0xFFF8F4FF), Color(0xFFFFFFFF)],
       fullWidth: true,
-      onTap: user.tags.isEmpty && user.positionRole.trim().isEmpty ? onTap : null,
+      onTap:
+          user.tags.isEmpty && user.positionRole.trim().isEmpty ? onTap : null,
       child: user.tags.isEmpty && user.positionRole.trim().isEmpty
           ? Column(
               children: [
@@ -1484,11 +1464,13 @@ class _MomentPhotoCard extends StatelessWidget {
                       alignment: Alignment.center,
                       child: Text(
                         '+$extraCount',
-                        style:
-                            Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800,
-                                ),
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                            ),
                       ),
                     ),
                 ],
