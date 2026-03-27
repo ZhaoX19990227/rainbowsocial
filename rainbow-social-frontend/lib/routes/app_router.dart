@@ -4,7 +4,6 @@ import '../models/app_user.dart';
 import '../pages/chat_page.dart';
 import '../pages/edit_profile_page.dart';
 import '../pages/flirty_action_design_page.dart';
-import '../pages/birthday_setup_page.dart';
 import '../pages/horoscope_detail_page.dart';
 import '../pages/likes_overview_page.dart';
 import '../pages/login_page.dart';
@@ -61,7 +60,7 @@ class AppRouter {
         );
       case birthdaySetup:
         return MaterialPageRoute(
-          builder: (_) => const BirthdaySetupPage(),
+          builder: (_) => const EditProfilePage(),
         );
       case horoscopeDetail:
         return MaterialPageRoute(

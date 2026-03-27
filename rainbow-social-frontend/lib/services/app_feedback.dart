@@ -9,6 +9,8 @@ import '../theme/app_theme.dart';
 class AppFeedback {
   static final messengerKey = GlobalKey<ScaffoldMessengerState>();
   static final navigatorKey = GlobalKey<NavigatorState>();
+  static OverlayEntry? _toastEntry;
+  static Timer? _toastTimer;
 
   static void showToast(String message) {
     _showToastCard(
@@ -108,39 +110,57 @@ class AppFeedback {
     required _FeedbackToastStyle style,
     required Duration duration,
   }) {
-    final state = messengerKey.currentState;
-    final context = messengerKey.currentContext;
-    if (state == null || context == null) return;
+    final overlay = navigatorKey.currentState?.overlay;
+    final overlayContext = navigatorKey.currentContext;
+    if (overlay == null || overlayContext == null) return;
 
-    final width = MediaQuery.of(context).size.width;
-    final height = MediaQuery.of(context).size.height;
+    _toastTimer?.cancel();
+    _toastEntry?.remove();
+    _toastEntry = null;
+
+    final mediaQuery = MediaQuery.of(overlayContext);
+    final width = mediaQuery.size.width;
+    final height = mediaQuery.size.height;
     final maxWidth = math.min(style.maxWidth, width - 40);
-    final centerOffset =
-        math.max((height * 0.42).roundToDouble(), 220).toDouble();
+    final centerY = height * 0.42;
+    final top = (centerY - 44).clamp(
+      mediaQuery.padding.top + 12,
+      height - mediaQuery.padding.bottom - 120,
+    );
 
-    state
-      ..clearSnackBars()
-      ..showSnackBar(
-        SnackBar(
-          duration: duration,
-          behavior: SnackBarBehavior.floating,
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          margin: EdgeInsets.fromLTRB(20, 0, 20, centerOffset),
-          padding: EdgeInsets.zero,
-          content: Align(
-            alignment: Alignment.center,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: maxWidth),
-              child: _JellyToastCard(
-                title: title,
-                subtitle: subtitle,
-                style: style,
+    final entry = OverlayEntry(
+      builder: (context) {
+        return Positioned(
+          left: 20,
+          right: 20,
+          top: top,
+          child: IgnorePointer(
+            ignoring: true,
+            child: SafeArea(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxWidth),
+                  child: _JellyToastCard(
+                    title: title,
+                    subtitle: subtitle,
+                    style: style,
+                  ),
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
+      },
+    );
+
+    _toastEntry = entry;
+    overlay.insert(entry);
+    _toastTimer = Timer(duration, () {
+      if (_toastEntry == entry) {
+        entry.remove();
+        _toastEntry = null;
+      }
+    });
   }
 
   static String? _subtitleFor(String message) {

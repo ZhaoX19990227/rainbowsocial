@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../controllers/auth_controller.dart';
 import '../controllers/chat_controller.dart';
@@ -9,11 +11,16 @@ import '../controllers/home_controller.dart';
 import '../controllers/match_controller.dart';
 import '../controllers/nearby_controller.dart';
 import '../controllers/profile_controller.dart';
+import '../providers/app_providers.dart';
 import '../routes/app_router.dart';
+import '../services/api_config.dart';
 import '../services/app_feedback.dart';
-import '../services/profile_completion.dart';
+import '../services/tag_options.dart';
+import '../services/zodiac_utils.dart';
 import '../theme/app_theme.dart';
+import '../usecases/upload_usecases.dart';
 import '../widgets/luminous_background.dart';
+import '../widgets/inline_birthday_picker.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -26,11 +33,25 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _accountController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  final _nicknameController = TextEditingController();
+  final _ageController = TextEditingController();
+  final _heightController = TextEditingController();
+  final _weightController = TextEditingController();
+  final _cityController = TextEditingController();
+  final _picker = ImagePicker();
 
   bool _isRegisterMode = false;
-  bool _registerPreparedLogin = false;
   bool _navigatedAfterAuth = false;
+  bool _suppressAuthNavigation = false;
   bool _buttonPressed = false;
+  bool _uploadingAvatar = false;
+  bool _resolvingCity = false;
+  String _registerAvatarUrl = '';
+  XFile? _registerAvatarFile;
+  String _selectedPositionRole = '';
+  DateTime? _selectedBirthday;
+  double _lat = 0;
+  double _lng = 0;
   ProviderSubscription<AsyncValue>? _authSubscription;
 
   @override
@@ -42,16 +63,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         (previous, next) {
           next.whenOrNull(
             data: (session) {
-              if (!mounted || session == null || _navigatedAfterAuth) {
+              if (!mounted ||
+                  session == null ||
+                  _navigatedAfterAuth ||
+                  _suppressAuthNavigation) {
                 return;
               }
               _navigatedAfterAuth = true;
               _refreshUserScopedState();
-              Navigator.of(context).pushReplacementNamed(
-                ProfileCompletion.needsOnboarding(session.user)
-                    ? AppRouter.editProfile
-                    : AppRouter.main,
-              );
+              Navigator.of(context).pushReplacementNamed(AppRouter.main);
             },
             error: (error, _) {
               if (!mounted) return;
@@ -70,6 +90,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     _accountController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _nicknameController.dispose();
+    _ageController.dispose();
+    _heightController.dispose();
+    _weightController.dispose();
+    _cityController.dispose();
     super.dispose();
   }
 
@@ -96,12 +121,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       compact ? 18 : 24,
                     ),
                     children: [
-                      _LoginHero(
-                        isRegisterMode: _isRegisterMode,
-                        registerPreparedLogin: _registerPreparedLogin,
-                        compact: compact,
-                        onRegisterTap: () =>
-                            setState(() => _isRegisterMode = true),
+                  _LoginHero(
+                    isRegisterMode: _isRegisterMode,
+                    compact: compact,
+                    onRegisterTap: () =>
+                        setState(() => _isRegisterMode = true),
                         onHelpTap: () => AppFeedback.showToast('帮助功能即将上线'),
                       ),
                       SizedBox(height: compact ? 18 : 24),
@@ -138,24 +162,115 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 }
                               },
                             ),
-                            if (_isRegisterMode) ...[
-                              const SizedBox(height: 12),
-                              _PillInputField(
-                                controller: _confirmPasswordController,
+                        if (_isRegisterMode) ...[
+                          const SizedBox(height: 12),
+                          _PillInputField(
+                            controller: _confirmPasswordController,
                                 hintText: '确认密码',
                                 prefixIcon: Icons.verified_user_outlined,
                                 obscureText: true,
                                 textInputAction: TextInputAction.done,
                                 onSubmitted: (_) => _submitRegister(loading),
                               ),
+                              const SizedBox(height: 16),
+                              _RegisterAvatarField(
+                                avatarUrl: _registerAvatarUrl,
+                                loading: _uploadingAvatar,
+                                onTap: _pickRegistrationAvatar,
+                              ),
+                              const SizedBox(height: 12),
+                              _PillInputField(
+                                controller: _nicknameController,
+                                hintText: '昵称',
+                                prefixIcon: Icons.badge_outlined,
+                                textInputAction: TextInputAction.next,
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _PillInputField(
+                                      controller: _ageController,
+                                      hintText: '年龄',
+                                      prefixIcon: Icons.cake_outlined,
+                                      textInputAction: TextInputAction.next,
+                                      keyboardType: TextInputType.number,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _PillInputField(
+                                      controller: _heightController,
+                                      hintText: '身高',
+                                      prefixIcon: Icons.height_rounded,
+                                      textInputAction: TextInputAction.next,
+                                      keyboardType: TextInputType.number,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _PillInputField(
+                                      controller: _weightController,
+                                      hintText: '体重',
+                                      prefixIcon: Icons.monitor_weight_outlined,
+                                      textInputAction: TextInputAction.next,
+                                      keyboardType: TextInputType.number,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _PillInputField(
+                                      controller: _cityController,
+                                      hintText: '城市',
+                                      prefixIcon: Icons.location_city_outlined,
+                                      textInputAction: TextInputAction.next,
+                                      trailing: IconButton(
+                                        onPressed: _resolvingCity
+                                            ? null
+                                            : _resolveRegistrationLocation,
+                                        icon: _resolvingCity
+                                            ? const SizedBox(
+                                                width: 18,
+                                                height: 18,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                ),
+                                              )
+                                            : const Icon(
+                                                Icons.my_location_rounded,
+                                                size: 18,
+                                                color: AppTheme.primary,
+                                              ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              _RegisterBirthdayField(
+                                birthday: _selectedBirthday,
+                                onChanged: (value) {
+                                  setState(() => _selectedBirthday = value);
+                                },
+                              ),
+                              const SizedBox(height: 12),
+                              _RegisterPositionField(
+                                selected: _selectedPositionRole,
+                                onSelected: (value) => setState(
+                                  () => _selectedPositionRole = value,
+                                ),
+                              ),
                             ],
-                            SizedBox(height: compact ? 18 : 22),
-                            _RippleActionButton(
+                          SizedBox(height: compact ? 18 : 22),
+                          _RippleActionButton(
                               label: _isRegisterMode
                                   ? '创建账号'
-                                  : _registerPreparedLogin
-                                      ? '直接登录'
-                                      : '进入 Lune',
+                                  : '进入 Lune',
                               loading: loading,
                               pressed: _buttonPressed,
                               onTapDown: () =>
@@ -190,6 +305,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final account = _accountController.text.trim().toLowerCase();
     final password = _passwordController.text;
     final confirm = _confirmPasswordController.text;
+    final nickname = _nicknameController.text.trim();
+    final age = int.tryParse(_ageController.text.trim()) ?? 0;
+    final heightCm = int.tryParse(_heightController.text.trim()) ?? 0;
+    final weightKg = int.tryParse(_weightController.text.trim()) ?? 0;
+    final city = _cityController.text.trim();
+    final birthday = _selectedBirthday;
 
     if (account.isEmpty || password.isEmpty || confirm.isEmpty) {
       AppFeedback.showToast('请填写完整注册信息');
@@ -199,17 +320,67 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       AppFeedback.showToast('两次输入的密码不一致');
       return;
     }
+    if (_registerAvatarUrl.trim().isEmpty ||
+        age <= 0 ||
+        heightCm <= 0 ||
+        weightKg <= 0 ||
+        city.isEmpty ||
+        birthday == null ||
+        _selectedPositionRole.trim().isEmpty) {
+      AppFeedback.showToast('头像、年龄、身高、体重、城市、生日、属性均为必填');
+      return;
+    }
 
-    await ref.read(authControllerProvider.notifier).register(account, password);
-    if (!mounted) return;
-    if (ref.read(authControllerProvider).hasError) return;
+    _suppressAuthNavigation = true;
+    _navigatedAfterAuth = true;
+    try {
+      await ref.read(authControllerProvider.notifier).register(account, password);
+      if (!mounted || ref.read(authControllerProvider).hasError) return;
 
-    setState(() {
-      _isRegisterMode = false;
-      _registerPreparedLogin = true;
-      _confirmPasswordController.clear();
-    });
-    AppFeedback.showToast('账号已创建完成');
+      await ref.read(authControllerProvider.notifier).login(account, password);
+      if (!mounted || ref.read(authControllerProvider).hasError) return;
+
+      final session = ref.read(authControllerProvider).valueOrNull;
+      if (session == null) {
+        throw Exception('登录状态不可用');
+      }
+
+      var avatarUrl = _registerAvatarUrl;
+      if (_registerAvatarFile != null) {
+        final rawUrl = await ref.read(uploadImageUseCaseProvider).call(
+              token: session.token,
+              file: _registerAvatarFile!,
+            );
+        avatarUrl =
+            rawUrl.startsWith('http') ? rawUrl : '${ApiConfig.baseUrl}$rawUrl';
+      }
+
+      final updated = session.user.copyWith(
+        nickname: nickname.isEmpty ? account : nickname,
+        avatar: avatarUrl,
+        photos: const [],
+        age: age,
+        heightCm: heightCm,
+        weightKg: weightKg,
+        birthday: ZodiacUtils.formatBirthday(birthday),
+        zodiacSign: ZodiacUtils.zodiacFromBirthday(birthday) ?? '',
+        positionRole: _selectedPositionRole.trim(),
+        locationLabel: city,
+        lat: _lat,
+        lng: _lng,
+      );
+
+      await ref.read(profileControllerProvider.notifier).save(updated);
+      if (!mounted) return;
+      _refreshUserScopedState();
+      Navigator.of(context).pushReplacementNamed(AppRouter.main);
+    } catch (error) {
+      if (!mounted) return;
+      _navigatedAfterAuth = false;
+      AppFeedback.showError('$error');
+    } finally {
+      _suppressAuthNavigation = false;
+    }
   }
 
   Future<void> _submitLogin(bool loading) async {
@@ -226,6 +397,69 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     await ref.read(authControllerProvider.notifier).login(account, password);
   }
 
+  Future<void> _pickRegistrationAvatar() async {
+    if (_uploadingAvatar) return;
+    final source = await AppFeedback.showJellySheet<ImageSource>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('从相册选择'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('打开相机'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) return;
+
+    final picked = await _picker.pickImage(
+      source: source,
+      imageQuality: 88,
+      maxWidth: 1800,
+    );
+    if (picked == null) return;
+
+    setState(() {
+      _registerAvatarFile = picked;
+      _registerAvatarUrl = picked.path;
+    });
+  }
+
+  Future<void> _resolveRegistrationLocation() async {
+    if (_resolvingCity) return;
+    setState(() => _resolvingCity = true);
+    try {
+      final position =
+          await ref.read(locationServiceProvider).getCurrentPosition();
+      final locationLabel =
+          await ref.read(locationLabelServiceProvider).getLocationLabel(
+                lat: position.latitude,
+                lng: position.longitude,
+              );
+      if (!mounted) return;
+      setState(() {
+        _lat = position.latitude;
+        _lng = position.longitude;
+        _cityController.text = locationLabel;
+      });
+    } catch (error) {
+      AppFeedback.showError('城市获取失败：$error');
+    } finally {
+      if (mounted) {
+        setState(() => _resolvingCity = false);
+      }
+    }
+  }
+
   void _refreshUserScopedState() {
     ref.invalidate(profileControllerProvider);
     ref.invalidate(matchesControllerProvider);
@@ -239,14 +473,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 class _LoginHero extends StatelessWidget {
   const _LoginHero({
     required this.isRegisterMode,
-    required this.registerPreparedLogin,
     required this.compact,
     required this.onRegisterTap,
     required this.onHelpTap,
   });
 
   final bool isRegisterMode;
-  final bool registerPreparedLogin;
   final bool compact;
   final VoidCallback onRegisterTap;
   final VoidCallback onHelpTap;
@@ -756,6 +988,186 @@ class _FrostedFormCard extends StatelessWidget {
   }
 }
 
+class _RegisterAvatarField extends StatelessWidget {
+  const _RegisterAvatarField({
+    required this.avatarUrl,
+    required this.loading,
+    required this.onTap,
+  });
+
+  final String avatarUrl;
+  final bool loading;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: loading ? null : onTap,
+      child: Container(
+        height: 74,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.white.withValues(alpha: 0.56),
+              const Color(0xFFF4F1FF).withValues(alpha: 0.48),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(26),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.68)),
+        ),
+        child: Row(
+          children: [
+            loading
+                ? const SizedBox(
+                    width: 42,
+                    height: 42,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : ClipOval(
+                    child: SizedBox(
+                      width: 42,
+                      height: 42,
+                      child: avatarUrl.trim().isEmpty
+                          ? Container(
+                              color: AppTheme.surfaceHighest,
+                              child: const Icon(
+                                Icons.add_a_photo_rounded,
+                                color: AppTheme.primary,
+                              ),
+                            )
+                          : Image(
+                              image: avatarUrl.startsWith('http')
+                                  ? NetworkImage(avatarUrl)
+                                  : FileImage(File(avatarUrl))
+                                      as ImageProvider,
+                              fit: BoxFit.cover,
+                            ),
+                    ),
+                  ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                avatarUrl.trim().isEmpty ? '上传头像' : '头像已选择',
+                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: avatarUrl.trim().isEmpty
+                          ? AppTheme.textSecondary
+                          : AppTheme.textPrimary,
+                    ),
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right_rounded,
+              color: AppTheme.primary,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RegisterBirthdayField extends StatelessWidget {
+  const _RegisterBirthdayField({
+    required this.birthday,
+    required this.onChanged,
+  });
+
+  final DateTime? birthday;
+  final ValueChanged<DateTime> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.white.withValues(alpha: 0.56),
+            const Color(0xFFF4F1FF).withValues(alpha: 0.48),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.68)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '生日',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: AppTheme.textSecondary,
+                ),
+          ),
+          const SizedBox(height: 10),
+          InlineBirthdayPicker(
+            initialDate: birthday ?? DateTime(1998, 6, 15),
+            onChanged: onChanged,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RegisterPositionField extends StatelessWidget {
+  const _RegisterPositionField({
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final String selected;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.white.withValues(alpha: 0.56),
+            const Color(0xFFF4F1FF).withValues(alpha: 0.48),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.68)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '属性',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: AppTheme.textSecondary,
+                ),
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: profilePositionOptions.map((option) {
+              final active = selected == option;
+              return ChoiceChip(
+                selected: active,
+                label: Text(option),
+                onSelected: (_) => onSelected(option),
+                selectedColor: AppTheme.primary.withValues(alpha: 0.16),
+                side: BorderSide(
+                  color: active ? AppTheme.primary : AppTheme.ghostBorder,
+                ),
+                labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: active ? AppTheme.primary : AppTheme.textSecondary,
+                    ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PillInputField extends StatelessWidget {
   const _PillInputField({
     required this.controller,
@@ -765,6 +1177,8 @@ class _PillInputField extends StatelessWidget {
     this.textInputAction,
     this.autocorrect = true,
     this.onSubmitted,
+    this.keyboardType,
+    this.trailing,
   });
 
   final TextEditingController controller;
@@ -774,6 +1188,8 @@ class _PillInputField extends StatelessWidget {
   final TextInputAction? textInputAction;
   final bool autocorrect;
   final ValueChanged<String>? onSubmitted;
+  final TextInputType? keyboardType;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -801,6 +1217,7 @@ class _PillInputField extends StatelessWidget {
               controller: controller,
               obscureText: obscureText,
               textInputAction: textInputAction,
+              keyboardType: keyboardType,
               autocorrect: autocorrect,
               onSubmitted: onSubmitted,
               decoration: InputDecoration(
@@ -819,6 +1236,10 @@ class _PillInputField extends StatelessWidget {
               ),
             ),
           ),
+          if (trailing != null) ...[
+            const SizedBox(width: 6),
+            trailing!,
+          ],
         ],
       ),
     );

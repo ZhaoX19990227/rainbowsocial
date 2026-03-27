@@ -9,7 +9,6 @@ import '../providers/app_providers.dart';
 import '../routes/app_router.dart';
 import '../services/api_config.dart';
 import '../services/app_feedback.dart';
-import '../services/profile_completion.dart';
 import '../services/tag_options.dart';
 import '../services/zodiac_utils.dart';
 import '../theme/app_theme.dart';
@@ -77,8 +76,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     final sessionUser = ref.watch(authControllerProvider).valueOrNull?.user;
     final profile =
         ref.watch(profileControllerProvider).valueOrNull ?? sessionUser;
-    final isOnboardingFlow = ProfileCompletion.needsOnboarding(profile);
-    final missingFields = ProfileCompletion.missingFields(profile);
     final zodiacSign = ZodiacUtils.zodiacFromBirthday(
           ZodiacUtils.tryParseBirthday(_birthday.text.trim()),
         ) ??
@@ -90,12 +87,12 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
           onPressed: () => Navigator.of(context).maybePop(),
           icon: const Icon(Icons.close_rounded),
         ),
-        title: Text(isOnboardingFlow ? '完善资料' : '编辑资料'),
+        title: const Text('编辑资料'),
         actions: [
           TextButton(
             onPressed: profile == null || _uploading
                 ? null
-                : () => _saveProfile(profile, isOnboardingFlow),
+                : () => _saveProfile(profile),
             child: Text(_uploading ? '上传中...' : '保存'),
           ),
         ],
@@ -107,74 +104,6 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
             child: ListView(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
               children: [
-                if (isOnboardingFlow) ...[
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(28),
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFFF7E9FF),
-                          Color(0xFFE8F3FF),
-                        ],
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppTheme.primary.withValues(alpha: 0.1),
-                          blurRadius: 24,
-                          offset: const Offset(0, 12),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '先把关键资料补完整',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          '完成这些信息后，我们才能更准确地展示推荐、附近和个人中心。',
-                          style:
-                              Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                    color: AppTheme.textSecondary,
-                                  ),
-                        ),
-                        const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: missingFields
-                              .map(
-                                (field) => Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 8,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(999),
-                                    color: Colors.white.withValues(alpha: 0.82),
-                                  ),
-                                  child: Text(
-                                    field,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelMedium
-                                        ?.copyWith(
-                                          color: AppTheme.primary,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                  ),
-                                ),
-                              )
-                              .toList(),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                ],
                 _SectionHeader(
                   title: '展示资料',
                   subtitle: '长按下方照片可调整顺序',
@@ -535,45 +464,57 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     );
   }
 
-  Future<void> _saveProfile(AppUser profile, bool isOnboardingFlow) async {
+  Future<void> _saveProfile(AppUser profile) async {
+    final avatar = _avatar.text.trim();
+    final age = int.tryParse(_age.text.trim()) ?? 0;
+    final heightCm = int.tryParse(_heightCm.text.trim()) ?? 0;
+    final weightKg = int.tryParse(_weightKg.text.trim()) ?? 0;
+    final birthday = _birthday.text.trim();
+    final positionRole = _selectedPositionRole.trim();
+    final city = _locationLabel.trim();
+
+    if (avatar.isEmpty ||
+        age <= 0 ||
+        heightCm <= 0 ||
+        weightKg <= 0 ||
+        birthday.isEmpty ||
+        city.isEmpty ||
+        positionRole.isEmpty) {
+      AppFeedback.showToast('头像、年龄、身高、体重、城市、生日、属性均为必填');
+      return;
+    }
+
     final updated = AppUser(
       id: profile.id,
       email: profile.email,
       nickname: _nickname.text.trim(),
-      avatar: _avatar.text.trim(),
+      avatar: avatar,
       photos: _normalizePhotos(
         _photos,
-        avatarUrl: _avatar.text.trim(),
+        avatarUrl: avatar,
       ),
-      age: int.tryParse(_age.text.trim()) ?? profile.age,
-      heightCm: int.tryParse(_heightCm.text.trim()) ?? profile.heightCm,
-      weightKg: int.tryParse(_weightKg.text.trim()) ?? profile.weightKg,
-      birthday: _birthday.text.trim(),
+      age: age,
+      heightCm: heightCm,
+      weightKg: weightKg,
+      birthday: birthday,
       zodiacSign: ZodiacUtils.zodiacFromBirthday(
-            ZodiacUtils.tryParseBirthday(_birthday.text.trim()),
+            ZodiacUtils.tryParseBirthday(birthday),
           ) ??
           '',
       mbtiType: profile.mbtiType,
       bio: _bio.text.trim(),
       tags: _parseTags(_tags.text),
-      positionRole: _selectedPositionRole.trim(),
+      positionRole: positionRole,
       lat: _lat,
       lng: _lng,
-      locationLabel: _locationLabel.trim(),
+      locationLabel: city,
       onlineStatus: profile.onlineStatus,
       distanceKm: profile.distanceKm,
     );
     await ref.read(profileControllerProvider.notifier).save(updated);
     if (!mounted) return;
-    AppFeedback.showToast(isOnboardingFlow ? '资料已保存' : '资料已更新');
-    if (isOnboardingFlow) {
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        AppRouter.main,
-        (route) => false,
-      );
-    } else {
-      Navigator.of(context).pop();
-    }
+    AppFeedback.showToast('资料已更新');
+    Navigator.of(context).pop();
   }
 
   Future<void> _resolveCurrentLocation() async {

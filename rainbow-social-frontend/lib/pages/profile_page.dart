@@ -10,7 +10,6 @@ import '../controllers/nearby_controller.dart';
 import '../controllers/profile_controller.dart';
 import '../models/app_user.dart';
 import '../models/match_summary.dart';
-import '../providers/app_providers.dart';
 import '../routes/app_router.dart';
 import '../services/api_config.dart';
 import '../services/app_feedback.dart';
@@ -110,7 +109,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         child: _ZodiacInsightCard(
                           user: displayUser,
                           onTap: () => Navigator.of(context)
-                              .pushNamed(AppRouter.birthdaySetup),
+                              .pushNamed(AppRouter.editProfile),
                         ),
                       ),
                     ],
@@ -305,12 +304,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         itemCount: UserStatusCatalog.options.length,
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
+                          gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 4,
                           mainAxisSpacing: 12,
                           crossAxisSpacing: 12,
-                          childAspectRatio: 0.9,
+                          mainAxisExtent: 102,
                         ),
                         itemBuilder: (context, index) {
                           final option = UserStatusCatalog.options[index];
@@ -366,6 +365,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                   Text(
                                     option.label,
                                     textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: Theme.of(context)
                                         .textTheme
                                         .labelMedium
@@ -702,22 +703,24 @@ class _ProfileTopBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _IconShell(
-          icon: Icons.settings_rounded,
-          onTap: onEdit,
-        ),
-        const Spacer(),
-        Text(
-          '个人资料',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: AppTheme.textPrimary,
-              ),
-        ),
-        const Spacer(),
         const SizedBox(
           width: 44,
           height: 44,
+        ),
+        Expanded(
+          child: Center(
+            child: Text(
+              '个人资料',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppTheme.textPrimary,
+                  ),
+            ),
+          ),
+        ),
+        _IconShell(
+          icon: Icons.settings_rounded,
+          onTap: onEdit,
         ),
       ],
     );
@@ -1097,7 +1100,7 @@ class _MbtiInsightCard extends StatelessWidget {
                 const SizedBox(height: 12),
                 const _MissingContent(
                   title: '尚未解锁人格',
-                  subtitle: '点我去测试，解锁你的 MBTI 档案。',
+                  subtitle: '解锁你的 MBTI 档案。',
                 ),
                 const SizedBox(height: 12),
                 Container(

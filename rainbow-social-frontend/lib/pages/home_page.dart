@@ -371,53 +371,47 @@ class _SwipeDeckState extends State<_SwipeDeck>
     AppUser user, {
     required double dxProgress,
   }) {
-    Widget child = Positioned.fill(
-      child: UserCard(
-        user: user,
-        onTap: () => widget.onCardTap(user),
-        overlayBuilder: (_) => _SwipeOverlay(
-          likeOpacity: _effectiveOffset.dx > 0 ? dxProgress : 0,
-          passOpacity: _effectiveOffset.dx < 0 ? dxProgress : 0,
-        ),
-      ),
-    );
-
     final rotation = (_effectiveOffset.dx / constraints.maxWidth) * 0.18;
 
-    child = Positioned.fill(
-      child: Transform.translate(
-        offset: _effectiveOffset,
-        child: Transform.rotate(
-          angle: rotation,
-          child: child,
+    return Positioned.fill(
+      child: GestureDetector(
+        onPanUpdate: (details) {
+          if (_isAnimating) return;
+          setState(() {
+            _dragOffset += details.delta;
+          });
+        },
+        onPanEnd: (_) async {
+          if (_isAnimating) return;
+          final decision = _decisionForCurrentOffset();
+          if (decision != null) {
+            await triggerSwipe(decision);
+            return;
+          }
+          await _animateTo(Offset.zero);
+          if (!mounted) return;
+          setState(() {
+            _dragOffset = Offset.zero;
+            _offsetAnimation = null;
+            _controller.reset();
+            _isAnimating = false;
+          });
+        },
+        child: Transform.translate(
+          offset: _effectiveOffset,
+          child: Transform.rotate(
+            angle: rotation,
+            child: UserCard(
+              user: user,
+              onTap: () => widget.onCardTap(user),
+              overlayBuilder: (_) => _SwipeOverlay(
+                likeOpacity: _effectiveOffset.dx > 0 ? dxProgress : 0,
+                passOpacity: _effectiveOffset.dx < 0 ? dxProgress : 0,
+              ),
+            ),
+          ),
         ),
       ),
-    );
-
-    return GestureDetector(
-      onPanUpdate: (details) {
-        if (_isAnimating) return;
-        setState(() {
-          _dragOffset += details.delta;
-        });
-      },
-      onPanEnd: (_) async {
-        if (_isAnimating) return;
-        final decision = _decisionForCurrentOffset();
-        if (decision != null) {
-          await triggerSwipe(decision);
-          return;
-        }
-        await _animateTo(Offset.zero);
-        if (!mounted) return;
-        setState(() {
-          _dragOffset = Offset.zero;
-          _offsetAnimation = null;
-          _controller.reset();
-          _isAnimating = false;
-        });
-      },
-      child: child,
     );
   }
 
