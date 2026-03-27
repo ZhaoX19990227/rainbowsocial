@@ -113,7 +113,10 @@ class AppFeedback {
     if (state == null || context == null) return;
 
     final width = MediaQuery.of(context).size.width;
+    final height = MediaQuery.of(context).size.height;
     final maxWidth = math.min(style.maxWidth, width - 40);
+    final centerOffset =
+        math.max((height * 0.42).roundToDouble(), 220).toDouble();
 
     state
       ..clearSnackBars()
@@ -123,10 +126,10 @@ class AppFeedback {
           behavior: SnackBarBehavior.floating,
           elevation: 0,
           backgroundColor: Colors.transparent,
-          margin: const EdgeInsets.fromLTRB(20, 0, 20, 156),
+          margin: EdgeInsets.fromLTRB(20, 0, 20, centerOffset),
           padding: EdgeInsets.zero,
           content: Align(
-            alignment: Alignment.bottomCenter,
+            alignment: Alignment.center,
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: maxWidth),
               child: _JellyToastCard(
@@ -436,11 +439,9 @@ class _FeedbackToastStyle {
           titleColor: AppTheme.textPrimary,
           subtitleColor: AppTheme.textSecondary,
           icon: Icons.favorite_rounded,
-          iconColor: Colors.white,
-          iconBackgroundColor: Colors.transparent,
-          iconGradient: const LinearGradient(
-            colors: [Color(0xFFC8B6FF), Color(0xFFA78BFA), Color(0xFFF0ABFC)],
-          ),
+          iconColor: const Color(0xFF7B36C2),
+          iconBackgroundColor: const Color(0x1F7B36C2),
+          iconGradient: null,
           radius: 22,
           blur: 16,
           shadowBlur: 20,
@@ -455,11 +456,9 @@ class _FeedbackToastStyle {
           titleColor: AppTheme.textPrimary,
           subtitleColor: AppTheme.textSecondary,
           icon: Icons.favorite_rounded,
-          iconColor: Colors.white,
-          iconBackgroundColor: Colors.transparent,
-          iconGradient: const LinearGradient(
-            colors: [Color(0xFFC8B6FF), Color(0xFFA78BFA), Color(0xFFF0ABFC)],
-          ),
+          iconColor: const Color(0xFF7B36C2),
+          iconBackgroundColor: const Color(0x1F7B36C2),
+          iconGradient: null,
           radius: 22,
           blur: 16,
           shadowBlur: 22,
@@ -474,11 +473,9 @@ class _FeedbackToastStyle {
           titleColor: AppTheme.textPrimary,
           subtitleColor: AppTheme.textSecondary,
           icon: Icons.favorite_rounded,
-          iconColor: Colors.white,
-          iconBackgroundColor: Colors.transparent,
-          iconGradient: const LinearGradient(
-            colors: [Color(0xFFC8B6FF), Color(0xFFA78BFA), Color(0xFFF0ABFC)],
-          ),
+          iconColor: const Color(0xFF7B36C2),
+          iconBackgroundColor: const Color(0x1F7B36C2),
+          iconGradient: null,
           radius: 22,
           blur: 16,
           shadowBlur: 20,

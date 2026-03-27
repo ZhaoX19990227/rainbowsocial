@@ -267,15 +267,17 @@ class _LoginHero extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(
-                'LUNE',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      color: const Color(0xFF6F33B7),
-                      letterSpacing: 10,
-                      fontWeight: FontWeight.w400,
-                    ),
+              Expanded(
+                child: Text(
+                  'LUNE',
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: const Color(0xFF6F33B7),
+                        letterSpacing: 7,
+                        fontWeight: FontWeight.w400,
+                      ),
+                ),
               ),
-              const Spacer(),
               _HeroTopLink(
                 label: '注册',
                 onTap: onRegisterTap,
@@ -342,27 +344,39 @@ class _LoginHero extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
-          RichText(
-            text: TextSpan(
-              children: [
-                TextSpan(
-                  text: '$titleLead ',
+          Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 18,
+            runSpacing: 6,
+            children: [
+              Text(
+                titleLead,
+                style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
+                      fontFamily: 'PingFang SC',
+                    ),
+              ),
+              ShaderMask(
+                shaderCallback: (bounds) => const LinearGradient(
+                  colors: [
+                    Color(0xFF6F33B7),
+                    Color(0xFF8F4BE6),
+                    Color(0xFFBE6AF8),
+                  ],
+                ).createShader(bounds),
+                child: Text(
+                  'Lune',
                   style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        color: AppTheme.textPrimary,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.2,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w400,
+                        letterSpacing: 5.5,
+                        fontFamily: 'PingFang SC',
                       ),
                 ),
-                TextSpan(
-                  text: 'Lune',
-                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
-                        color: AppTheme.textPrimary,
-                        fontWeight: FontWeight.w300,
-                        letterSpacing: 6,
-                      ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
           const SizedBox(height: 14),
           Text(
