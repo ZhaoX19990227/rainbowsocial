@@ -20,7 +20,7 @@ class SplashPage extends ConsumerStatefulWidget {
 }
 
 class _SplashPageState extends ConsumerState<SplashPage> {
-  static const Duration _minimumShowDuration = Duration(milliseconds: 4000);
+  static const Duration _minimumShowDuration = Duration(milliseconds: 1600);
 
   bool _navigated = false;
   AsyncValue? _latestAuthState;
@@ -206,7 +206,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
                         const _FlowingLoadingBar(),
                         const SizedBox(height: 14),
                         Text(
-                          '正在把今晚的相遇轻轻点亮',
+                          '正在加载...',
                           style: textTheme.labelLarge?.copyWith(
                             color:
                                 AppTheme.textSecondary.withValues(alpha: 0.82),
@@ -281,12 +281,10 @@ class _SplashBrandMark extends StatelessWidget {
                 ],
               ),
               child: Padding(
-                padding: const EdgeInsets.all(14),
-                child: ClipOval(
-                  child: Image.asset(
-                    'assets/branding/lune_logo.png',
-                    fit: BoxFit.cover,
-                  ),
+                padding: const EdgeInsets.all(10),
+                child: Image.asset(
+                  'assets/branding/lune_logo.png',
+                  fit: BoxFit.contain,
                 ),
               ),
             ),

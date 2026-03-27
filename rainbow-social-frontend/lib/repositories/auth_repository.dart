@@ -11,6 +11,4 @@ class AuthRepository {
 
   Future<AuthSession> login(String account, String password) =>
       _service.login(account, password);
-
-  AuthSession demoSession(String account) => _service.demoSession(account);
 }

@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../services/app_flags.dart';
 import '../services/api_client.dart';
 import '../models/app_user.dart';
 import '../models/auth_session.dart';
@@ -32,11 +31,6 @@ class AuthController extends StateNotifier<AsyncValue<AuthSession?>> {
           await _ref.read(clearSessionUseCaseProvider)();
           return null;
         }
-        if (savedSession.token == 'demo-token' && !AppFlags.useMockFallbacks) {
-          await _ref.read(clearSessionUseCaseProvider)();
-          return null;
-        }
-
         try {
           final user =
               await _ref.read(getProfileUseCaseProvider)(savedSession.token);
@@ -66,18 +60,9 @@ class AuthController extends StateNotifier<AsyncValue<AuthSession?>> {
   Future<void> login(String account, String password) async {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
-      try {
-        final session = await _ref.read(loginUseCaseProvider)(account, password);
-        await _ref.read(saveSessionUseCaseProvider)(session);
-        return session;
-      } catch (error) {
-        if (!AppFlags.useMockFallbacks) {
-          rethrow;
-        }
-        final session = _ref.read(loginUseCaseProvider).demoSession(account);
-        await _ref.read(saveSessionUseCaseProvider)(session);
-        return session;
-      }
+      final session = await _ref.read(loginUseCaseProvider)(account, password);
+      await _ref.read(saveSessionUseCaseProvider)(session);
+      return session;
     });
   }
 

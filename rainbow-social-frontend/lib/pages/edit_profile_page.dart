@@ -565,7 +565,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     );
     await ref.read(profileControllerProvider.notifier).save(updated);
     if (!mounted) return;
-    AppFeedback.showToast(isOnboardingFlow ? '资料已完善，开始探索吧' : '资料已更新');
+    AppFeedback.showToast(isOnboardingFlow ? '资料已保存' : '资料已更新');
     if (isOnboardingFlow) {
       Navigator.of(context).pushNamedAndRemoveUntil(
         AppRouter.main,

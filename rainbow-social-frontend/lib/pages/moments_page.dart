@@ -20,7 +20,7 @@ class MomentsPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        title: const Text('感性瞬间'),
+        title: const Text('动态'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded),
           onPressed: () => Navigator.of(context).pop(),
@@ -53,7 +53,7 @@ class MomentsPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      '还没有感性瞬间',
+                      '还没有动态内容',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w800,
                           ),

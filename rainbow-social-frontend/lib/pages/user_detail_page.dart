@@ -69,7 +69,7 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
             ? '就在附近'
             : '距离 ${user.distanceKm!.toStringAsFixed(1)} km';
     final headlineBio =
-        user.bio.trim().isEmpty ? '在耐心地把自己的温柔，摊成想靠近的余地。' : user.bio.trim();
+        user.bio.trim().isEmpty ? '这个用户还没有填写个人简介。' : user.bio.trim();
 
     return Scaffold(
       body: CustomScrollView(
@@ -595,6 +595,7 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
       if (result.matched) {
         await ref.read(matchesControllerProvider.notifier).load();
         await ref.read(matchSummaryControllerProvider.notifier).load();
+        if (!mounted || !context.mounted) return;
         await _showRelationshipOverlay(
           context,
           child: _RelationshipUpgradeOverlay(

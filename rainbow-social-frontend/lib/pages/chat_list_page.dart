@@ -31,6 +31,7 @@ class _ChatListPageState extends ConsumerState<ChatListPage> {
   String _query = '';
   bool _isEditing = false;
   final Set<int> _selectedPeerIds = <int>{};
+  String? _lastShownError;
 
   @override
   void dispose() {
@@ -41,10 +42,15 @@ class _ChatListPageState extends ConsumerState<ChatListPage> {
   @override
   Widget build(BuildContext context) {
     final threadsState = ref.watch(chatThreadsControllerProvider);
-    if (threadsState.errorMessage != null && threadsState.threads.isEmpty) {
+    if (threadsState.errorMessage != null &&
+        threadsState.threads.isEmpty &&
+        threadsState.errorMessage != _lastShownError) {
+      _lastShownError = threadsState.errorMessage;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         AppFeedback.showError(threadsState.errorMessage!);
       });
+    } else if (threadsState.errorMessage == null) {
+      _lastShownError = null;
     }
 
     final allThreads = threadsState.threads;
@@ -226,7 +232,7 @@ class _ChatHeader extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '今天有 $waitingCount 条新消息在等你',
+                  '当前有 $waitingCount 条未读消息',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(
                         color: AppTheme.textSecondary.withValues(alpha: 0.72),
                       ),

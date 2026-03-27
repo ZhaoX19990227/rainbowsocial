@@ -47,7 +47,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '往下翻，看看今天会和谁对上眼',
+                          '浏览推荐用户',
                           style:
                               Theme.of(context).textTheme.labelMedium?.copyWith(
                                     color: AppTheme.textSecondary,
@@ -86,8 +86,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                       _primeImages(users);
                       if (users.isEmpty) {
                         return AppEmptyState(
-                          title: '暂时没有更多推荐了',
-                          subtitle: '可以稍后再来，或刷新看看有没有新的心动对象～',
+                          title: '暂无更多推荐',
+                          subtitle: '稍后再试，或手动刷新。',
                           action: TextButton(
                             onPressed: () => ref
                                 .read(homeControllerProvider.notifier)

@@ -170,7 +170,7 @@ class _LikesOverviewPageState extends ConsumerState<LikesOverviewPage> {
         return _LikePageConfig(
           title: '我喜欢的',
           emptyTitle: '你还没有点过喜欢',
-          emptySubtitle: '遇到心动的人后，这里会记录你的主动。',
+          emptySubtitle: '你发出的喜欢会显示在这里。',
           items: args.summary.sent
               .map((item) => _LikeListItem(user: item.user))
               .toList(),
@@ -179,7 +179,7 @@ class _LikesOverviewPageState extends ConsumerState<LikesOverviewPage> {
         return _LikePageConfig(
           title: '互相喜欢',
           emptyTitle: '还没有互相喜欢',
-          emptySubtitle: '等到双向心动确认后，这里会解锁聊天入口。',
+          emptySubtitle: '互相喜欢后，这里会显示匹配记录。',
           items: args.summary.mutual
               .map((item) => _LikeListItem(user: item.user))
               .toList(),
@@ -392,7 +392,7 @@ class _ReceivedLikeExperience extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            '快来看看是谁对你心动了吧',
+            '查看谁喜欢了你',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                   color: AppTheme.textSecondary.withValues(alpha: 0.82),

@@ -282,7 +282,7 @@ class UserCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 6),
                       Text(
-                        user.bio.trim().isEmpty ? '慢慢靠近，也许今晚就能聊出一点感觉。' : user.bio,
+                        user.bio.trim().isEmpty ? '这个用户还没有填写个人简介。' : user.bio,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(

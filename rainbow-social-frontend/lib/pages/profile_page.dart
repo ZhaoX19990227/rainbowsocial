@@ -196,7 +196,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       final updated = profile.copyWith(photos: normalizedPhotos);
       await ref.read(profileControllerProvider.notifier).save(updated);
       if (!mounted) return;
-      AppFeedback.showToast('感性瞬间已上传');
+      AppFeedback.showToast('内容已上传');
     } catch (error) {
       AppFeedback.showError('上传失败：$error');
     } finally {
@@ -899,7 +899,7 @@ class _MomentsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionHeader(
-          title: '感性瞬间',
+          title: '动态',
           trailingLabel: '查看全部',
           onTap: onViewAll,
         ),
@@ -1205,8 +1205,8 @@ class _ZodiacInsightCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 const _MissingContent(
-                  title: '等你填写生日',
-                  subtitle: '点我去编辑生日，解锁你的星座档案。',
+                  title: '尚未填写生日',
+                  subtitle: '点击填写生日后即可生成星座信息。',
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -1288,7 +1288,7 @@ class _TagsInsightCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 16),
                 Text(
-                  '快去添加你的兴趣标签吧，让合拍的人更快找到你',
+                  '添加兴趣标签后，资料会更完整，也更方便展示。',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppTheme.textSecondary.withValues(alpha: 0.86),
@@ -1736,34 +1736,23 @@ class _InsightShell extends StatelessWidget {
       const SizedBox(height: 14),
     ];
 
-    final body = compactHeight == null
-        ? Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ...header,
-              Align(
-                alignment: Alignment.topLeft,
-                child: child,
-              ),
-            ],
-          )
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ...header,
-              Expanded(
-                child: Align(
-                  alignment: Alignment.topLeft,
-                  child: child,
-                ),
-              ),
-            ],
-          );
+    final body = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ...header,
+        Align(
+          alignment: Alignment.topLeft,
+          child: child,
+        ),
+      ],
+    );
 
     final content = Container(
       width: fullWidth ? double.infinity : null,
-      height: compactHeight,
+      constraints: compactHeight == null
+          ? null
+          : BoxConstraints(minHeight: compactHeight!),
       padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(30),
@@ -1780,7 +1769,7 @@ class _InsightShell extends StatelessWidget {
           ),
         ],
       ),
-      child: compactHeight == null ? body : SizedBox.expand(child: body),
+      child: body,
     );
     if (onTap == null) return content;
     return InkWell(

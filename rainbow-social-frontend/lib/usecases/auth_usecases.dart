@@ -32,6 +32,4 @@ class LoginUseCase {
 
   Future<AuthSession> call(String account, String password) =>
       _repository.login(account, password);
-
-  AuthSession demoSession(String account) => _repository.demoSession(account);
 }

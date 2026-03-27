@@ -309,7 +309,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                                 decoration: InputDecoration(
                                   hintText: _isRecording
                                       ? '松开发送，向上取消'
-                                      : '说点什么，让他更想靠近你',
+                                      : '输入消息',
                                   border: InputBorder.none,
                                   enabledBorder: InputBorder.none,
                                   focusedBorder: InputBorder.none,
