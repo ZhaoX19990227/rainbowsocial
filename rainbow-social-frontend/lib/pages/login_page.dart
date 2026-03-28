@@ -121,20 +121,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       compact ? 18 : 24,
                     ),
                     children: [
-                  _LoginHero(
-                    isRegisterMode: _isRegisterMode,
-                    compact: compact,
-                    onRegisterTap: () =>
-                        setState(() => _isRegisterMode = true),
+                      _LoginHero(
+                        isRegisterMode: _isRegisterMode,
+                        compact: compact,
+                        onRegisterTap: () =>
+                            setState(() => _isRegisterMode = !_isRegisterMode),
                         onHelpTap: () => AppFeedback.showToast('帮助功能即将上线'),
                       ),
                       SizedBox(height: compact ? 18 : 24),
-                      _SegmentedAuthSwitch(
-                        isRegisterMode: _isRegisterMode,
-                        onChanged: (value) =>
-                            setState(() => _isRegisterMode = value),
-                      ),
-                      SizedBox(height: compact ? 14 : 18),
                       _FrostedFormCard(
                         compact: compact,
                         child: Column(
@@ -162,10 +156,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 }
                               },
                             ),
-                        if (_isRegisterMode) ...[
-                          const SizedBox(height: 12),
-                          _PillInputField(
-                            controller: _confirmPasswordController,
+                            if (_isRegisterMode) ...[
+                              const SizedBox(height: 12),
+                              _PillInputField(
+                                controller: _confirmPasswordController,
                                 hintText: '确认密码',
                                 prefixIcon: Icons.verified_user_outlined,
                                 obscureText: true,
@@ -266,8 +260,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 ),
                               ),
                             ],
-                          SizedBox(height: compact ? 18 : 22),
-                          _RippleActionButton(
+                            SizedBox(height: compact ? 18 : 22),
+                            _RippleActionButton(
                               label: _isRegisterMode
                                   ? '创建账号'
                                   : '进入 Lune',
@@ -487,6 +481,7 @@ class _LoginHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final titleLead = isRegisterMode ? '开启你的' : '回到你的';
     final subtitle = isRegisterMode ? '建立属于你的连接入口' : '遇见 柔光里的呼吸';
+    final topActionLabel = isRegisterMode ? '登录' : '注册';
 
     return Container(
       padding: EdgeInsets.fromLTRB(
@@ -532,7 +527,7 @@ class _LoginHero extends StatelessWidget {
                 ),
               ),
               _HeroTopLink(
-                label: '注册',
+                label: topActionLabel,
                 onTap: onRegisterTap,
               ),
               const SizedBox(width: 18),
@@ -867,83 +862,6 @@ class _HeroGlow extends StatelessWidget {
               spreadRadius: 10,
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SegmentedAuthSwitch extends StatelessWidget {
-  const _SegmentedAuthSwitch({
-    required this.isRegisterMode,
-    required this.onChanged,
-  });
-
-  final bool isRegisterMode;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _SegmentedTab(
-              text: '登录',
-              active: !isRegisterMode,
-              onTap: () => onChanged(false),
-            ),
-          ),
-          Expanded(
-            child: _SegmentedTab(
-              text: '注册',
-              active: isRegisterMode,
-              onTap: () => onChanged(true),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SegmentedTab extends StatelessWidget {
-  const _SegmentedTab({
-    required this.text,
-    required this.active,
-    required this.onTap,
-  });
-
-  final String text;
-  final bool active;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        curve: Curves.easeOutCubic,
-        height: 44,
-        decoration: BoxDecoration(
-          color: active ? Colors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(30),
-        ),
-        child: Center(
-          child: Text(
-            text,
-            style: TextStyle(
-              color: active ? const Color(0xFFA78BFA) : Colors.grey.shade600,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
         ),
       ),
     );

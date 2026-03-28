@@ -1,7 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
+
+import 'api_config.dart';
 
 class ApiException implements Exception {
   const ApiException(this.message, {required this.statusCode});
@@ -36,7 +40,9 @@ class ApiClient {
     Map<String, String>? query,
   }) async {
     final uri = Uri.parse('$baseUrl$path').replace(queryParameters: query);
-    final response = await http.get(uri, headers: _headers(token));
+    final response = await _send(
+      () => http.get(uri, headers: _headers(token)),
+    );
     return _decode(response);
   }
 
@@ -45,10 +51,12 @@ class ApiClient {
     String? token,
     Map<String, dynamic>? body,
   }) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl$path'),
-      headers: _headers(token),
-      body: jsonEncode(body ?? const {}),
+    final response = await _send(
+      () => http.post(
+        Uri.parse('$baseUrl$path'),
+        headers: _headers(token),
+        body: jsonEncode(body ?? const {}),
+      ),
     );
     return _decode(response);
   }
@@ -58,10 +66,12 @@ class ApiClient {
     String? token,
     Map<String, dynamic>? body,
   }) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl$path'),
-      headers: _headers(token),
-      body: jsonEncode(body ?? const {}),
+    final response = await _send(
+      () => http.put(
+        Uri.parse('$baseUrl$path'),
+        headers: _headers(token),
+        body: jsonEncode(body ?? const {}),
+      ),
     );
     return _decode(response);
   }
@@ -71,10 +81,12 @@ class ApiClient {
     String? token,
     Map<String, dynamic>? body,
   }) async {
-    final response = await http.delete(
-      Uri.parse('$baseUrl$path'),
-      headers: _headers(token),
-      body: jsonEncode(body ?? const {}),
+    final response = await _send(
+      () => http.delete(
+        Uri.parse('$baseUrl$path'),
+        headers: _headers(token),
+        body: jsonEncode(body ?? const {}),
+      ),
     );
     return _decode(response);
   }
@@ -100,9 +112,21 @@ class ApiClient {
       );
     }
 
-    final streamed = await request.send();
+    final streamed = await _send(request.send);
     final response = await http.Response.fromStream(streamed);
     return _decode(response);
+  }
+
+  Future<T> _send<T>(Future<T> Function() request) async {
+    try {
+      return await request().timeout(ApiConfig.requestTimeout);
+    } on TimeoutException {
+      throw const ApiException('连接超时，请检查当前后端地址或网络状态', statusCode: 0);
+    } on SocketException {
+      throw const ApiException('无法连接服务器，请检查当前后端地址或网络状态', statusCode: 0);
+    } on http.ClientException {
+      throw const ApiException('请求发送失败，请稍后重试', statusCode: 0);
+    }
   }
 
   Map<String, String> _headers(

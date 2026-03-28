@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:animated_text_kit/animated_text_kit.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,10 +17,12 @@ class SplashPage extends ConsumerStatefulWidget {
 
 class _SplashPageState extends ConsumerState<SplashPage> {
   static const Duration _minimumShowDuration = Duration(milliseconds: 1600);
+  static const Duration _maximumWaitDuration = Duration(seconds: 4);
 
   bool _navigated = false;
   AsyncValue? _latestAuthState;
   Timer? _deferredRouteTimer;
+  Timer? _maximumWaitTimer;
   ProviderSubscription<AsyncValue>? _subscription;
   late final DateTime _enteredAt;
 
@@ -29,6 +31,12 @@ class _SplashPageState extends ConsumerState<SplashPage> {
     super.initState();
     _enteredAt = DateTime.now();
     Future<void>.microtask(() {
+      _maximumWaitTimer = Timer(_maximumWaitDuration, () {
+        if (!mounted || _navigated) {
+          return;
+        }
+        _navigateToNext(_latestAuthState ?? const AsyncValue.data(null));
+      });
       _subscription = ref.listenManual<AsyncValue>(
         authControllerProvider,
         (previous, next) {
@@ -65,6 +73,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
     if (!mounted || _navigated) {
       return;
     }
+    _maximumWaitTimer?.cancel();
     _navigated = true;
     Navigator.of(context).pushReplacementNamed(
       state.valueOrNull == null ? AppRouter.login : AppRouter.main,
@@ -74,6 +83,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
   @override
   void dispose() {
     _deferredRouteTimer?.cancel();
+    _maximumWaitTimer?.cancel();
     _subscription?.close();
     super.dispose();
   }
@@ -117,37 +127,13 @@ class _SplashPageState extends ConsumerState<SplashPage> {
                     const Spacer(),
                     SizedBox(
                       width: 300,
-                      child: DefaultTextStyle(
-                        style:
-                            Theme.of(context).textTheme.headlineSmall!.copyWith(
-                                  color: AppTheme.textPrimary,
-                                  fontWeight: FontWeight.w700,
-                                  height: 1.4,
-                                  fontFamily: 'PingFang SC',
-                                ),
-                        textAlign: TextAlign.center,
-                        child: AnimatedTextKit(
-                          key: const ValueKey('splash-copy'),
-                          isRepeatingAnimation: false,
-                          repeatForever: false,
-                          totalRepeatCount: 1,
-                          animatedTexts: [
-                            TypewriterAnimatedText(
-                              '回到你的Lune\n遇见 柔光里的呼吸...',
-                              speed: const Duration(milliseconds: 110),
-                              cursor: '▋',
-                              textStyle: Theme.of(context)
-                                  .textTheme
-                                  .headlineSmall!
-                                  .copyWith(
-                                    color: AppTheme.primaryDark,
-                                    fontWeight: FontWeight.w700,
-                                    height: 1.45,
-                                    fontFamily: 'PingFang SC',
-                                  ),
+                      child: _SplashTypewriterCopy(
+                        style: Theme.of(context).textTheme.headlineSmall!.copyWith(
+                              color: AppTheme.primaryDark,
+                              fontWeight: FontWeight.w700,
+                              height: 1.45,
+                              fontFamily: 'PingFang SC',
                             ),
-                          ],
-                        ),
                       ),
                     ),
                     const SizedBox(height: 38),
@@ -173,6 +159,98 @@ class _SplashPageState extends ConsumerState<SplashPage> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SplashTypewriterCopy extends StatefulWidget {
+  const _SplashTypewriterCopy({required this.style});
+
+  final TextStyle style;
+
+  @override
+  State<_SplashTypewriterCopy> createState() => _SplashTypewriterCopyState();
+}
+
+class _SplashTypewriterCopyState extends State<_SplashTypewriterCopy> {
+  static const String _lineOne = '回到你的Lune';
+  static const String _lineTwo = '遇见 柔光里的呼吸...';
+  static const Duration _tick = Duration(milliseconds: 95);
+  static const Duration _linePause = Duration(milliseconds: 240);
+
+  Timer? _timer;
+  String _visibleLineOne = '';
+  String _visibleLineTwo = '';
+  bool _showCursor = true;
+  int _step = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(_tick, (_) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        final firstLineLength = _lineOne.length;
+        final pauseSteps =
+            (_linePause.inMilliseconds / _tick.inMilliseconds).round();
+        final secondLineStart = firstLineLength + pauseSteps;
+        final secondLineLength = _lineTwo.length;
+
+        if (_step < firstLineLength) {
+          _visibleLineOne = _lineOne.substring(0, _step + 1);
+        } else if (_step >= secondLineStart &&
+            _step < secondLineStart + secondLineLength) {
+          final secondIndex = _step - secondLineStart + 1;
+          _visibleLineTwo = _lineTwo.substring(0, secondIndex);
+        } else if (_step >= secondLineStart + secondLineLength) {
+          _showCursor = false;
+          _timer?.cancel();
+        }
+
+        _step += 1;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final firstLineLength = _lineOne.length;
+    final pauseSteps =
+        (_linePause.inMilliseconds / _tick.inMilliseconds).round();
+    final secondLineStart = firstLineLength + pauseSteps;
+    final typingLineOne = _step <= firstLineLength;
+    final typingLineTwo = _step > secondLineStart && _visibleLineTwo != _lineTwo;
+    final lineOneText = typingLineOne && _showCursor
+        ? '$_visibleLineOne▋'
+        : _visibleLineOne;
+    final lineTwoText = typingLineTwo && _showCursor
+        ? '$_visibleLineTwo▋'
+        : _visibleLineTwo;
+
+    return Column(
+      key: const ValueKey('splash-copy'),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          lineOneText,
+          textAlign: TextAlign.center,
+          style: widget.style,
+        ),
+        const SizedBox(height: 4),
+        Text(
+          lineTwoText,
+          textAlign: TextAlign.center,
+          style: widget.style,
+        ),
+      ],
     );
   }
 }
@@ -320,58 +398,90 @@ class _FloatingGlow extends StatelessWidget {
   }
 }
 
-class _FlowingLoadingBar extends StatelessWidget {
+class _FlowingLoadingBar extends StatefulWidget {
   const _FlowingLoadingBar();
 
   @override
+  State<_FlowingLoadingBar> createState() => _FlowingLoadingBarState();
+}
+
+class _FlowingLoadingBarState extends State<_FlowingLoadingBar>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1350),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 168,
-      height: 6,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(999),
-        color: Colors.white.withValues(alpha: 0.46),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppTheme.primary.withValues(alpha: 0.18),
-                    AppTheme.secondary.withValues(alpha: 0.18),
-                    AppTheme.tertiary.withValues(alpha: 0.18),
-                  ],
-                ),
-              ),
-            ),
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final travel = Curves.easeInOutSine.transform(_controller.value);
+        final maxOffset = 168 - 58;
+        return Container(
+          width: 168,
+          height: 6,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(999),
+            color: Colors.white.withValues(alpha: 0.46),
           ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Container(
-              width: 58,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(999),
-                gradient: const LinearGradient(
-                  colors: [
-                    AppTheme.primary,
-                    AppTheme.secondary,
-                    AppTheme.tertiary,
-                  ],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primary.withValues(alpha: 0.28),
-                    blurRadius: 16,
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppTheme.primary.withValues(alpha: 0.18),
+                        AppTheme.secondary.withValues(alpha: 0.18),
+                        AppTheme.tertiary.withValues(alpha: 0.18),
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
-            ),
+              Positioned(
+                left: travel * maxOffset,
+                top: 0,
+                bottom: 0,
+                child: Container(
+                  width: 58,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(999),
+                    gradient: const LinearGradient(
+                      colors: [
+                        AppTheme.primary,
+                        AppTheme.secondary,
+                        AppTheme.tertiary,
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppTheme.primary.withValues(alpha: 0.28),
+                        blurRadius: 16,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
