@@ -39,6 +39,7 @@ func (s *UserService) UpdateProfile(userID int64, input model.User) (*model.User
 	existing.MBTIType = sanitizeMBTIType(input.MBTIType)
 	existing.Bio = strings.TrimSpace(input.Bio)
 	existing.Tags = sanitizeTags(input.Tags)
+	existing.PositionRole = strings.TrimSpace(input.PositionRole)
 	existing.Photos = sanitizePhotos(input.Photos)
 	existing.Lat = input.Lat
 	existing.Lng = input.Lng

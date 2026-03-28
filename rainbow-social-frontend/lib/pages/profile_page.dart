@@ -14,7 +14,6 @@ import '../routes/app_router.dart';
 import '../services/api_config.dart';
 import '../services/app_feedback.dart';
 import '../services/mbti_catalog.dart';
-import '../services/tag_options.dart';
 import '../services/user_status_catalog.dart';
 import '../services/zodiac_utils.dart';
 import '../theme/app_theme.dart';
@@ -22,8 +21,6 @@ import '../usecases/upload_usecases.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/app_skeleton.dart';
 import '../widgets/avatar_widget.dart';
-import '../widgets/mbti_badge.dart';
-import '../widgets/zodiac_badge.dart';
 import 'likes_overview_page.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
@@ -35,7 +32,6 @@ class ProfilePage extends ConsumerStatefulWidget {
 
 class _ProfilePageState extends ConsumerState<ProfilePage> {
   final ImagePicker _picker = ImagePicker();
-  static const _maxTags = 5;
   bool _uploadingMoment = false;
 
   @override
@@ -92,37 +88,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     onUpload: _pickAndUploadMoment,
                     onViewAll: () => Navigator.of(context)
                         .pushNamed(AppRouter.moments, arguments: displayUser),
-                  ),
-                  const SizedBox(height: 24),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: _MbtiInsightCard(
-                          user: displayUser,
-                          onTap: () => Navigator.of(context)
-                              .pushNamed(AppRouter.mbtiTest),
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: _ZodiacInsightCard(
-                          user: displayUser,
-                          onTap: () => Navigator.of(context)
-                              .pushNamed(AppRouter.editProfile),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  _TagsInsightCard(
-                    user: displayUser,
-                    onTap: () => _showTagPicker(displayUser),
-                  ),
-                  const SizedBox(height: 16),
-                  _AboutInsightCard(
-                    user: displayUser,
-                    onTap: () => _showAboutEditor(displayUser),
                   ),
                 ],
               ),
@@ -469,213 +434,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     AppFeedback.showToast(option == null ? '今日状态已恢复默认' : '今日状态已更新');
   }
 
-  Future<void> _showTagPicker(AppUser user) async {
-    List<String> draft = [...user.tags];
-    final result = await AppFeedback.showJellySheet<List<String>>(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => StatefulBuilder(
-        builder: (sheetContext, setSheetState) {
-          return SafeArea(
-            top: false,
-            child: Container(
-              margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 22),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.96),
-                borderRadius: BorderRadius.circular(32),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primary.withValues(alpha: 0.12),
-                    blurRadius: 34,
-                    offset: const Offset(0, -12),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 46,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: AppTheme.ghostBorder.withValues(alpha: 0.34),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 18),
-                  Text(
-                    '选择兴趣标签',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '最多选择 $_maxTags 个，让合拍的人更快找到你',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: AppTheme.textSecondary,
-                        ),
-                  ),
-                  const SizedBox(height: 18),
-                  Wrap(
-                    spacing: 10,
-                    runSpacing: 10,
-                    children: profileTagOptions.map((tag) {
-                      final selected = draft.contains(tag);
-                      return GestureDetector(
-                        onTap: () {
-                          setSheetState(() {
-                            if (selected) {
-                              draft =
-                                  draft.where((item) => item != tag).toList();
-                            } else if (draft.length < _maxTags) {
-                              draft = [...draft, tag];
-                            } else {
-                              AppFeedback.showToast('最多选择 $_maxTags 个标签');
-                            }
-                          });
-                        },
-                        child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 9,
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(999),
-                            gradient: selected
-                                ? const LinearGradient(
-                                    colors: [
-                                      AppTheme.primary,
-                                      AppTheme.primaryDark,
-                                    ],
-                                  )
-                                : null,
-                            color: selected ? null : const Color(0xFFF4F1FB),
-                          ),
-                          child: Text(
-                            tag,
-                            style: Theme.of(context)
-                                .textTheme
-                                .labelMedium
-                                ?.copyWith(
-                                  color: selected
-                                      ? Colors.white
-                                      : AppTheme.primary,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 22),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: () => Navigator.of(sheetContext).pop(draft),
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppTheme.primary,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size.fromHeight(54),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                      child: const Text('保存标签'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-
-    if (result == null) return;
-    final profile = ref.read(profileControllerProvider).valueOrNull;
-    if (profile == null) return;
-    await ref.read(profileControllerProvider.notifier).save(
-          profile.copyWith(tags: result),
-        );
-    if (!mounted) return;
-    AppFeedback.showToast('兴趣标签已更新');
-  }
-
-  Future<void> _showAboutEditor(AppUser user) async {
-    final controller = TextEditingController(text: user.bio.trim());
-    final result = await AppFeedback.showJellyDialog<String>(
-      context: context,
-      builder: (dialogContext) => Padding(
-        padding: const EdgeInsets.fromLTRB(4, 4, 4, 0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '填写关于我',
-              style: Theme.of(dialogContext).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '写一点你的性格、节奏和想认识怎样的人',
-              style: Theme.of(dialogContext).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.textSecondary,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              minLines: 4,
-              maxLines: 6,
-              maxLength: 120,
-              decoration: const InputDecoration(
-                hintText: '例如：慢热但真诚，喜欢轻松有分寸的聊天。',
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: const Text('取消'),
-                ),
-                const Spacer(),
-                FilledButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(
-                    controller.text.trim(),
-                  ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppTheme.primary,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: const Text('保存'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-    controller.dispose();
-
-    if (result == null) return;
-    final profile = ref.read(profileControllerProvider).valueOrNull;
-    if (profile == null) return;
-    await ref.read(profileControllerProvider.notifier).save(
-          profile.copyWith(bio: result),
-        );
-    if (!mounted) return;
-    AppFeedback.showToast('关于我已更新');
-  }
-
   Future<void> _signOut(BuildContext context, WidgetRef ref) async {
     await ref.read(authControllerProvider.notifier).signOut();
     ref.invalidate(profileControllerProvider);
@@ -745,6 +503,32 @@ class _ProfileHeroCard extends StatelessWidget {
     final activeStatus = UserStatusCatalog.isActive(user.statusExpiresAt)
         ? UserStatusCatalog.byId(user.statusId)
         : null;
+    final identityBadges = <Widget>[
+      if (user.zodiacSign.trim().isNotEmpty)
+        _CompactIdentityBadge(
+          icon: Icons.auto_awesome_rounded,
+          label: ZodiacUtils.displayName(user.zodiacSign.trim()),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFFF8FC1),
+              Color(0xFFB26BFF),
+              Color(0xFF7CB8FF),
+            ],
+          ),
+        ),
+      if (user.mbtiType.trim().isNotEmpty)
+        _CompactIdentityBadge(
+          icon: MbtiCatalog.resolve(user.mbtiType.trim()).avatarAccent,
+          label: user.mbtiType.trim(),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: MbtiCatalog.resolve(user.mbtiType.trim()).palette,
+          ),
+        ),
+    ];
     final chips = <_HeroChipData>[
       if (user.positionRole.trim().isNotEmpty)
         _HeroChipData(
@@ -755,8 +539,10 @@ class _ProfileHeroCard extends StatelessWidget {
       _HeroChipData(label: '${user.heightCm}cm'),
       _HeroChipData(label: '${user.weightKg}kg'),
     ];
-    final visibleTags =
-        user.tags.where((tag) => tag.trim().isNotEmpty).toList();
+    final about = user.bio.trim();
+    final aboutPreview = about.length > 50
+        ? '${about.substring(0, 50)}...'
+        : about;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 26, 24, 22),
@@ -831,6 +617,15 @@ class _ProfileHeroCard extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
           ),
+          if (identityBadges.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 10,
+              runSpacing: 10,
+              children: identityBadges,
+            ),
+          ],
           const SizedBox(height: 18),
           Wrap(
             alignment: WrapAlignment.center,
@@ -838,14 +633,29 @@ class _ProfileHeroCard extends StatelessWidget {
             runSpacing: 8,
             children: chips.map((chip) => _HeroMetaChip(data: chip)).toList(),
           ),
-          if (visibleTags.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 8,
-              runSpacing: 8,
-              children:
-                  visibleTags.map((tag) => _SoftTagChip(label: tag)).toList(),
+          if (aboutPreview.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                color: Colors.white.withValues(alpha: 0.58),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.72),
+                ),
+              ),
+              child: Text(
+                aboutPreview,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.textSecondary,
+                      height: 1.55,
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
             ),
           ],
           const SizedBox(height: 16),
@@ -1035,323 +845,6 @@ class _SocialStatsGrid extends StatelessWidget {
           if (i != items.length - 1) const SizedBox(width: 12),
         ],
       ],
-    );
-  }
-}
-
-class _MbtiInsightCard extends StatelessWidget {
-  const _MbtiInsightCard({
-    required this.user,
-    required this.onTap,
-  });
-
-  final AppUser user;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasMbti = user.mbtiType.trim().isNotEmpty;
-    final mbti = hasMbti ? MbtiCatalog.resolve(user.mbtiType) : null;
-
-    return _InsightShell(
-      title: '人格档案',
-      subtitle: hasMbti ? 'MBTI' : 'MBTI',
-      accent: const [Color(0xFFF4E6FF), Color(0xFFFFFFFF)],
-      compactHeight: 214,
-      onTap: !hasMbti ? onTap : null,
-      child: hasMbti && mbti != null
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                MbtiBadge(type: mbti.type, compact: true),
-                const SizedBox(height: 10),
-                Text(
-                  mbti.name,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  mbti.oneLiner,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
-                ),
-              ],
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: AppTheme.primary.withValues(alpha: 0.08),
-                  ),
-                  child: Icon(
-                    Icons.psychology_alt_rounded,
-                    color: AppTheme.primary.withValues(alpha: 0.35),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const _MissingContent(
-                  title: '尚未解锁人格',
-                  subtitle: '解锁你的 MBTI 档案。',
-                ),
-                const SizedBox(height: 12),
-                Container(
-                  width: double.infinity,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(999),
-                    color: AppTheme.primary.withValues(alpha: 0.08),
-                  ),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Container(
-                      width: 42,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(999),
-                        color: AppTheme.primary.withValues(alpha: 0.28),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
-}
-
-class _ZodiacInsightCard extends StatelessWidget {
-  const _ZodiacInsightCard({
-    required this.user,
-    required this.onTap,
-  });
-
-  final AppUser user;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final sign = user.zodiacSign.trim();
-
-    return _InsightShell(
-      title: '星座档案',
-      subtitle: 'ARIES',
-      accent: const [Color(0xFFFFF0F6), Color(0xFFFFFFFF)],
-      compactHeight: 214,
-      onTap: sign.isEmpty ? onTap : null,
-      child: sign.isNotEmpty
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ZodiacBadge(sign: sign, compact: true),
-                const SizedBox(height: 10),
-                Text(
-                  ZodiacUtils.displayName(sign),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '生日已点亮。',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textSecondary,
-                        height: 1.35,
-                      ),
-                ),
-              ],
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    color: AppTheme.tertiary.withValues(alpha: 0.08),
-                  ),
-                  child: Icon(
-                    Icons.auto_awesome_rounded,
-                    color: AppTheme.tertiary.withValues(alpha: 0.35),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const _MissingContent(
-                  title: '尚未填写生日',
-                  subtitle: '点击填写生日后即可生成星座信息。',
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: List.generate(
-                    4,
-                    (index) => Container(
-                      width: 8,
-                      height: 8,
-                      margin: const EdgeInsets.only(right: 6),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppTheme.tertiary.withValues(
-                          alpha: index == 0 ? 0.28 : 0.12,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-    );
-  }
-}
-
-class _TagsInsightCard extends StatelessWidget {
-  const _TagsInsightCard({
-    required this.user,
-    required this.onTap,
-  });
-
-  final AppUser user;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return _InsightShell(
-      title: '兴趣标签',
-      subtitle: 'HEADLINES',
-      accent: const [Color(0xFFF8F4FF), Color(0xFFFFFFFF)],
-      fullWidth: true,
-      onTap:
-          user.tags.isEmpty && user.positionRole.trim().isEmpty ? onTap : null,
-      child: user.tags.isEmpty && user.positionRole.trim().isEmpty
-          ? Column(
-              children: [
-                Container(
-                  width: 76,
-                  height: 76,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        AppTheme.primary.withValues(alpha: 0.12),
-                        AppTheme.primary.withValues(alpha: 0.03),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                  child: Center(
-                    child: Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primary.withValues(alpha: 0.1),
-                            blurRadius: 16,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.auto_fix_high_rounded,
-                        color: AppTheme.primary.withValues(alpha: 0.72),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  '添加兴趣标签后，资料会更完整，也更方便展示。',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppTheme.textSecondary.withValues(alpha: 0.86),
-                        height: 1.6,
-                      ),
-                ),
-              ],
-            )
-          : Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                if (user.positionRole.trim().isNotEmpty)
-                  _SoftTagChip(
-                    label: user.positionRole.trim(),
-                    highlighted: true,
-                  ),
-                ...user.tags.map((tag) => _SoftTagChip(label: tag)),
-              ],
-            ),
-    );
-  }
-}
-
-class _AboutInsightCard extends StatelessWidget {
-  const _AboutInsightCard({
-    required this.user,
-    required this.onTap,
-  });
-
-  final AppUser user;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final about = user.bio.trim().isEmpty
-        ? '还没有填写自我介绍，去写一点你喜欢的节奏、偏爱的聊天方式，或者理想型。'
-        : user.bio.trim();
-
-    return _InsightShell(
-      title: '关于我',
-      subtitle: 'ABOUT',
-      accent: const [Color(0xFFFFFFFF), Color(0xFFF7F3FF)],
-      fullWidth: true,
-      onTap: user.bio.trim().isEmpty ? onTap : null,
-      child: user.bio.trim().isEmpty
-          ? Column(
-              children: [
-                Container(
-                  width: 82,
-                  height: 82,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        AppTheme.primary.withValues(alpha: 0.14),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                  child: Icon(
-                    Icons.chat_bubble_outline_rounded,
-                    size: 34,
-                    color: AppTheme.primary.withValues(alpha: 0.38),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _MissingContent(
-                  title: '还没有写下关于我',
-                  subtitle: '写一点你的性格、节奏和想认识怎样的人，这里就会亮起来。',
-                ),
-              ],
-            )
-          : Text(
-              about,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppTheme.textSecondary,
-                    height: 1.7,
-                  ),
-            ),
     );
   }
 }
@@ -1682,149 +1175,67 @@ class _SocialStatCard extends StatelessWidget {
   }
 }
 
-class _InsightShell extends StatelessWidget {
-  const _InsightShell({
-    required this.title,
-    required this.subtitle,
-    required this.child,
-    required this.accent,
-    this.fullWidth = false,
-    this.compactHeight,
-    this.onTap,
-  });
-
-  final String title;
-  final String subtitle;
-  final Widget child;
-  final List<Color> accent;
-  final bool fullWidth;
-  final double? compactHeight;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final header = [
-      Text(
-        subtitle,
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: AppTheme.tertiary.withValues(alpha: 0.68),
-              letterSpacing: 1.6,
-            ),
-      ),
-      const SizedBox(height: 8),
-      Text(
-        title,
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
-      ),
-      const SizedBox(height: 14),
-    ];
-
-    final body = Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ...header,
-        Align(
-          alignment: Alignment.topLeft,
-          child: child,
-        ),
-      ],
-    );
-
-    final content = Container(
-      width: fullWidth ? double.infinity : null,
-      constraints: compactHeight == null
-          ? null
-          : BoxConstraints(minHeight: compactHeight!),
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(30),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: accent,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primary.withValues(alpha: 0.06),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: body,
-    );
-    if (onTap == null) return content;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(30),
-      child: content,
-    );
-  }
-}
-
-class _MissingContent extends StatelessWidget {
-  const _MissingContent({
-    required this.title,
-    required this.subtitle,
-  });
-
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          subtitle,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppTheme.textSecondary,
-              ),
-        ),
-      ],
-    );
-  }
-}
-
-class _SoftTagChip extends StatelessWidget {
-  const _SoftTagChip({
+class _CompactIdentityBadge extends StatelessWidget {
+  const _CompactIdentityBadge({
+    required this.icon,
     required this.label,
-    this.highlighted = false,
+    required this.gradient,
   });
 
+  final IconData icon;
   final String label;
-  final bool highlighted;
+  final Gradient gradient;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
-        gradient: highlighted
-            ? const LinearGradient(
-                colors: [AppTheme.primary, AppTheme.primaryDark],
-              )
-            : null,
-        color: highlighted ? null : const Color(0xFFF4F1FB),
+        color: Colors.white.withValues(alpha: 0.68),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.76),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: highlighted ? Colors.white : AppTheme.primary,
-              fontWeight: FontWeight.w700,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: gradient,
+              boxShadow: [
+                BoxShadow(
+                  color: AppTheme.primary.withValues(alpha: 0.16),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
+            child: Icon(
+              icon,
+              size: 12,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppTheme.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+        ],
       ),
     );
   }

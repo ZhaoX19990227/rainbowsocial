@@ -32,7 +32,7 @@ func (r *MatchRepository) CreateIfNotExists(userA, userB int64) error {
 func (r *MatchRepository) ListByUser(userID int64) ([]model.MatchUser, error) {
 	rows, err := r.db.Query(`
 		SELECT
-			u.id, u.email, u.nickname, u.avatar, u.age, u.bio, u.tags, u.lat, u.lng,
+			u.id, u.email, u.nickname, u.avatar, u.photos, u.age, u.height_cm, u.weight_kg, u.birthday, u.zodiac_sign, u.mbti_type, u.bio, u.tags, u.position_role, u.lat, u.lng, u.location_label,
 			u.online_status, u.created_at, u.last_active_at, m.created_at
 		FROM matches m
 		JOIN users u ON u.id = CASE WHEN m.user1_id = ? THEN m.user2_id ELSE m.user1_id END
@@ -47,6 +47,7 @@ func (r *MatchRepository) ListByUser(userID int64) ([]model.MatchUser, error) {
 	result := make([]model.MatchUser, 0)
 	for rows.Next() {
 		var item model.MatchUser
+		var photosJSON string
 		var tagsJSON string
 		var online int
 		if err := rows.Scan(
@@ -54,11 +55,19 @@ func (r *MatchRepository) ListByUser(userID int64) ([]model.MatchUser, error) {
 			&item.User.Email,
 			&item.User.Nickname,
 			&item.User.Avatar,
+			&photosJSON,
 			&item.User.Age,
+			&item.User.HeightCM,
+			&item.User.WeightKG,
+			&item.User.Birthday,
+			&item.User.ZodiacSign,
+			&item.User.MBTIType,
 			&item.User.Bio,
 			&tagsJSON,
+			&item.User.PositionRole,
 			&item.User.Lat,
 			&item.User.Lng,
+			&item.User.LocationLabel,
 			&online,
 			&item.User.CreatedAt,
 			&item.User.LastActiveAt,
@@ -66,6 +75,7 @@ func (r *MatchRepository) ListByUser(userID int64) ([]model.MatchUser, error) {
 		); err != nil {
 			return nil, err
 		}
+		item.User.Photos = decodeTags(photosJSON)
 		item.User.Tags = decodeTags(tagsJSON)
 		item.User.OnlineStatus = online == 1
 		result = append(result, item)
@@ -113,7 +123,7 @@ func (r *MatchRepository) listLikes(userID int64, sent bool) ([]model.LikeUser, 
 
 	rows, err := r.db.Query(`
 		SELECT
-			u.id, u.email, u.nickname, u.avatar, u.age, u.bio, u.tags, u.lat, u.lng,
+			u.id, u.email, u.nickname, u.avatar, u.photos, u.age, u.height_cm, u.weight_kg, u.birthday, u.zodiac_sign, u.mbti_type, u.bio, u.tags, u.position_role, u.lat, u.lng, u.location_label,
 			u.online_status, u.created_at, u.last_active_at,
 			s.created_at,
 			EXISTS(
@@ -144,6 +154,7 @@ func (r *MatchRepository) listLikes(userID int64, sent bool) ([]model.LikeUser, 
 	result := make([]model.LikeUser, 0)
 	for rows.Next() {
 		var item model.LikeUser
+		var photosJSON string
 		var tagsJSON string
 		var online int
 		var mutual int
@@ -153,11 +164,19 @@ func (r *MatchRepository) listLikes(userID int64, sent bool) ([]model.LikeUser, 
 			&item.User.Email,
 			&item.User.Nickname,
 			&item.User.Avatar,
+			&photosJSON,
 			&item.User.Age,
+			&item.User.HeightCM,
+			&item.User.WeightKG,
+			&item.User.Birthday,
+			&item.User.ZodiacSign,
+			&item.User.MBTIType,
 			&item.User.Bio,
 			&tagsJSON,
+			&item.User.PositionRole,
 			&item.User.Lat,
 			&item.User.Lng,
+			&item.User.LocationLabel,
 			&online,
 			&item.User.CreatedAt,
 			&item.User.LastActiveAt,
@@ -167,6 +186,7 @@ func (r *MatchRepository) listLikes(userID int64, sent bool) ([]model.LikeUser, 
 		); err != nil {
 			return nil, err
 		}
+		item.User.Photos = decodeTags(photosJSON)
 		item.User.Tags = decodeTags(tagsJSON)
 		item.User.OnlineStatus = online == 1
 		item.IsMutual = mutual == 1

@@ -59,6 +59,7 @@ func migrate(db *sql.DB) error {
 			mbti_type TEXT NOT NULL DEFAULT '',
 			bio TEXT NOT NULL DEFAULT '',
 			tags TEXT NOT NULL DEFAULT '[]',
+			position_role TEXT NOT NULL DEFAULT '',
 			lat REAL NOT NULL DEFAULT 0,
 			lng REAL NOT NULL DEFAULT 0,
 			location_label TEXT NOT NULL DEFAULT '',
@@ -210,6 +211,9 @@ func migrate(db *sql.DB) error {
 	if err := addColumnIfNotExists(db, "users", "mbti_type", "TEXT NOT NULL DEFAULT ''"); err != nil {
 		return err
 	}
+	if err := addColumnIfNotExists(db, "users", "position_role", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
 	if _, err := db.Exec(`UPDATE users SET account = email WHERE account = ''`); err != nil {
 		return fmt.Errorf("backfill users.account: %w", err)
 	}
@@ -271,22 +275,23 @@ func seedUsers(db *sql.DB) error {
 		MBTIType string
 		Bio      string
 		Tags     []string
+		Position string
 		Lat      float64
 		Lng      float64
 		Online   int
 	}
 
 	users := []seedUser{
-		{Email: "leo@example.com", Nickname: "Leo", Avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e", Age: 27, HeightCM: 178, WeightKG: 74, Birthday: "1997-08-11", Zodiac: "Leo", MBTIType: "ENTJ", Bio: "Coffee, gym, weekend hikes.", Tags: []string{"friendly", "travel", "gym"}, Lat: 31.2304, Lng: 121.4737, Online: 1},
-		{Email: "noah@example.com", Nickname: "Noah", Avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d", Age: 29, HeightCM: 182, WeightKG: 76, Birthday: "1995-10-16", Zodiac: "Libra", MBTIType: "ENFP", Bio: "Designer who loves galleries and brunch.", Tags: []string{"design", "art", "brunch"}, Lat: 31.2200, Lng: 121.4300, Online: 1},
-		{Email: "kai@example.com", Nickname: "Kai", Avatar: "https://images.unsplash.com/photo-1504593811423-6dd665756598", Age: 25, HeightCM: 175, WeightKG: 68, Birthday: "1999-03-06", Zodiac: "Pisces", MBTIType: "INFP", Bio: "Bookstores, indie music, and late-night chats.", Tags: []string{"books", "music", "night-owl"}, Lat: 31.2150, Lng: 121.5100, Online: 0},
-		{Email: "asher@example.com", Nickname: "Asher", Avatar: "https://images.unsplash.com/photo-1507591064344-4c6ce005b128", Age: 31, HeightCM: 185, WeightKG: 82, Birthday: "1993-12-28", Zodiac: "Capricorn", MBTIType: "ESTJ", Bio: "Foodie and runner looking for real connection.", Tags: []string{"running", "foodie", "serious"}, Lat: 31.2400, Lng: 121.4900, Online: 1},
-		{Email: "miles@example.com", Nickname: "Miles", Avatar: "https://images.unsplash.com/photo-1463453091185-61582044d556", Age: 26, HeightCM: 180, WeightKG: 79, Birthday: "1998-02-10", Zodiac: "Aquarius", MBTIType: "ISFJ", Bio: "Pet dad. Into films and lazy Sunday mornings.", Tags: []string{"movies", "pets", "chill"}, Lat: 31.2000, Lng: 121.4500, Online: 0},
+		{Email: "leo@example.com", Nickname: "Leo", Avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e", Age: 27, HeightCM: 178, WeightKG: 74, Birthday: "1997-08-11", Zodiac: "Leo", MBTIType: "ENTJ", Bio: "Coffee, gym, weekend hikes.", Tags: []string{"friendly", "travel", "gym"}, Position: "Top", Lat: 31.2304, Lng: 121.4737, Online: 1},
+		{Email: "noah@example.com", Nickname: "Noah", Avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d", Age: 29, HeightCM: 182, WeightKG: 76, Birthday: "1995-10-16", Zodiac: "Libra", MBTIType: "ENFP", Bio: "Designer who loves galleries and brunch.", Tags: []string{"design", "art", "brunch"}, Position: "Vers", Lat: 31.2200, Lng: 121.4300, Online: 1},
+		{Email: "kai@example.com", Nickname: "Kai", Avatar: "https://images.unsplash.com/photo-1504593811423-6dd665756598", Age: 25, HeightCM: 175, WeightKG: 68, Birthday: "1999-03-06", Zodiac: "Pisces", MBTIType: "INFP", Bio: "Bookstores, indie music, and late-night chats.", Tags: []string{"books", "music", "night-owl"}, Position: "Bottom", Lat: 31.2150, Lng: 121.5100, Online: 0},
+		{Email: "asher@example.com", Nickname: "Asher", Avatar: "https://images.unsplash.com/photo-1507591064344-4c6ce005b128", Age: 31, HeightCM: 185, WeightKG: 82, Birthday: "1993-12-28", Zodiac: "Capricorn", MBTIType: "ESTJ", Bio: "Foodie and runner looking for real connection.", Tags: []string{"running", "foodie", "serious"}, Position: "Side", Lat: 31.2400, Lng: 121.4900, Online: 1},
+		{Email: "miles@example.com", Nickname: "Miles", Avatar: "https://images.unsplash.com/photo-1463453091185-61582044d556", Age: 26, HeightCM: 180, WeightKG: 79, Birthday: "1998-02-10", Zodiac: "Aquarius", MBTIType: "ISFJ", Bio: "Pet dad. Into films and lazy Sunday mornings.", Tags: []string{"movies", "pets", "chill"}, Position: "Vers Bottom", Lat: 31.2000, Lng: 121.4500, Online: 0},
 	}
 
 	stmt, err := db.Prepare(`
-		INSERT INTO users (email, account, nickname, avatar, photos, age, height_cm, weight_kg, birthday, zodiac_sign, mbti_type, bio, tags, lat, lng, online_status, created_at, last_active_at)
-		VALUES (?, ?, ?, ?, '[]', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO users (email, account, nickname, avatar, photos, age, height_cm, weight_kg, birthday, zodiac_sign, mbti_type, bio, tags, position_role, lat, lng, online_status, created_at, last_active_at)
+		VALUES (?, ?, ?, ?, '[]', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`)
 	if err != nil {
 		return err
@@ -311,6 +316,7 @@ func seedUsers(db *sql.DB) error {
 			user.MBTIType,
 			user.Bio,
 			string(tagsJSON),
+			user.Position,
 			user.Lat,
 			user.Lng,
 			user.Online,

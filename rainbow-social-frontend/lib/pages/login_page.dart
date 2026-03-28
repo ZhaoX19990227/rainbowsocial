@@ -215,35 +215,34 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                       keyboardType: TextInputType.number,
                                     ),
                                   ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: _PillInputField(
-                                      controller: _cityController,
-                                      hintText: '城市',
-                                      prefixIcon: Icons.location_city_outlined,
-                                      textInputAction: TextInputAction.next,
-                                      trailing: IconButton(
-                                        onPressed: _resolvingCity
-                                            ? null
-                                            : _resolveRegistrationLocation,
-                                        icon: _resolvingCity
-                                            ? const SizedBox(
-                                                width: 18,
-                                                height: 18,
-                                                child:
-                                                    CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                ),
-                                              )
-                                            : const Icon(
-                                                Icons.my_location_rounded,
-                                                size: 18,
-                                                color: AppTheme.primary,
-                                              ),
-                                      ),
-                                    ),
-                                  ),
                                 ],
+                              ),
+                              const SizedBox(height: 12),
+                              _PillInputField(
+                                controller: _cityController,
+                                hintText: '城市，可手动输入或定位获取',
+                                prefixIcon: Icons.location_city_outlined,
+                                textInputAction: TextInputAction.next,
+                                maxLines: 1,
+                                trailing: IconButton(
+                                  tooltip: '定位获取',
+                                  onPressed: _resolvingCity
+                                      ? null
+                                      : _resolveRegistrationLocation,
+                                  icon: _resolvingCity
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                          ),
+                                        )
+                                      : const Icon(
+                                          Icons.my_location_rounded,
+                                          size: 18,
+                                          color: AppTheme.primary,
+                                        ),
+                                ),
                               ),
                               const SizedBox(height: 12),
                               _RegisterBirthdayField(
@@ -1039,49 +1038,63 @@ class _RegisterPositionField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Colors.white.withValues(alpha: 0.56),
-            const Color(0xFFF4F1FF).withValues(alpha: 0.48),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.68)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            '属性',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: AppTheme.textSecondary,
-                ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final itemWidth = (constraints.maxWidth - 8) / 2;
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Colors.white.withValues(alpha: 0.56),
+                const Color(0xFFF4F1FF).withValues(alpha: 0.48),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(26),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.68)),
           ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: profilePositionOptions.map((option) {
-              final active = selected == option;
-              return ChoiceChip(
-                selected: active,
-                label: Text(option),
-                onSelected: (_) => onSelected(option),
-                selectedColor: AppTheme.primary.withValues(alpha: 0.16),
-                side: BorderSide(
-                  color: active ? AppTheme.primary : AppTheme.ghostBorder,
-                ),
-                labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: active ? AppTheme.primary : AppTheme.textSecondary,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '属性',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: AppTheme.textSecondary,
                     ),
-              );
-            }).toList(),
+              ),
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: profilePositionOptions.map((option) {
+                  final active = selected == option;
+                  return SizedBox(
+                    width: itemWidth,
+                    child: ChoiceChip(
+                      selected: active,
+                      label: Center(child: Text(option)),
+                      labelPadding: EdgeInsets.zero,
+                      showCheckmark: false,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      onSelected: (_) => onSelected(option),
+                      selectedColor: AppTheme.primary.withValues(alpha: 0.16),
+                      side: BorderSide(
+                        color: active ? AppTheme.primary : AppTheme.ghostBorder,
+                      ),
+                      labelStyle:
+                          Theme.of(context).textTheme.labelLarge?.copyWith(
+                                color:
+                                    active ? AppTheme.primary : AppTheme.textSecondary,
+                              ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -1097,6 +1110,7 @@ class _PillInputField extends StatelessWidget {
     this.onSubmitted,
     this.keyboardType,
     this.trailing,
+    this.maxLines = 1,
   });
 
   final TextEditingController controller;
@@ -1108,6 +1122,7 @@ class _PillInputField extends StatelessWidget {
   final ValueChanged<String>? onSubmitted;
   final TextInputType? keyboardType;
   final Widget? trailing;
+  final int maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -1138,6 +1153,7 @@ class _PillInputField extends StatelessWidget {
               keyboardType: keyboardType,
               autocorrect: autocorrect,
               onSubmitted: onSubmitted,
+              maxLines: maxLines,
               decoration: InputDecoration(
                 hintText: hintText,
                 isDense: true,

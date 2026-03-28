@@ -36,6 +36,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
   final _birthday = TextEditingController();
   final _bio = TextEditingController();
   final _tags = TextEditingController();
+  final _locationController = TextEditingController();
   final _picker = ImagePicker();
 
   List<String> _photos = const [];
@@ -58,6 +59,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     _birthday.dispose();
     _bio.dispose();
     _tags.dispose();
+    _locationController.dispose();
     super.dispose();
   }
 
@@ -193,58 +195,35 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                               ),
                             ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _LabeledField(
-                              label: '城市 / 位置',
-                              child: Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 16,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(28),
-                                  color: AppTheme.surfaceHighest,
-                                ),
-                                child: Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(
-                                        _locationLabel.trim().isNotEmpty
-                                            ? _locationLabel.trim()
-                                            : '点击右侧按钮获取当前位置',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(
-                                              color: AppTheme.textSecondary,
-                                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _LabeledField(
+                        label: '城市 / 位置',
+                        child: TextField(
+                          controller: _locationController,
+                          onChanged: (value) => _locationLabel = value,
+                          style: Theme.of(context).textTheme.bodyLarge,
+                          decoration: InputDecoration(
+                            hintText: '可手动输入城市，或点击右侧定位',
+                            suffixIcon: IconButton(
+                              onPressed:
+                                  _updatingLocation ? null : _resolveCurrentLocation,
+                              icon: _updatingLocation
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
                                       ),
+                                    )
+                                  : const Icon(
+                                      Icons.my_location_rounded,
+                                      color: AppTheme.primary,
                                     ),
-                                    IconButton(
-                                      onPressed: _updatingLocation
-                                          ? null
-                                          : _resolveCurrentLocation,
-                                      icon: _updatingLocation
-                                          ? const SizedBox(
-                                              width: 18,
-                                              height: 18,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                              ),
-                                            )
-                                          : const Icon(
-                                              Icons.my_location_rounded,
-                                              color: AppTheme.primary,
-                                            ),
-                                    ),
-                                  ],
-                                ),
-                              ),
                             ),
                           ),
-                        ],
+                        ),
                       ),
                       const SizedBox(height: 12),
                       _LabeledField(
@@ -377,34 +356,47 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                       const SizedBox(height: 12),
                       _LabeledField(
                         label: '属性',
-                        child: Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children: profilePositionOptions.map((option) {
-                            final selected = _selectedPositionRole == option;
-                            return ChoiceChip(
-                              selected: selected,
-                              label: Text(option),
-                              onSelected: (_) {
-                                setState(() => _selectedPositionRole = option);
-                              },
-                              selectedColor:
-                                  AppTheme.primary.withValues(alpha: 0.16),
-                              side: BorderSide(
-                                color: selected
-                                    ? AppTheme.primary
-                                    : AppTheme.ghostBorder,
-                              ),
-                              labelStyle: Theme.of(context)
-                                  .textTheme
-                                  .labelLarge
-                                  ?.copyWith(
-                                    color: selected
-                                        ? AppTheme.primary
-                                        : AppTheme.textSecondary,
+                        child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            final itemWidth = (constraints.maxWidth - 10) / 2;
+                            return Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: profilePositionOptions.map((option) {
+                                final selected = _selectedPositionRole == option;
+                                return SizedBox(
+                                  width: itemWidth,
+                                  child: ChoiceChip(
+                                    selected: selected,
+                                    label: Center(child: Text(option)),
+                                    labelPadding: EdgeInsets.zero,
+                                    showCheckmark: false,
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    onSelected: (_) {
+                                      setState(
+                                          () => _selectedPositionRole = option);
+                                    },
+                                    selectedColor:
+                                        AppTheme.primary.withValues(alpha: 0.16),
+                                    side: BorderSide(
+                                      color: selected
+                                          ? AppTheme.primary
+                                          : AppTheme.ghostBorder,
+                                    ),
+                                    labelStyle: Theme.of(context)
+                                        .textTheme
+                                        .labelLarge
+                                        ?.copyWith(
+                                          color: selected
+                                              ? AppTheme.primary
+                                              : AppTheme.textSecondary,
+                                        ),
                                   ),
+                                );
+                              }).toList(),
                             );
-                          }).toList(),
+                          },
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -447,9 +439,10 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
                         child: TextField(
                           controller: _bio,
                           maxLines: 4,
+                          maxLength: 50,
                           style: Theme.of(context).textTheme.bodyLarge,
                           decoration: const InputDecoration(
-                            hintText: '介绍一下你自己，让更多人认识你...',
+                            hintText: '用 50 字以内介绍一下你自己...',
                           ),
                         ),
                       ),
@@ -502,7 +495,9 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
           ) ??
           '',
       mbtiType: profile.mbtiType,
-      bio: _bio.text.trim(),
+      bio: _bio.text.trim().length > 50
+          ? _bio.text.trim().substring(0, 50)
+          : _bio.text.trim(),
       tags: _parseTags(_tags.text),
       positionRole: positionRole,
       lat: _lat,
@@ -545,6 +540,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
         _locationLabel = updated.locationLabel.trim().isEmpty
             ? locationLabel
             : updated.locationLabel;
+        _locationController.text = _locationLabel;
       });
     } catch (error) {
       AppFeedback.showError('位置获取失败：$error');
@@ -676,6 +672,7 @@ class _EditProfilePageState extends ConsumerState<EditProfilePage> {
     _selectedTags = [...user.tags];
     _selectedPositionRole = user.positionRole;
     _locationLabel = user.locationLabel;
+    _locationController.text = user.locationLabel;
     _lat = user.lat;
     _lng = user.lng;
     _photos = _normalizePhotos(user.photos, avatarUrl: user.avatar);

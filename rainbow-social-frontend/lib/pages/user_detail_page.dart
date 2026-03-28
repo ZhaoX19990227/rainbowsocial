@@ -11,7 +11,9 @@ import '../models/block_status.dart';
 import '../models/match_summary.dart';
 import '../routes/app_router.dart';
 import '../services/app_feedback.dart';
+import '../services/mbti_catalog.dart';
 import '../services/relationship_copy.dart';
+import '../services/zodiac_utils.dart';
 import '../theme/app_theme.dart';
 import '../usecases/swipe_usecases.dart';
 import '../widgets/avatar_widget.dart';
@@ -348,104 +350,134 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Transform.translate(
-                    offset: Offset.zero,
-                    child: Column(
-                      children: [
-                        GlassCard(
-                          borderRadius: BorderRadius.circular(34),
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 24),
+                  GlassCard(
+                    borderRadius: BorderRadius.circular(34),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '完整资料',
+                            style:
+                                Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.w800,
+                                      color: AppTheme.primary,
+                                    ),
+                          ),
+                          const SizedBox(height: 14),
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: [
+                              _DetailHeroPill(
+                                icon: Icons.cake_outlined,
+                                label: '${user.age} 岁',
+                              ),
+                              _DetailHeroPill(
+                                icon: Icons.height_rounded,
+                                label: '${user.heightCm} cm',
+                              ),
+                              _DetailHeroPill(
+                                icon: Icons.monitor_weight_outlined,
+                                label: '${user.weightKg} kg',
+                              ),
+                              if (user.positionRole.trim().isNotEmpty)
+                                _DetailHeroPill(
+                                  icon: Icons.bolt_rounded,
+                                  label: user.positionRole.trim(),
+                                  accent: AppTheme.primaryDark,
+                                ),
+                              if (user.mbtiType.trim().isNotEmpty)
+                                _DetailHeroPill(
+                                  icon: MbtiCatalog
+                                      .resolve(user.mbtiType.trim())
+                                      .avatarAccent,
+                                  label: user.mbtiType.trim(),
+                                  accent: AppTheme.secondary,
+                                ),
+                              if (user.zodiacSign.trim().isNotEmpty)
+                                _DetailHeroPill(
+                                  icon: Icons.auto_awesome_rounded,
+                                  label:
+                                      ZodiacUtils.displayName(user.zodiacSign.trim()),
+                                  accent: AppTheme.tertiary,
+                                ),
+                              _DetailHeroPill(
+                                icon: Icons.location_on_outlined,
+                                label: locationText,
+                                accent: AppTheme.primary,
+                              ),
+                            ],
+                          ),
+                          if (user.tags.isNotEmpty) ...[
+                            const SizedBox(height: 18),
+                            Text(
+                              '兴趣标签',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.copyWith(
+                                    color: AppTheme.textSecondary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                            ),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: user.tags
+                                  .map(
+                                    (tag) => TagChip(
+                                      label: tag,
+                                      icon: Icons.auto_awesome_rounded,
+                                      maxWidth: 140,
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                          ],
+                          const SizedBox(height: 18),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(26),
+                              gradient: const LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  Color(0xFFFFFFFF),
+                                  Color(0xFFF5F1FF),
+                                ],
+                              ),
+                              border: Border.all(color: AppTheme.ghostBorder),
+                            ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Center(
-                                  child: const SizedBox.shrink(),
+                                Text(
+                                  '关于他',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelLarge
+                                      ?.copyWith(color: AppTheme.primary),
                                 ),
-                                if (user.tags.isNotEmpty) ...[
-                                  const SizedBox(height: 4),
-                                  Wrap(
-                                    spacing: 10,
-                                    runSpacing: 10,
-                                    children: user.tags
-                                        .take(5)
-                                        .map(
-                                          (tag) => TagChip(
-                                            label: tag,
-                                            icon: Icons.auto_awesome_rounded,
-                                            maxWidth: 140,
-                                          ),
-                                        )
-                                        .toList(),
-                                  ),
-                                ],
-                                const SizedBox(height: 18),
-                                Container(
-                                  width: double.infinity,
-                                  padding:
-                                      const EdgeInsets.fromLTRB(18, 18, 18, 18),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(26),
-                                    gradient: const LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: [
-                                        Color(0xFFFFFFFF),
-                                        Color(0xFFF5F1FF),
-                                      ],
-                                    ),
-                                    border:
-                                        Border.all(color: AppTheme.ghostBorder),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        '关于他',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .labelLarge
-                                            ?.copyWith(color: AppTheme.primary),
+                                const SizedBox(height: 12),
+                                Text(
+                                  '“$headlineBio”',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge
+                                      ?.copyWith(
+                                        height: 1.7,
+                                        fontStyle: FontStyle.italic,
                                       ),
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        '“$headlineBio”',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyLarge
-                                            ?.copyWith(
-                                              height: 1.7,
-                                              fontStyle: FontStyle.italic,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  GlassCard(
-                    child: ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      title: Text(_relationshipCardTitle(
-                        relation,
-                        blockStatus.valueOrNull,
-                      )),
-                      subtitle: Text(_relationshipCardSubtitle(
-                        relation,
-                        blockStatus.valueOrNull,
-                        user.nickname,
-                      )),
-                      trailing: Icon(
-                        _relationshipCardIcon(
-                          relation,
-                          blockStatus.valueOrNull,
-                        ),
+                        ],
                       ),
                     ),
                   ),
@@ -666,6 +698,7 @@ class _PhotoGalleryViewerState extends State<_PhotoGalleryViewer> {
               return InteractiveViewer(
                 minScale: 1,
                 maxScale: 3.2,
+                panEnabled: false,
                 child: Center(
                   child: Hero(
                     tag: index == 0
@@ -995,37 +1028,6 @@ String _waitingReplySubtitle(String nickname) =>
 String _defaultSubtitle(String nickname) =>
     '喜欢 $nickname 后，对方会收到提醒；互相关注后才可以聊天。';
 
-String _relationshipCardTitle(_UserRelation relation, BlockStatus? status) {
-  if (status?.blockedByMe == true) {
-    return '你已屏蔽对方';
-  }
-  if (status?.blockedByTarget == true) {
-    return '当前不可见';
-  }
-  return relation.title;
-}
-
-String _relationshipCardSubtitle(
-  _UserRelation relation,
-  BlockStatus? status,
-  String nickname,
-) {
-  if (status?.blockedByMe == true) {
-    return '你已屏蔽 $nickname，取消屏蔽后才可以重新建立关系。';
-  }
-  if (status?.blockedByTarget == true) {
-    return '$nickname 当前对你不可见，暂时无法建立关系。';
-  }
-  return relation.subtitle(nickname);
-}
-
-IconData _relationshipCardIcon(_UserRelation relation, BlockStatus? status) {
-  if (status?.isBlocked == true) {
-    return Icons.visibility_off_rounded;
-  }
-  return relation.isMutual ? Icons.chat_bubble_rounded : Icons.favorite_rounded;
-}
-
 String _blockedMessage(BlockStatus status) {
   if (status.blockedByMe) {
     return '你已屏蔽对方，取消屏蔽后再试';
@@ -1075,154 +1077,6 @@ class _DetailHeroPill extends StatelessWidget {
                 ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _IdentitySummaryTile extends StatelessWidget {
-  const _IdentitySummaryTile({
-    required this.title,
-    required this.subtitle,
-    required this.accent,
-    required this.footer,
-  });
-
-  final String title;
-  final String subtitle;
-  final Gradient accent;
-  final String footer;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: accent,
-        border: Border.all(color: AppTheme.ghostBorder),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontSize: 26,
-                  color: AppTheme.primary,
-                ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            subtitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: AppTheme.textSecondary,
-                ),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            footer,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppTheme.textSecondary,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _InsightSection extends StatelessWidget {
-  const _InsightSection({
-    required this.title,
-    required this.accent,
-    required this.points,
-  });
-
-  final String title;
-  final Color accent;
-  final List<String> points;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(22),
-        color: Colors.white.withValues(alpha: 0.78),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 10,
-                height: 10,
-                decoration: BoxDecoration(
-                  color: accent,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                title,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          ...points.map(
-            (point) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                point,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondary,
-                      height: 1.55,
-                    ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CircleFab extends StatelessWidget {
-  const _CircleFab({
-    required this.icon,
-    required this.onTap,
-    this.filled = false,
-  });
-
-  final IconData icon;
-  final VoidCallback onTap;
-  final bool filled;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: filled ? 74 : 60,
-        height: filled ? 74 : 60,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: filled
-              ? const LinearGradient(
-                  colors: [Color(0xFFEA87FF), Color(0xFFE470FF)])
-              : null,
-          color: filled ? null : const Color(0x991E1E2D),
-        ),
-        child:
-            Icon(icon, color: filled ? const Color(0xFF400050) : Colors.white),
       ),
     );
   }
