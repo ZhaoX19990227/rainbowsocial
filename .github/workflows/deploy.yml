@@ -60,6 +60,7 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.DEPLOY_PORT || '22' }}
+          timeout: 30m
           source: ".artifacts/rainbowsocial-src.tgz,.artifacts/rainbowsocial-web.tgz,deploy/oracle/ci-redeploy.sh"
           target: "/tmp"
           overwrite: true
@@ -71,6 +72,8 @@ jobs:
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
           port: ${{ secrets.DEPLOY_PORT || '22' }}
+          timeout: 30m
+          command_timeout: 30m
           script_stop: true
           envs: DEPLOY_PATH
           script: |
