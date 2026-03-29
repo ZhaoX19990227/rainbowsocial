@@ -11,10 +11,11 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/rainbow-social-backend ./main.go
 
-FROM gcr.io/distroless/static-debian12
+FROM scratch
 
 WORKDIR /app
 
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=builder /out/rainbow-social-backend /app/rainbow-social-backend
 COPY --from=builder /src/downloads /app/downloads
 
@@ -28,4 +29,4 @@ ENV DOWNLOAD_DIR=/app/downloads
 
 EXPOSE 8088
 
-CMD ["/app/rainbow-social-backend"]
+ENTRYPOINT ["/app/rainbow-social-backend"]
