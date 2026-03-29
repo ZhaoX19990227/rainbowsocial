@@ -304,30 +304,40 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Container(
-                              height: 42,
+                              height: 50,
                               padding:
-                                  const EdgeInsets.symmetric(horizontal: 14),
+                                  const EdgeInsets.symmetric(horizontal: 16),
                               decoration: BoxDecoration(
                                 color: AppTheme.surfaceHighest,
                                 borderRadius: BorderRadius.circular(999),
                               ),
-                              child: TextField(
-                                controller: _controller,
-                                minLines: 1,
-                                maxLines: 1,
-                                textAlignVertical: TextAlignVertical.center,
-                                onChanged: (_) => setState(() {}),
-                                decoration: InputDecoration(
-                                  hintText: _isRecording ? '松开发送，向上取消' : '输入消息',
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  disabledBorder: InputBorder.none,
-                                  filled: false,
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.zero,
+                              child: Center(
+                                child: TextField(
+                                  controller: _controller,
+                                  minLines: 1,
+                                  maxLines: 1,
+                                  keyboardType: TextInputType.text,
+                                  textAlignVertical: TextAlignVertical.center,
+                                  enableSuggestions: true,
+                                  autocorrect: true,
+                                  onChanged: (_) => setState(() {}),
+                                  decoration: InputDecoration(
+                                    isCollapsed: true,
+                                    hintText:
+                                        _isRecording ? '松开发送，向上取消' : '输入消息',
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    disabledBorder: InputBorder.none,
+                                    filled: false,
+                                  ),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge
+                                      ?.copyWith(
+                                        height: 1.15,
+                                      ),
                                 ),
-                                onSubmitted: (_) => _sendCurrentMessage(),
                               ),
                             ),
                           ),

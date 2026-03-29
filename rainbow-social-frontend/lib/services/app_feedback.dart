@@ -46,12 +46,14 @@ class AppFeedback {
     required String title,
     required String subtitle,
     Duration duration = const Duration(milliseconds: 2800),
+    VoidCallback? onTap,
   }) {
     _showToastCard(
       _polish(title),
       subtitle: subtitle.trim().isEmpty ? null : subtitle.trim(),
       style: _FeedbackToastStyle.relationship(),
       duration: duration,
+      onTap: onTap,
     );
   }
 
@@ -122,6 +124,7 @@ class AppFeedback {
     String? subtitle,
     required _FeedbackToastStyle style,
     required Duration duration,
+    VoidCallback? onTap,
   }) {
     final overlay = navigatorKey.currentState?.overlay;
     final overlayContext = navigatorKey.currentContext;
@@ -148,7 +151,7 @@ class AppFeedback {
           right: 20,
           top: top,
           child: IgnorePointer(
-            ignoring: true,
+            ignoring: onTap == null,
             child: SafeArea(
               child: Center(
                 child: ConstrainedBox(
@@ -157,6 +160,7 @@ class AppFeedback {
                     title: title,
                     subtitle: subtitle,
                     style: style,
+                    onTap: onTap,
                   ),
                 ),
               ),
@@ -264,11 +268,13 @@ class _JellyToastCard extends StatefulWidget {
     required this.title,
     required this.subtitle,
     required this.style,
+    this.onTap,
   });
 
   final String title;
   final String? subtitle;
   final _FeedbackToastStyle style;
+  final VoidCallback? onTap;
 
   @override
   State<_JellyToastCard> createState() => _JellyToastCardState();
@@ -308,67 +314,78 @@ class _JellyToastCardState extends State<_JellyToastCard>
         child: BackdropFilter(
           filter: ImageFilter.blur(
               sigmaX: widget.style.blur, sigmaY: widget.style.blur),
-          child: Container(
-            padding: widget.style.padding,
-            decoration: BoxDecoration(
-              color: widget.style.backgroundColor,
-              borderRadius: BorderRadius.circular(widget.style.radius),
-              border: Border.all(color: widget.style.borderColor),
-              boxShadow: [
-                BoxShadow(
-                  color: widget.style.shadowColor,
-                  blurRadius: widget.style.shadowBlur,
-                  offset: const Offset(0, 12),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: widget.onTap,
+              child: Container(
+                padding: widget.style.padding,
+                decoration: BoxDecoration(
+                  color: widget.style.backgroundColor,
+                  borderRadius: BorderRadius.circular(widget.style.radius),
+                  border: Border.all(color: widget.style.borderColor),
+                  boxShadow: [
+                    BoxShadow(
+                      color: widget.style.shadowColor,
+                      blurRadius: widget.style.shadowBlur,
+                      offset: const Offset(0, 12),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: widget.style.iconGradient,
-                    color: widget.style.iconBackgroundColor,
-                  ),
-                  child: Icon(
-                    widget.style.icon,
-                    size: 18,
-                    color: widget.style.iconColor,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Flexible(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.title,
-                        softWrap: true,
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: widget.style.titleColor,
-                              fontWeight: FontWeight.w700,
-                            ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: widget.style.iconGradient,
+                        color: widget.style.iconBackgroundColor,
                       ),
-                      if (widget.subtitle != null &&
-                          widget.subtitle!.trim().isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          widget.subtitle!,
-                          softWrap: true,
-                          style:
-                              Theme.of(context).textTheme.labelMedium?.copyWith(
+                      child: Icon(
+                        widget.style.icon,
+                        size: 18,
+                        color: widget.style.iconColor,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Flexible(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.title,
+                            softWrap: true,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelLarge
+                                ?.copyWith(
+                                  color: widget.style.titleColor,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                          if (widget.subtitle != null &&
+                              widget.subtitle!.trim().isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              widget.subtitle!,
+                              softWrap: true,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelMedium
+                                  ?.copyWith(
                                     color: widget.style.subtitleColor,
                                   ),
-                        ),
-                      ],
-                    ],
-                  ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ),

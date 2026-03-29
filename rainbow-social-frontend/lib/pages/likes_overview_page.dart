@@ -42,16 +42,52 @@ class LikesOverviewArgs {
   }
 }
 
-class LikesOverviewPage extends ConsumerWidget {
+class LikesOverviewPage extends ConsumerStatefulWidget {
   const LikesOverviewPage({super.key, required this.args});
 
   final LikesOverviewArgs args;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final liveSummary =
-        ref.watch(matchSummaryControllerProvider).valueOrNull ?? args.summary;
-    final config = _pageConfig(args.copyWith(summary: liveSummary));
+  ConsumerState<LikesOverviewPage> createState() => _LikesOverviewPageState();
+}
+
+class _LikesOverviewPageState extends ConsumerState<LikesOverviewPage> {
+  Set<String> _seenReceivedItems = const <String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.microtask(_loadSeenMarkers);
+  }
+
+  Future<void> _loadSeenMarkers() async {
+    final session = ref.read(authControllerProvider).valueOrNull;
+    if (session == null) return;
+    final items = await ref
+        .read(matchAlertStateServiceProvider)
+        .loadSeenReceivedItems(session.user.id);
+    if (!mounted) return;
+    setState(() => _seenReceivedItems = items);
+  }
+
+  Future<void> _markReceivedSeen(LikeUser like) async {
+    final session = ref.read(authControllerProvider).valueOrNull;
+    if (session == null) return;
+    final service = ref.read(matchAlertStateServiceProvider);
+    final key = service.receivedItemKey(
+      targetUserId: like.user.id,
+      likedAt: like.likedAt,
+    );
+    await service.markReceivedItemSeen(session.user.id, key);
+    if (!mounted) return;
+    setState(() => _seenReceivedItems = {..._seenReceivedItems, key});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final liveSummary = ref.watch(matchSummaryControllerProvider).valueOrNull ??
+        widget.args.summary;
+    final config = _pageConfig(widget.args.copyWith(summary: liveSummary));
 
     return Scaffold(
       body: DecoratedBox(
@@ -91,12 +127,24 @@ class LikesOverviewPage extends ConsumerWidget {
                             return _LikeOverviewCard(
                               config: config,
                               item: item,
-                              onTap: () => Navigator.of(context).pushNamed(
-                                AppRouter.detail,
-                                arguments: item.user,
-                              ),
+                              onTap: () async {
+                                if (config.title == '喜欢我的') {
+                                  final like = _findLike(
+                                      liveSummary.received, item.user.id);
+                                  if (like != null) {
+                                    await _markReceivedSeen(like);
+                                  }
+                                }
+                                if (!context.mounted) return;
+                                Navigator.of(context).pushNamed(
+                                  AppRouter.detail,
+                                  arguments: item.user,
+                                );
+                              },
                               onPrimary: () =>
-                                  _handlePrimaryAction(context, ref, item.user),
+                                  _handlePrimaryAction(context, item.user),
+                              showNewBadge: config.title == '喜欢我的' &&
+                                  _isNewReceivedItem(liveSummary, item.user.id),
                             );
                           },
                         ),
@@ -126,9 +174,7 @@ class LikesOverviewPage extends ConsumerWidget {
                   badge: _isMutualUser(args.summary, item.user.id)
                       ? _mutualInitiatorLabel(args.summary, item.user.id)
                       : null,
-                  caption: _isMutualUser(args.summary, item.user.id)
-                      ? _mutualInitiatorCaption(args.summary, item.user)
-                      : '${item.user.nickname} 喜欢了你',
+                  caption: '',
                   isMutual: _isMutualUser(args.summary, item.user.id),
                 ),
               )
@@ -147,7 +193,7 @@ class LikesOverviewPage extends ConsumerWidget {
                 (item) => _LikeListItem(
                   user: item.user,
                   badge: null,
-                  caption: '等待对方回应',
+                  caption: '',
                   isMutual: false,
                 ),
               )
@@ -166,7 +212,7 @@ class LikesOverviewPage extends ConsumerWidget {
                 (item) => _LikeListItem(
                   user: item.user,
                   badge: _mutualInitiatorLabel(args.summary, item.user.id),
-                  caption: _mutualInitiatorCaption(args.summary, item.user),
+                  caption: '',
                   isMutual: true,
                 ),
               )
@@ -187,18 +233,6 @@ class LikesOverviewPage extends ConsumerWidget {
         : '他主动';
   }
 
-  String _mutualInitiatorCaption(MatchSummary summary, AppUser user) {
-    final sent = _findLike(summary.sent, user.id);
-    final received = _findLike(summary.received, user.id);
-    if (sent == null || received == null) {
-      return '现在可以直接发消息';
-    }
-    return sent.likedAt.isBefore(received.likedAt) ||
-            sent.likedAt.isAtSameMomentAs(received.likedAt)
-        ? '你先喜欢了 ${user.nickname}，他后来回应了你'
-        : '${user.nickname} 先喜欢了你，你后来回应了他';
-  }
-
   LikeUser? _findLike(List<LikeUser> items, int userId) {
     for (final item in items) {
       if (item.user.id == userId) {
@@ -212,16 +246,29 @@ class LikesOverviewPage extends ConsumerWidget {
     return summary.mutual.any((item) => item.user.id == userId);
   }
 
+  bool _isNewReceivedItem(MatchSummary summary, int userId) {
+    final item = _findLike(summary.received, userId);
+    if (item == null) return false;
+    final key = ref.read(matchAlertStateServiceProvider).receivedItemKey(
+          targetUserId: item.user.id,
+          likedAt: item.likedAt,
+        );
+    return !_seenReceivedItems.contains(key);
+  }
+
   Future<void> _handlePrimaryAction(
     BuildContext context,
-    WidgetRef ref,
     AppUser user,
   ) async {
-    switch (args.type) {
+    switch (widget.args.type) {
       case LikeOverviewType.received:
         final liveSummary =
             ref.read(matchSummaryControllerProvider).valueOrNull ??
-                args.summary;
+                widget.args.summary;
+        final like = _findLike(liveSummary.received, user.id);
+        if (like != null) {
+          await _markReceivedSeen(like);
+        }
         if (_isMutualUser(liveSummary, user.id)) {
           await _handleUndoLike(context, ref, user);
         } else {
@@ -385,12 +432,14 @@ class _LikeOverviewCard extends StatelessWidget {
     required this.item,
     required this.onTap,
     required this.onPrimary,
+    required this.showNewBadge,
   });
 
   final _LikePageConfig config;
   final _LikeListItem item;
   final VoidCallback onTap;
   final VoidCallback onPrimary;
+  final bool showNewBadge;
 
   @override
   Widget build(BuildContext context) {
@@ -433,6 +482,38 @@ class _LikeOverviewCard extends StatelessWidget {
                                   ?.copyWith(fontWeight: FontWeight.w800),
                             ),
                           ),
+                          if (showNewBadge) ...[
+                            Container(
+                              margin: const EdgeInsets.only(right: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE9445A),
+                                borderRadius: BorderRadius.circular(999),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFFE9445A)
+                                        .withValues(alpha: 0.24),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                'NEW',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelSmall
+                                    ?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 0.6,
+                                    ),
+                              ),
+                            ),
+                          ],
                           if (item.badge != null &&
                               item.badge!.trim().isNotEmpty)
                             Container(
@@ -457,14 +538,18 @@ class _LikeOverviewCard extends StatelessWidget {
                             ),
                         ],
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        item.caption,
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                              color: AppTheme.textSecondary,
-                            ),
-                      ),
-                      const SizedBox(height: 10),
+                      if (item.caption.trim().isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Text(
+                          item.caption,
+                          style:
+                              Theme.of(context).textTheme.labelLarge?.copyWith(
+                                    color: AppTheme.textSecondary,
+                                  ),
+                        ),
+                        const SizedBox(height: 10),
+                      ] else
+                        const SizedBox(height: 10),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
@@ -498,34 +583,41 @@ class _LikeOverviewCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: onTap,
-                  style: OutlinedButton.styleFrom(
-                    side: BorderSide(
-                      color: AppTheme.primary.withValues(alpha: 0.14),
+          if (config.title == '我喜欢的')
+            GradientButton(
+              label: config.primaryLabel,
+              icon: config.primaryIcon,
+              onPressed: onPrimary,
+            )
+          else
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onTap,
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                        color: AppTheme.primary.withValues(alpha: 0.14),
+                      ),
+                      minimumSize: const Size.fromHeight(50),
                     ),
-                    minimumSize: const Size.fromHeight(50),
+                    child: const Text('查看资料'),
                   ),
-                  child: const Text('查看资料'),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: GradientButton(
-                  label: config.title == '喜欢我的' && item.isMutual
-                      ? '取消喜欢'
-                      : config.primaryLabel,
-                  icon: config.title == '喜欢我的' && item.isMutual
-                      ? Icons.heart_broken_rounded
-                      : config.primaryIcon,
-                  onPressed: onPrimary,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: GradientButton(
+                    label: config.title == '喜欢我的' && item.isMutual
+                        ? '取消喜欢'
+                        : config.primaryLabel,
+                    icon: config.title == '喜欢我的' && item.isMutual
+                        ? Icons.heart_broken_rounded
+                        : config.primaryIcon,
+                    onPressed: onPrimary,
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
         ],
       ),
     );

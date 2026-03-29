@@ -7,12 +7,14 @@ import '../controllers/auth_controller.dart';
 import '../models/auth_session.dart';
 import '../models/match_summary.dart';
 import '../providers/app_providers.dart';
+import '../routes/app_router.dart';
 import '../services/app_feedback.dart';
 import '../usecases/match_usecases.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/luminous_background.dart';
 import 'chat_list_page.dart';
 import 'home_page.dart';
+import 'likes_overview_page.dart';
 import 'nearby_page.dart';
 import 'profile_page.dart';
 
@@ -116,11 +118,32 @@ class _MainTabPageState extends ConsumerState<MainTabPage> {
 
     if (newReceivedCount > 0 && mounted) {
       _showingMatchDialog = true;
+      final receivedKeys = summary.received
+          .where((item) {
+            if (seenReceivedAt == null) return true;
+            return item.likedAt.isAfter(seenReceivedAt);
+          })
+          .map((item) => store.receivedItemKey(
+                targetUserId: item.user.id,
+                likedAt: item.likedAt,
+              ))
+          .toList();
       AppFeedback.showRelationshipToast(
         title: newReceivedCount > 1 ? '有 $newReceivedCount 个新喜欢' : '有人喜欢了你',
         subtitle: newReceivedCount > 1
             ? '这段时间有几个人向你表达了好感，去看看是谁在靠近。'
             : '${summary.received.first.user.nickname} 喜欢了你，回个喜欢就能聊天。',
+        onTap: () async {
+          await store.markReceivedItemsSeen(session.user.id, receivedKeys);
+          if (!mounted) return;
+          Navigator.of(context).pushNamed(
+            AppRouter.likesOverview,
+            arguments: LikesOverviewArgs(
+              type: LikeOverviewType.received,
+              summary: summary,
+            ),
+          );
+        },
       );
       _showingMatchDialog = false;
     }
