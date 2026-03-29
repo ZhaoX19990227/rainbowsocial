@@ -14,6 +14,7 @@ import '../widgets/app_empty_state.dart';
 import '../widgets/avatar_widget.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/gradient_button.dart';
+import '../widgets/relationship_upgrade_overlay.dart';
 
 enum LikeOverviewType {
   received,
@@ -29,6 +30,16 @@ class LikesOverviewArgs {
 
   final LikeOverviewType type;
   final MatchSummary summary;
+
+  LikesOverviewArgs copyWith({
+    LikeOverviewType? type,
+    MatchSummary? summary,
+  }) {
+    return LikesOverviewArgs(
+      type: type ?? this.type,
+      summary: summary ?? this.summary,
+    );
+  }
 }
 
 class LikesOverviewPage extends ConsumerWidget {
@@ -38,7 +49,9 @@ class LikesOverviewPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final config = _pageConfig(args);
+    final liveSummary =
+        ref.watch(matchSummaryControllerProvider).valueOrNull ?? args.summary;
+    final config = _pageConfig(args.copyWith(summary: liveSummary));
 
     return Scaffold(
       body: DecoratedBox(
@@ -59,7 +72,7 @@ class LikesOverviewPage extends ConsumerWidget {
             child: Column(
               children: [
                 _LikesHeader(config: config),
-                const SizedBox(height: 16),
+                const SizedBox(height: 10),
                 Expanded(
                   child: config.items.isEmpty
                       ? AppEmptyState(
@@ -110,8 +123,13 @@ class LikesOverviewPage extends ConsumerWidget {
               .map(
                 (item) => _LikeListItem(
                   user: item.user,
-                  badge: null,
-                  caption: '${item.user.nickname} 喜欢了你',
+                  badge: _isMutualUser(args.summary, item.user.id)
+                      ? _mutualInitiatorLabel(args.summary, item.user.id)
+                      : null,
+                  caption: _isMutualUser(args.summary, item.user.id)
+                      ? _mutualInitiatorCaption(args.summary, item.user)
+                      : '${item.user.nickname} 喜欢了你',
+                  isMutual: _isMutualUser(args.summary, item.user.id),
                 ),
               )
               .toList(),
@@ -130,6 +148,7 @@ class LikesOverviewPage extends ConsumerWidget {
                   user: item.user,
                   badge: null,
                   caption: '等待对方回应',
+                  isMutual: false,
                 ),
               )
               .toList(),
@@ -148,6 +167,7 @@ class LikesOverviewPage extends ConsumerWidget {
                   user: item.user,
                   badge: _mutualInitiatorLabel(args.summary, item.user.id),
                   caption: _mutualInitiatorCaption(args.summary, item.user),
+                  isMutual: true,
                 ),
               )
               .toList(),
@@ -188,6 +208,10 @@ class LikesOverviewPage extends ConsumerWidget {
     return null;
   }
 
+  bool _isMutualUser(MatchSummary summary, int userId) {
+    return summary.mutual.any((item) => item.user.id == userId);
+  }
+
   Future<void> _handlePrimaryAction(
     BuildContext context,
     WidgetRef ref,
@@ -195,7 +219,14 @@ class LikesOverviewPage extends ConsumerWidget {
   ) async {
     switch (args.type) {
       case LikeOverviewType.received:
-        await _handleReceivedLikeReply(context, ref, user);
+        final liveSummary =
+            ref.read(matchSummaryControllerProvider).valueOrNull ??
+                args.summary;
+        if (_isMutualUser(liveSummary, user.id)) {
+          await _handleUndoLike(context, ref, user);
+        } else {
+          await _handleReceivedLikeReply(context, ref, user);
+        }
         break;
       case LikeOverviewType.sent:
         Navigator.of(context).pushNamed(AppRouter.detail, arguments: user);
@@ -241,32 +272,44 @@ class LikesOverviewPage extends ConsumerWidget {
               .reduce((left, right) => left.isAfter(right) ? left : right);
           await store.saveLastReceivedAt(session.user.id, latestReceived);
         }
-        await _showMutualLikeOverlay(
+        if (!context.mounted) return;
+        await showRelationshipUpgradeOverlay(
           context,
           user: user,
           currentUserAvatar: session.user.avatar,
-          onChat: () {
+          onPrimary: () {
             Navigator.of(context)
               ..pop()
               ..pushNamed(AppRouter.chat, arguments: user);
           },
-          onOpenMutual: () {
-            Navigator.of(context)
-              ..pop()
-              ..pushReplacementNamed(
-                AppRouter.likesOverview,
-                arguments: LikesOverviewArgs(
-                  type: LikeOverviewType.mutual,
-                  summary: refreshed,
-                ),
-              );
-          },
+          onSecondary: () => Navigator.of(context).pop(),
         );
       } else {
         Navigator.of(context).pushNamed(AppRouter.detail, arguments: user);
       }
     } catch (error) {
       AppFeedback.showError('回应失败：$error');
+    }
+  }
+
+  Future<void> _handleUndoLike(
+    BuildContext context,
+    WidgetRef ref,
+    AppUser user,
+  ) async {
+    final session = ref.read(authControllerProvider).valueOrNull;
+    if (session == null) {
+      AppFeedback.showToast('请先登录');
+      return;
+    }
+    try {
+      await ref.read(undoSwipeUseCaseProvider)(session.token, user.id);
+      await ref.read(matchSummaryControllerProvider.notifier).load();
+      await ref.read(matchesControllerProvider.notifier).load();
+      if (!context.mounted) return;
+      AppFeedback.showToast('已取消喜欢');
+    } catch (error) {
+      AppFeedback.showError('取消失败：$error');
     }
   }
 }
@@ -296,11 +339,13 @@ class _LikeListItem {
     required this.user,
     required this.badge,
     required this.caption,
+    required this.isMutual,
   });
 
   final AppUser user;
   final String? badge;
   final String caption;
+  final bool isMutual;
 }
 
 class _LikesHeader extends StatelessWidget {
@@ -310,54 +355,24 @@ class _LikesHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Row(
       children: [
-        Row(
-          children: [
-            IconButton(
-              onPressed: () => Navigator.of(context).maybePop(),
-              style: IconButton.styleFrom(
-                backgroundColor: Colors.white.withValues(alpha: 0.82),
-              ),
-              icon: const Icon(
-                Icons.arrow_back_rounded,
-                color: AppTheme.primary,
-              ),
-            ),
-            const Spacer(),
-          ],
-        ),
-        const SizedBox(height: 10),
-        GlassCard(
-          borderRadius: BorderRadius.circular(30),
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  config.title,
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        color: AppTheme.primary,
-                        fontWeight: FontWeight.w800,
-                      ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                config.subtitle,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w900,
-                    ),
-              ),
-            ],
+        IconButton(
+          onPressed: () => Navigator.of(context).maybePop(),
+          style: IconButton.styleFrom(
+            backgroundColor: Colors.white.withValues(alpha: 0.82),
           ),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: AppTheme.primary,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          config.title,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w900,
+              ),
         ),
       ],
     );
@@ -418,7 +433,8 @@ class _LikeOverviewCard extends StatelessWidget {
                                   ?.copyWith(fontWeight: FontWeight.w800),
                             ),
                           ),
-                          if (item.badge != null && item.badge!.trim().isNotEmpty)
+                          if (item.badge != null &&
+                              item.badge!.trim().isNotEmpty)
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 10,
@@ -499,182 +515,18 @@ class _LikeOverviewCard extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: GradientButton(
-                  label: config.primaryLabel,
-                  icon: config.primaryIcon,
+                  label: config.title == '喜欢我的' && item.isMutual
+                      ? '取消喜欢'
+                      : config.primaryLabel,
+                  icon: config.title == '喜欢我的' && item.isMutual
+                      ? Icons.heart_broken_rounded
+                      : config.primaryIcon,
                   onPressed: onPrimary,
                 ),
               ),
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-Future<void> _showMutualLikeOverlay(
-  BuildContext context, {
-  required AppUser user,
-  required String currentUserAvatar,
-  required VoidCallback onChat,
-  required VoidCallback onOpenMutual,
-}) {
-  return showGeneralDialog<void>(
-    context: context,
-    barrierLabel: 'mutual-like',
-    barrierDismissible: true,
-    barrierColor: Colors.black.withValues(alpha: 0.72),
-    transitionDuration: const Duration(milliseconds: 300),
-    pageBuilder: (context, _, __) {
-      return _MutualLikeOverlay(
-        user: user,
-        currentUserAvatar: currentUserAvatar,
-        onChat: onChat,
-        onOpenMutual: onOpenMutual,
-      );
-    },
-    transitionBuilder: (context, animation, _, child) {
-      final curved = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-      );
-      return FadeTransition(
-        opacity: curved,
-        child: ScaleTransition(
-          scale: Tween<double>(begin: 0.92, end: 1).animate(curved),
-          child: child,
-        ),
-      );
-    },
-  );
-}
-
-class _MutualLikeOverlay extends StatelessWidget {
-  const _MutualLikeOverlay({
-    required this.user,
-    required this.currentUserAvatar,
-    required this.onChat,
-    required this.onOpenMutual,
-  });
-
-  final AppUser user;
-  final String currentUserAvatar;
-  final VoidCallback onChat;
-  final VoidCallback onOpenMutual;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: GlassCard(
-            borderRadius: BorderRadius.circular(34),
-            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    '互相喜欢',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: AppTheme.primary,
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Text(
-                  '你们已经可以开始聊天了',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  '${user.nickname} 先喜欢了你，你刚刚回应了他。',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: AppTheme.textSecondary,
-                        height: 1.55,
-                      ),
-                ),
-                const SizedBox(height: 22),
-                SizedBox(
-                  width: 220,
-                  height: 120,
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Transform.translate(
-                        offset: const Offset(-36, 0),
-                        child: AvatarWidget(
-                          imageUrl: currentUserAvatar,
-                          radius: 34,
-                          isOnline: true,
-                        ),
-                      ),
-                      Transform.translate(
-                        offset: const Offset(36, 0),
-                        child: AvatarWidget(
-                          imageUrl: user.avatar,
-                          radius: 34,
-                          isOnline: user.onlineStatus,
-                        ),
-                      ),
-                      Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withValues(alpha: 0.94),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppTheme.primary.withValues(alpha: 0.14),
-                              blurRadius: 18,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.favorite_rounded,
-                          color: AppTheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: onOpenMutual,
-                        child: const Text('看看互相喜欢'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: GradientButton(
-                        label: '去聊天',
-                        icon: Icons.chat_bubble_rounded,
-                        onPressed: onChat,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }

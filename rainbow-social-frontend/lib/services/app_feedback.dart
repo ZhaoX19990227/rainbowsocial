@@ -42,6 +42,19 @@ class AppFeedback {
     );
   }
 
+  static void showRelationshipToast({
+    required String title,
+    required String subtitle,
+    Duration duration = const Duration(milliseconds: 2800),
+  }) {
+    _showToastCard(
+      _polish(title),
+      subtitle: subtitle.trim().isEmpty ? null : subtitle.trim(),
+      style: _FeedbackToastStyle.relationship(),
+      duration: duration,
+    );
+  }
+
   static void showUndoUnavailableToast() {
     _showToastCard(
       '当前没有可撤销的操作',
@@ -517,6 +530,24 @@ class _FeedbackToastStyle {
           blur: 16,
           shadowBlur: 18,
           maxWidth: 290,
+        );
+
+  _FeedbackToastStyle.relationship()
+      : this(
+          backgroundColor: Color(0x6EFFFFFF),
+          borderColor: Color(0xA6FFFFFF),
+          shadowColor: Color(0x267B36C2),
+          titleColor: AppTheme.textPrimary,
+          subtitleColor: AppTheme.textSecondary,
+          icon: Icons.favorite_rounded,
+          iconColor: AppTheme.primary,
+          iconBackgroundColor: Color(0x1F7B36C2),
+          iconGradient: null,
+          radius: 24,
+          blur: 18,
+          shadowBlur: 24,
+          maxWidth: 332,
+          padding: EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         );
 
   final Color backgroundColor;

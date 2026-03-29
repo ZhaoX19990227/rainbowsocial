@@ -19,8 +19,8 @@ import '../services/zodiac_utils.dart';
 import '../theme/app_theme.dart';
 import '../usecases/swipe_usecases.dart';
 import '../usecases/user_usecases.dart';
-import '../widgets/avatar_widget.dart';
 import '../widgets/glass_card.dart';
+import '../widgets/relationship_upgrade_overlay.dart';
 import '../widgets/tag_chip.dart';
 
 final userDetailProvider =
@@ -756,17 +756,15 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
           }
         }
         if (!mounted || !context.mounted) return;
-        await _showRelationshipOverlay(
+        await showRelationshipUpgradeOverlay(
           context,
-          child: _RelationshipUpgradeOverlay(
-            user: user,
-            currentUserAvatar: session.user.avatarOrFallback,
-            onPrimary: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pushNamed(AppRouter.chat, arguments: user);
-            },
-            onSecondary: () => Navigator.of(context).pop(),
-          ),
+          user: user,
+          currentUserAvatar: session.user.avatarOrFallback,
+          onPrimary: () {
+            Navigator.of(context).pop();
+            Navigator.of(context).pushNamed(AppRouter.chat, arguments: user);
+          },
+          onSecondary: () => Navigator.of(context).pop(),
         );
       } else {
         await ref.read(matchSummaryControllerProvider.notifier).load();
@@ -899,241 +897,6 @@ class _PhotoGalleryViewerState extends State<_PhotoGalleryViewer> {
                       color: Colors.white,
                       fontWeight: FontWeight.w700,
                     ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-Future<void> _showRelationshipOverlay(
-  BuildContext context, {
-  required Widget child,
-}) {
-  return showGeneralDialog<void>(
-    context: context,
-    barrierLabel: 'relationship-upgrade',
-    barrierDismissible: true,
-    barrierColor: Colors.black.withValues(alpha: 0.78),
-    transitionDuration: const Duration(milliseconds: 320),
-    pageBuilder: (context, _, __) => child,
-    transitionBuilder: (context, animation, _, child) {
-      final curved = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-      );
-      return FadeTransition(
-        opacity: curved,
-        child: ScaleTransition(
-          scale: Tween(begin: 0.92, end: 1.0).animate(curved),
-          child: child,
-        ),
-      );
-    },
-  );
-}
-
-class _RelationshipUpgradeOverlay extends StatelessWidget {
-  const _RelationshipUpgradeOverlay({
-    required this.user,
-    required this.currentUserAvatar,
-    required this.onPrimary,
-    required this.onSecondary,
-  });
-
-  final AppUser user;
-  final String currentUserAvatar;
-  final VoidCallback onPrimary;
-  final VoidCallback onSecondary;
-
-  @override
-  Widget build(BuildContext context) {
-    const title = '互相喜欢';
-    final body = RelationshipCopy.mutualLike(user.nickname);
-
-    return Material(
-      color: Colors.transparent,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: Alignment.topCenter,
-                radius: 1.18,
-                colors: [
-                  AppTheme.primary.withValues(alpha: 0.32),
-                  AppTheme.secondary.withValues(alpha: 0.16),
-                  const Color(0xFF090914),
-                ],
-              ),
-            ),
-          ),
-          ...List.generate(16, (index) {
-            final offsetX = ((index % 4) - 1.5) * 72.0;
-            final offsetY = (index ~/ 4) * 82.0;
-            return Positioned(
-              left: MediaQuery.of(context).size.width / 2 + offsetX,
-              top: 90 + offsetY,
-              child: Opacity(
-                opacity: 0.22,
-                child: Text(
-                  '❤',
-                  style: TextStyle(
-                    fontSize: 22 + (index % 3) * 4,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            );
-          }),
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: GlassCard(
-                padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-                borderRadius: BorderRadius.circular(34),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(999),
-                        color: Colors.white.withValues(alpha: 0.08),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.08),
-                        ),
-                      ),
-                      child: Text(
-                        '他主动',
-                        style:
-                            Theme.of(context).textTheme.labelMedium?.copyWith(
-                                  color: const Color(0xFF8B4EE8),
-                                  letterSpacing: 0.7,
-                                ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Text(
-                      title,
-                      style:
-                          Theme.of(context).textTheme.headlineLarge?.copyWith(
-                                fontSize: 40,
-                              ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      body,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: const Color(0xFF5F567F),
-                            height: 1.55,
-                          ),
-                    ),
-                    const SizedBox(height: 26),
-                    SizedBox(
-                      width: 240,
-                      height: 220,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          Container(
-                            width: 220,
-                            height: 220,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: RadialGradient(
-                                colors: [
-                                  AppTheme.tertiary.withValues(alpha: 0.18),
-                                  AppTheme.primary.withValues(alpha: 0.08),
-                                  Colors.transparent,
-                                ],
-                              ),
-                            ),
-                          ),
-                          Transform.translate(
-                            offset: const Offset(-44, 8),
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: Colors.white.withValues(alpha: 0.86),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: AppTheme.primary
-                                        .withValues(alpha: 0.12),
-                                    blurRadius: 18,
-                                    offset: const Offset(0, 8),
-                                  ),
-                                ],
-                              ),
-                              child: AvatarWidget(
-                                imageUrl: currentUserAvatar,
-                                radius: 40,
-                                isOnline: true,
-                              ),
-                            ),
-                          ),
-                          Transform.translate(
-                            offset: const Offset(38, -4),
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                shape: BoxShape.circle,
-                                gradient: LinearGradient(
-                                  colors: [
-                                    Color(0x66FFAA7A),
-                                    Color(0x66EA87FF),
-                                  ],
-                                ),
-                              ),
-                              child: AvatarWidget(
-                                imageUrl: user.avatar,
-                                radius: 54,
-                                isOnline: user.onlineStatus,
-                              ),
-                            ),
-                          ),
-                          const Text(
-                            '❤',
-                            style: TextStyle(
-                              fontSize: 28,
-                              color: Color(0xFFF6C5B8),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: onSecondary,
-                            child: const Text('稍后再说'),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: FilledButton(
-                            onPressed: onPrimary,
-                            style: FilledButton.styleFrom(
-                              backgroundColor: const Color(0xFFF5A16B),
-                              foregroundColor: const Color(0xFF2A1224),
-                            ),
-                            child: const Text('去聊天'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
               ),
             ),
           ),

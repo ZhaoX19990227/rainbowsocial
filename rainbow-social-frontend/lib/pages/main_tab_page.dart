@@ -7,14 +7,12 @@ import '../controllers/auth_controller.dart';
 import '../models/auth_session.dart';
 import '../models/match_summary.dart';
 import '../providers/app_providers.dart';
-import '../routes/app_router.dart';
 import '../services/app_feedback.dart';
 import '../usecases/match_usecases.dart';
 import '../widgets/app_bottom_nav.dart';
 import '../widgets/luminous_background.dart';
 import 'chat_list_page.dart';
 import 'home_page.dart';
-import 'likes_overview_page.dart';
 import 'nearby_page.dart';
 import 'profile_page.dart';
 
@@ -63,8 +61,10 @@ class _MainTabPageState extends ConsumerState<MainTabPage> {
 
     _checkingMatchAlerts = true;
     try {
-      final summary = await ref.read(getMatchSummaryUseCaseProvider)(session.token);
-      await _showNewRelationshipAlerts(session, summary, silentWhenBusy: silentWhenBusy);
+      final summary =
+          await ref.read(getMatchSummaryUseCaseProvider)(session.token);
+      await _showNewRelationshipAlerts(session, summary,
+          silentWhenBusy: silentWhenBusy);
     } catch (_) {
       // Keep the app usable if alerts fail to refresh.
     } finally {
@@ -96,117 +96,34 @@ class _MainTabPageState extends ConsumerState<MainTabPage> {
       return;
     }
 
-    if (newMutualCount > 0 && mounted) {
-      _showingMatchDialog = true;
-      await _showRelationshipInboxDialog(
-        title: newMutualCount > 1 ? '有 $newMutualCount 个新的互相喜欢' : '你们互相喜欢了',
-        subtitle: newMutualCount > 1
-            ? '刚刚有几段双向心动成立了，去看看是谁回应了你。'
-            : '${summary.mutual.first.user.nickname} 和你已经可以开始聊天了。',
-        primaryLabel: '去看看',
-        onPrimary: () {
-          Navigator.of(context)
-            ..pop()
-            ..pushNamed(
-              AppRouter.likesOverview,
-              arguments: LikesOverviewArgs(
-                type: LikeOverviewType.mutual,
-                summary: summary,
-              ),
-            );
-        },
-      );
-      _showingMatchDialog = false;
-    }
-
-    if (newReceivedCount > 0 && mounted) {
-      _showingMatchDialog = true;
-      await _showRelationshipInboxDialog(
-        title: newReceivedCount > 1 ? '有 $newReceivedCount 个新喜欢' : '有人喜欢了你',
-        subtitle: newReceivedCount > 1
-            ? '这段时间有几个人向你表达了好感，去看看是谁在靠近。'
-            : '${summary.received.first.user.nickname} 喜欢了你，回个喜欢就能聊天。',
-        primaryLabel: '去看看',
-        onPrimary: () {
-          Navigator.of(context)
-            ..pop()
-            ..pushNamed(
-              AppRouter.likesOverview,
-              arguments: LikesOverviewArgs(
-                type: LikeOverviewType.received,
-                summary: summary,
-              ),
-            );
-        },
-      );
-      _showingMatchDialog = false;
-    }
-
     if (latestReceived != null) {
       await store.saveLastReceivedAt(session.user.id, latestReceived);
     }
     if (latestMutual != null) {
       await store.saveLastMutualAt(session.user.id, latestMutual);
     }
-  }
 
-  Future<void> _showRelationshipInboxDialog({
-    required String title,
-    required String subtitle,
-    required String primaryLabel,
-    required VoidCallback onPrimary,
-  }) async {
-    await AppFeedback.showJellySheet<void>(
-      context: context,
-      builder: (sheetContext) => SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-          child: Container(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.96),
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w900,
-                      ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  subtitle,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-                const SizedBox(height: 18),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () => Navigator.of(sheetContext).pop(),
-                        child: const Text('稍后再看'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: FilledButton(
-                        onPressed: onPrimary,
-                        child: Text(primaryLabel),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+    if (newMutualCount > 0 && mounted) {
+      _showingMatchDialog = true;
+      AppFeedback.showRelationshipToast(
+        title: newMutualCount > 1 ? '有 $newMutualCount 个新的互相喜欢' : '你们互相喜欢了',
+        subtitle: newMutualCount > 1
+            ? '刚刚有几段双向心动成立了，去看看是谁回应了你。'
+            : '${summary.mutual.first.user.nickname} 和你已经可以开始聊天了。',
+      );
+      _showingMatchDialog = false;
+    }
+
+    if (newReceivedCount > 0 && mounted) {
+      _showingMatchDialog = true;
+      AppFeedback.showRelationshipToast(
+        title: newReceivedCount > 1 ? '有 $newReceivedCount 个新喜欢' : '有人喜欢了你',
+        subtitle: newReceivedCount > 1
+            ? '这段时间有几个人向你表达了好感，去看看是谁在靠近。'
+            : '${summary.received.first.user.nickname} 喜欢了你，回个喜欢就能聊天。',
+      );
+      _showingMatchDialog = false;
+    }
   }
 
   DateTime? _latestReceivedAt(MatchSummary summary) {
