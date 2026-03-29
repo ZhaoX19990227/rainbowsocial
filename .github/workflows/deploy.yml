@@ -44,7 +44,6 @@ jobs:
           tar -czf .artifacts/rainbowsocial-src.tgz \
             --exclude='rainbow-social-backend/*.db' \
             --exclude='rainbow-social-backend/*.db-*' \
-            --exclude='rainbow-social-backend/downloads' \
             --exclude='rainbow-social-backend/tmp' \
             --exclude='rainbow-social-backend/logs' \
             rainbow-social-backend \
