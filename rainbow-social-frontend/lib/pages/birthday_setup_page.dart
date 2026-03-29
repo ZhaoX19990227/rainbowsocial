@@ -37,8 +37,6 @@ class _BirthdaySetupPageState extends ConsumerState<BirthdaySetupPage> {
   Widget build(BuildContext context) {
     final profile = ref.watch(profileControllerProvider).valueOrNull;
     final sign = ZodiacUtils.zodiacFromBirthday(_birthday);
-    final birthdayLabel =
-        _birthday == null ? '' : ZodiacUtils.formatBirthday(_birthday);
     final selectedDate = _birthday ?? DateTime(1998, 6, 15);
 
     return Scaffold(

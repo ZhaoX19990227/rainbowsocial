@@ -269,7 +269,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         itemCount: UserStatusCatalog.options.length,
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                          gridDelegate:
+                        gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 4,
                           mainAxisSpacing: 12,
@@ -540,9 +540,6 @@ class _ProfileHeroCard extends StatelessWidget {
       _HeroChipData(label: '${user.weightKg}kg'),
     ];
     final about = user.bio.trim();
-    final aboutPreview = about.length > 50
-        ? '${about.substring(0, 50)}...'
-        : about;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 26, 24, 22),
@@ -633,35 +630,137 @@ class _ProfileHeroCard extends StatelessWidget {
             runSpacing: 8,
             children: chips.map((chip) => _HeroMetaChip(data: chip)).toList(),
           ),
-          if (aboutPreview.isNotEmpty) ...[
+          if (about.isNotEmpty) ...[
             const SizedBox(height: 16),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: Colors.white.withValues(alpha: 0.58),
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.72),
-                ),
-              ),
-              child: Text(
-                aboutPreview,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppTheme.textSecondary,
-                      height: 1.55,
-                      fontWeight: FontWeight.w500,
-                    ),
-              ),
-            ),
+            _MarqueeBioText(text: about),
           ],
           const SizedBox(height: 16),
           _ProfileLikesStrip(summary: summary),
         ],
       ),
+    );
+  }
+}
+
+class _MarqueeBioText extends StatefulWidget {
+  const _MarqueeBioText({required this.text});
+
+  final String text;
+
+  @override
+  State<_MarqueeBioText> createState() => _MarqueeBioTextState();
+}
+
+class _MarqueeBioTextState extends State<_MarqueeBioText> {
+  final ScrollController _scrollController = ScrollController();
+  final GlobalKey _textKey = GlobalKey();
+  double _availableWidth = 0;
+  double _textWidth = 0;
+  bool _animating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scheduleMarquee());
+  }
+
+  @override
+  void didUpdateWidget(covariant _MarqueeBioText oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.text != widget.text) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scheduleMarquee());
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scheduleMarquee() {
+    if (!mounted) return;
+    final textContext = _textKey.currentContext;
+    if (textContext == null) return;
+    final renderBox = textContext.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+    final nextWidth = renderBox.size.width;
+    final nextAvailable = context.size?.width ?? 0;
+    if (_textWidth != nextWidth || _availableWidth != nextAvailable) {
+      setState(() {
+        _textWidth = nextWidth;
+        _availableWidth = nextAvailable;
+      });
+    }
+    if (_textWidth > _availableWidth && !_animating) {
+      _startMarquee();
+    }
+  }
+
+  Future<void> _startMarquee() async {
+    if (!mounted || !_scrollController.hasClients) return;
+    final maxExtent = _scrollController.position.maxScrollExtent;
+    if (maxExtent <= 0) return;
+    _animating = true;
+    while (mounted && _scrollController.hasClients) {
+      await Future<void>.delayed(const Duration(milliseconds: 900));
+      if (!mounted || !_scrollController.hasClients) break;
+      await _scrollController.animateTo(
+        maxExtent,
+        duration:
+            Duration(milliseconds: (maxExtent * 18).round().clamp(1600, 5200)),
+        curve: Curves.easeInOut,
+      );
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      if (!mounted || !_scrollController.hasClients) break;
+      await _scrollController.animateTo(
+        0,
+        duration:
+            Duration(milliseconds: (maxExtent * 18).round().clamp(1600, 5200)),
+        curve: Curves.easeInOut,
+      );
+    }
+    _animating = false;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.bodyLarge?.copyWith(
+          color: AppTheme.textSecondary.withValues(alpha: 0.88),
+          fontStyle: FontStyle.italic,
+          fontWeight: FontWeight.w500,
+          height: 1.35,
+        );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scheduleMarquee());
+        return SizedBox(
+          width: double.infinity,
+          height: 28,
+          child: ClipRect(
+            child: SingleChildScrollView(
+              controller: _scrollController,
+              physics: const NeverScrollableScrollPhysics(),
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                child: Align(
+                  alignment: Alignment.center,
+                  child: Text(
+                    widget.text,
+                    key: _textKey,
+                    maxLines: 1,
+                    softWrap: false,
+                    textAlign: TextAlign.center,
+                    style: style,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -792,63 +891,6 @@ class _ProfileLikesStrip extends StatelessWidget {
   }
 }
 
-class _SocialStatsGrid extends StatelessWidget {
-  const _SocialStatsGrid({required this.summary});
-
-  final MatchSummary? summary;
-
-  @override
-  Widget build(BuildContext context) {
-    final safeSummary = summary ?? const MatchSummary.empty();
-    final items = [
-      _SocialStatData(
-        label: '喜欢我的',
-        value: safeSummary.received.length,
-        icon: Icons.star_rounded,
-        accent: const LinearGradient(
-          colors: [Color(0xFFF4DAFF), Color(0xFFFFE2EE)],
-        ),
-        iconColor: AppTheme.primary,
-        type: LikeOverviewType.received,
-      ),
-      _SocialStatData(
-        label: '我喜欢的',
-        value: safeSummary.sent.length,
-        icon: Icons.favorite_rounded,
-        accent: const LinearGradient(
-          colors: [Color(0xFFE0EEFF), Color(0xFFF0E6FF)],
-        ),
-        iconColor: AppTheme.secondary,
-        type: LikeOverviewType.sent,
-      ),
-      _SocialStatData(
-        label: '互相喜欢',
-        value: safeSummary.mutual.length,
-        icon: Icons.auto_awesome_rounded,
-        accent: const LinearGradient(
-          colors: [AppTheme.primary, AppTheme.tertiary],
-        ),
-        iconColor: Colors.white,
-        type: LikeOverviewType.mutual,
-      ),
-    ];
-
-    return Row(
-      children: [
-        for (var i = 0; i < items.length; i++) ...[
-          Expanded(
-            child: _SocialStatCard(
-              data: items[i],
-              summary: safeSummary,
-            ),
-          ),
-          if (i != items.length - 1) const SizedBox(width: 12),
-        ],
-      ],
-    );
-  }
-}
-
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({
     required this.title,
@@ -904,15 +946,11 @@ class _MomentPhotoCard extends StatelessWidget {
     required this.imageUrl,
     required this.aspectRatio,
     this.emptyLabel,
-    this.emptyHint,
-    this.extraCount = 0,
   });
 
   final String? imageUrl;
   final double aspectRatio;
   final String? emptyLabel;
-  final String? emptyHint;
-  final int extraCount;
 
   @override
   Widget build(BuildContext context) {
@@ -949,32 +987,12 @@ class _MomentPhotoCard extends StatelessWidget {
                   Image.network(
                     imageUrl!,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _MomentFallback(
-                      emptyLabel: emptyLabel,
-                      emptyHint: emptyHint,
-                    ),
+                    errorBuilder: (_, __, ___) =>
+                        _MomentFallback(emptyLabel: emptyLabel),
                   ),
-                  if (extraCount > 0)
-                    Container(
-                      color: Colors.black.withValues(alpha: 0.24),
-                      alignment: Alignment.center,
-                      child: Text(
-                        '+$extraCount',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineMedium
-                            ?.copyWith(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
-                            ),
-                      ),
-                    ),
                 ],
               )
-            : _MomentFallback(
-                emptyLabel: emptyLabel,
-                emptyHint: emptyHint,
-              ),
+            : _MomentFallback(emptyLabel: emptyLabel),
       ),
     );
   }
@@ -983,11 +1001,9 @@ class _MomentPhotoCard extends StatelessWidget {
 class _MomentFallback extends StatelessWidget {
   const _MomentFallback({
     this.emptyLabel,
-    this.emptyHint,
   });
 
   final String? emptyLabel;
-  final String? emptyHint;
 
   @override
   Widget build(BuildContext context) {
@@ -1015,16 +1031,6 @@ class _MomentFallback extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
             ),
-            if (emptyHint != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                emptyHint!,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: const Color(0xFFC9A884).withValues(alpha: 0.75),
-                      fontSize: 10,
-                    ),
-              ),
-            ],
           ],
         ),
       ),
@@ -1241,46 +1247,6 @@ class _CompactIdentityBadge extends StatelessWidget {
   }
 }
 
-class _MiniMetric extends StatelessWidget {
-  const _MiniMetric({
-    required this.label,
-    required this.value,
-  });
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: Colors.white.withValues(alpha: 0.7),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppTheme.textSecondary,
-                ),
-          ),
-          const SizedBox(width: 6),
-          Text(
-            value,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: AppTheme.primary,
-                  fontWeight: FontWeight.w800,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _ActionTile extends StatelessWidget {
   const _ActionTile({
     required this.icon,
@@ -1376,78 +1342,6 @@ class _ProfileStatusBubble extends StatelessWidget {
         hasStatus ? currentStatus.icon : Icons.add_rounded,
         size: hasStatus ? 17 : 18,
         color: hasStatus ? Colors.white : AppTheme.primary,
-      ),
-    );
-  }
-}
-
-class _ProfileStatusPill extends StatelessWidget {
-  const _ProfileStatusPill({required this.status});
-
-  final UserStatusOption status;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(999),
-        gradient: UserStatusCatalog.gradientFor(status.id),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primary.withValues(alpha: 0.18),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(status.icon, size: 16, color: Colors.white),
-          const SizedBox(width: 8),
-          Text(
-            status.label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w800,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _IconButtonCard extends StatelessWidget {
-  const _IconButtonCard({
-    required this.icon,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
-      child: Ink(
-        width: 56,
-        height: 56,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          color: Colors.white.withValues(alpha: 0.74),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 14,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Icon(icon, color: AppTheme.primary),
       ),
     );
   }
