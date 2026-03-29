@@ -7,7 +7,7 @@ REPO_ARCHIVE="${REPO_ARCHIVE:-/tmp/rainbowsocial-src.tgz}"
 WEB_ARCHIVE="${WEB_ARCHIVE:-/tmp/rainbowsocial-web.tgz}"
 WORK_DIR="$(mktemp -d /tmp/rainbowsocial-deploy.XXXXXX)"
 BACKUP_DIR=""
-HEALTHCHECK_URL="${HEALTHCHECK_URL:-http://127.0.0.1:8088/health}"
+HEALTHCHECK_URL="${HEALTHCHECK_URL:-}"
 ROLLBACK_NEEDED=0
 DEPLOY_TARGETS=(
   "rainbow-social-backend"
@@ -15,6 +15,8 @@ DEPLOY_TARGETS=(
   "rainbow-share-static"
   "deploy"
 )
+LEGACY_LAYOUT=0
+SYNC_PAIRS=()
 
 restore_path() {
   local path="$1"
@@ -26,18 +28,64 @@ restore_path() {
 }
 
 run_healthcheck() {
+  local url
+
   if ! command -v curl >/dev/null 2>&1; then
     echo "==> curl not found, skip health check"
     return 0
   fi
 
-  echo "==> health check: $HEALTHCHECK_URL"
-  curl -fsS "$HEALTHCHECK_URL"
-  echo
+  if [ -n "$HEALTHCHECK_URL" ]; then
+    echo "==> health check: $HEALTHCHECK_URL"
+    curl -fsS "$HEALTHCHECK_URL"
+    echo
+    return 0
+  fi
+
+  for url in "http://127.0.0.1:8088/health" "http://127.0.0.1/health"; do
+    echo "==> health check: $url"
+    if curl -fsS "$url"; then
+      echo
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+restore_preserved_files() {
+  local path="$1"
+  local filename
+
+  for filename in ".env" ".env.example"; do
+    if [ -f "$BACKUP_DIR/$path/$filename" ] && [ ! -f "$DEPLOY_ROOT/$path/$filename" ]; then
+      cp "$BACKUP_DIR/$path/$filename" "$DEPLOY_ROOT/$path/$filename"
+    fi
+  done
+}
+
+detect_layout() {
+  if [ -f "$DEPLOY_ROOT/docker-compose.yml" ] && grep -q '\./backend' "$DEPLOY_ROOT/docker-compose.yml"; then
+    LEGACY_LAYOUT=1
+    SYNC_PAIRS=(
+      "rainbow-social-backend:backend"
+      "rainbow-social-frontend:rainbow-social-frontend"
+      "rainbow-share-static:rainbow-share-static"
+      "deploy:deploy"
+    )
+    return
+  fi
+
+  SYNC_PAIRS=(
+    "rainbow-social-backend:rainbow-social-backend"
+    "rainbow-social-frontend:rainbow-social-frontend"
+    "rainbow-share-static:rainbow-share-static"
+    "deploy:deploy"
+  )
 }
 
 rollback() {
-  local path
+  local path source target
 
   if [ "$ROLLBACK_NEEDED" -ne 1 ]; then
     return
@@ -53,6 +101,12 @@ rollback() {
   for path in "${DEPLOY_TARGETS[@]}"; do
     restore_path "$path"
   done
+
+  if [ "$LEGACY_LAYOUT" -eq 1 ]; then
+    for path in backend; do
+      restore_path "$path"
+    done
+  fi
 
   if [ -d "$BACKUP_DIR/site" ]; then
     rm -rf "$DEPLOY_ROOT/site"
@@ -83,6 +137,7 @@ tar -xzf "$REPO_ARCHIVE" -C "$WORK_DIR/src"
 mkdir -p "$DEPLOY_ROOT"
 BACKUP_DIR="$WORK_DIR/backup"
 mkdir -p "$BACKUP_DIR"
+detect_layout
 
 for path in "${DEPLOY_TARGETS[@]}"; do
   if [ -e "$DEPLOY_ROOT/$path" ]; then
@@ -90,17 +145,25 @@ for path in "${DEPLOY_TARGETS[@]}"; do
   fi
 done
 
+if [ "$LEGACY_LAYOUT" -eq 1 ] && [ -e "$DEPLOY_ROOT/backend" ]; then
+  cp -R "$DEPLOY_ROOT/backend" "$BACKUP_DIR/backend"
+fi
+
 if [ -d "$DEPLOY_ROOT/site" ]; then
   cp -R "$DEPLOY_ROOT/site" "$BACKUP_DIR/site"
 fi
 
 ROLLBACK_NEEDED=1
 
-for path in "${DEPLOY_TARGETS[@]}"; do
-  if [ -e "$WORK_DIR/src/$path" ]; then
-    echo "==> syncing $path"
-    rm -rf "$DEPLOY_ROOT/$path"
-    cp -R "$WORK_DIR/src/$path" "$DEPLOY_ROOT/$path"
+for pair in "${SYNC_PAIRS[@]}"; do
+  source="${pair%%:*}"
+  target="${pair##*:}"
+
+  if [ -e "$WORK_DIR/src/$source" ]; then
+    echo "==> syncing $source -> $target"
+    rm -rf "$DEPLOY_ROOT/$target"
+    cp -R "$WORK_DIR/src/$source" "$DEPLOY_ROOT/$target"
+    restore_preserved_files "$target"
   fi
 done
 

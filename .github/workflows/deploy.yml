@@ -23,9 +23,18 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: rainbow-social-backend/go.mod
+          cache-dependency-path: rainbow-social-backend/go.sum
+
+      - name: Download backend modules
+        working-directory: rainbow-social-backend
+        env:
+          GOPROXY: https://proxy.golang.org,direct
+        run: go mod download
 
       - name: Run backend tests
         working-directory: rainbow-social-backend
+        env:
+          GOPROXY: https://proxy.golang.org,direct
         run: go test ./...
 
       - name: Set up Flutter
