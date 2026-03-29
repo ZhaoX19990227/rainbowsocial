@@ -10,6 +10,7 @@ import '../services/horoscope_service.dart';
 import '../services/match_service.dart';
 import '../services/safety_service.dart';
 import '../services/location_service.dart';
+import '../services/match_alert_state_service.dart';
 import '../services/location_label_service.dart';
 import '../services/session_storage_service.dart';
 import '../services/swipe_service.dart';
@@ -66,6 +67,10 @@ final swipeServiceProvider = Provider<SwipeService>((ref) {
 
 final matchServiceProvider = Provider<MatchService>((ref) {
   return MatchService(ref.read(apiClientProvider));
+});
+
+final matchAlertStateServiceProvider = Provider<MatchAlertStateService>((ref) {
+  return MatchAlertStateService();
 });
 
 final safetyServiceProvider = Provider<SafetyService>((ref) {

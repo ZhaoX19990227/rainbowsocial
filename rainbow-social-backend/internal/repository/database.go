@@ -60,6 +60,9 @@ func migrate(db *sql.DB) error {
 			bio TEXT NOT NULL DEFAULT '',
 			tags TEXT NOT NULL DEFAULT '[]',
 			position_role TEXT NOT NULL DEFAULT '',
+			status_id TEXT NOT NULL DEFAULT '',
+			status_label TEXT NOT NULL DEFAULT '',
+			status_expires_at TEXT NOT NULL DEFAULT '',
 			lat REAL NOT NULL DEFAULT 0,
 			lng REAL NOT NULL DEFAULT 0,
 			location_label TEXT NOT NULL DEFAULT '',
@@ -212,6 +215,15 @@ func migrate(db *sql.DB) error {
 		return err
 	}
 	if err := addColumnIfNotExists(db, "users", "position_role", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
+	if err := addColumnIfNotExists(db, "users", "status_id", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
+	if err := addColumnIfNotExists(db, "users", "status_label", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
+	if err := addColumnIfNotExists(db, "users", "status_expires_at", "TEXT NOT NULL DEFAULT ''"); err != nil {
 		return err
 	}
 	if _, err := db.Exec(`UPDATE users SET account = email WHERE account = ''`); err != nil {

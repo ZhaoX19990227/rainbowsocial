@@ -18,6 +18,9 @@ type User struct {
 	Bio           string    `json:"bio"`
 	Tags          []string  `json:"tags"`
 	PositionRole  string    `json:"position_role,omitempty"`
+	StatusID      string    `json:"status_id,omitempty"`
+	StatusLabel   string    `json:"status_label,omitempty"`
+	StatusExpiresAt string  `json:"status_expires_at,omitempty"`
 	Lat           float64   `json:"lat"`
 	Lng           float64   `json:"lng"`
 	LocationLabel string    `json:"location_label,omitempty"`

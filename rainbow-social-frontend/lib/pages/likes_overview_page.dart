@@ -5,6 +5,7 @@ import '../controllers/auth_controller.dart';
 import '../controllers/match_controller.dart';
 import '../models/app_user.dart';
 import '../models/match_summary.dart';
+import '../providers/app_providers.dart';
 import '../routes/app_router.dart';
 import '../services/app_feedback.dart';
 import '../theme/app_theme.dart';
@@ -227,6 +228,19 @@ class LikesOverviewPage extends ConsumerWidget {
         final refreshed =
             ref.read(matchSummaryControllerProvider).valueOrNull ??
                 MatchSummary.empty();
+        final store = ref.read(matchAlertStateServiceProvider);
+        if (refreshed.mutual.isNotEmpty) {
+          final latestMutual = refreshed.mutual
+              .map((item) => item.matchedAt)
+              .reduce((left, right) => left.isAfter(right) ? left : right);
+          await store.saveLastMutualAt(session.user.id, latestMutual);
+        }
+        if (refreshed.received.isNotEmpty) {
+          final latestReceived = refreshed.received
+              .map((item) => item.likedAt)
+              .reduce((left, right) => left.isAfter(right) ? left : right);
+          await store.saveLastReceivedAt(session.user.id, latestReceived);
+        }
         await _showMutualLikeOverlay(
           context,
           user: user,

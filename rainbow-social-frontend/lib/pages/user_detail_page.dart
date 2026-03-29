@@ -12,6 +12,7 @@ import '../models/match_summary.dart';
 import '../routes/app_router.dart';
 import '../services/app_feedback.dart';
 import '../services/mbti_catalog.dart';
+import '../providers/app_providers.dart';
 import '../services/relationship_copy.dart';
 import '../services/user_status_catalog.dart';
 import '../services/zodiac_utils.dart';
@@ -712,6 +713,27 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
       if (result.matched) {
         await ref.read(matchesControllerProvider.notifier).load();
         await ref.read(matchSummaryControllerProvider.notifier).load();
+        final refreshedSummary =
+            ref.read(matchSummaryControllerProvider).valueOrNull;
+        if (refreshedSummary != null) {
+          final latestMutual = refreshedSummary.mutual.isEmpty
+              ? null
+              : refreshedSummary.mutual
+                  .map((item) => item.matchedAt)
+                  .reduce((left, right) => left.isAfter(right) ? left : right);
+          final latestReceived = refreshedSummary.received.isEmpty
+              ? null
+              : refreshedSummary.received
+                  .map((item) => item.likedAt)
+                  .reduce((left, right) => left.isAfter(right) ? left : right);
+          final store = ref.read(matchAlertStateServiceProvider);
+          if (latestMutual != null) {
+            await store.saveLastMutualAt(session.user.id, latestMutual);
+          }
+          if (latestReceived != null) {
+            await store.saveLastReceivedAt(session.user.id, latestReceived);
+          }
+        }
         if (!mounted || !context.mounted) return;
         await _showRelationshipOverlay(
           context,
