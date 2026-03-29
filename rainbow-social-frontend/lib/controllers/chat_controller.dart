@@ -20,11 +20,13 @@ import 'auth_controller.dart';
 
 final chatThreadsControllerProvider =
     StateNotifierProvider<ChatThreadsController, ChatListState>((ref) {
+  ref.watch(authControllerProvider.select((state) => state.valueOrNull?.user.id));
   return ChatThreadsController(ref);
 });
 
 final chatControllerProvider = StateNotifierProvider.autoDispose
     .family<ChatController, ChatRoomState, AppUser>((ref, peer) {
+  ref.watch(authControllerProvider.select((state) => state.valueOrNull?.user.id));
   return ChatController(ref, peer);
 });
 

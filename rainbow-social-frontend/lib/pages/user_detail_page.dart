@@ -13,6 +13,7 @@ import '../routes/app_router.dart';
 import '../services/app_feedback.dart';
 import '../services/mbti_catalog.dart';
 import '../services/relationship_copy.dart';
+import '../services/user_status_catalog.dart';
 import '../services/zodiac_utils.dart';
 import '../theme/app_theme.dart';
 import '../usecases/swipe_usecases.dart';
@@ -59,6 +60,15 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
     super.dispose();
   }
 
+  Future<void> _animateToPhoto(int index) async {
+    if (!_photoController.hasClients) return;
+    await _photoController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = widget.user;
@@ -72,6 +82,12 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
             : '距离 ${user.distanceKm!.toStringAsFixed(1)} km';
     final headlineBio =
         user.bio.trim().isEmpty ? '这个用户还没有填写个人简介。' : user.bio.trim();
+    final activeStatus = UserStatusCatalog.isActive(user.statusExpiresAt)
+        ? UserStatusCatalog.labelOf(
+            user.statusId,
+            fallback: user.statusLabel.trim(),
+          )
+        : '';
 
     return Scaffold(
       body: CustomScrollView(
@@ -96,7 +112,7 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
               ),
             ),
             title: Text(
-              'Profile',
+              '靠近他',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppTheme.primary,
                     fontWeight: FontWeight.w800,
@@ -176,17 +192,46 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                                 tag: index == 0
                                     ? 'match-avatar-${user.id}'
                                     : 'match-avatar-${user.id}-$index',
-                                child: GestureDetector(
-                                  onTap: () => _openFullScreenGallery(index),
-                                  child: Image.network(
-                                    _galleryPhotos[index],
-                                    fit: BoxFit.cover,
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: InkWell(
+                                    onTap: () => _openFullScreenGallery(index),
+                                    child: Image.network(
+                                      _galleryPhotos[index],
+                                      fit: BoxFit.cover,
+                                    ),
                                   ),
                                 ),
                               );
                             },
                           ),
                         ),
+                        if (_galleryPhotos.length > 1)
+                          Positioned(
+                            left: 0,
+                            top: 0,
+                            bottom: 0,
+                            width: 80,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.translucent,
+                              onTap: _selectedPhotoIndex > 0
+                                  ? () => _animateToPhoto(_selectedPhotoIndex - 1)
+                                  : null,
+                            ),
+                          ),
+                        if (_galleryPhotos.length > 1)
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            bottom: 0,
+                            width: 80,
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.translucent,
+                              onTap: _selectedPhotoIndex < _galleryPhotos.length - 1
+                                  ? () => _animateToPhoto(_selectedPhotoIndex + 1)
+                                  : null,
+                            ),
+                          ),
                         Positioned.fill(
                           child: DecoratedBox(
                             decoration: BoxDecoration(
@@ -213,17 +258,20 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                               children:
                                   List.generate(_galleryPhotos.length, (index) {
                                 final active = index == _selectedPhotoIndex;
-                                return AnimatedContainer(
-                                  duration: const Duration(milliseconds: 180),
-                                  margin:
-                                      const EdgeInsets.symmetric(horizontal: 4),
-                                  width: active ? 18 : 7,
-                                  height: 7,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(999),
-                                    color: active
-                                        ? Colors.white
-                                        : Colors.white.withValues(alpha: 0.42),
+                                return GestureDetector(
+                                  onTap: () => _animateToPhoto(index),
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 180),
+                                    margin:
+                                        const EdgeInsets.symmetric(horizontal: 4),
+                                    width: active ? 18 : 7,
+                                    height: 7,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(999),
+                                      color: active
+                                          ? Colors.white
+                                          : Colors.white.withValues(alpha: 0.42),
+                                    ),
                                   ),
                                 );
                               }),
@@ -279,6 +327,33 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                                                 ),
                                               ),
                                               const SizedBox(width: 6),
+                                              if (activeStatus.isNotEmpty)
+                                                Container(
+                                                  margin:
+                                                      const EdgeInsets.only(right: 6),
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 5,
+                                                  ),
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(999),
+                                                    gradient: UserStatusCatalog
+                                                        .gradientFor(user.statusId),
+                                                  ),
+                                                  child: Text(
+                                                    activeStatus,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .labelSmall
+                                                        ?.copyWith(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.w800,
+                                                        ),
+                                                  ),
+                                                ),
                                               if (user.onlineStatus)
                                                 Container(
                                                   width: 8,
@@ -358,38 +433,38 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '完整资料',
+                            '他的气味',
                             style:
                                 Theme.of(context).textTheme.titleMedium?.copyWith(
                                       fontWeight: FontWeight.w800,
                                       color: AppTheme.primary,
                                     ),
                           ),
-                          const SizedBox(height: 14),
+                          const SizedBox(height: 16),
                           Wrap(
                             spacing: 10,
                             runSpacing: 10,
                             children: [
-                              _DetailHeroPill(
+                              _InlineInfoChip(
                                 icon: Icons.cake_outlined,
                                 label: '${user.age} 岁',
                               ),
-                              _DetailHeroPill(
+                              _InlineInfoChip(
                                 icon: Icons.height_rounded,
                                 label: '${user.heightCm} cm',
                               ),
-                              _DetailHeroPill(
+                              _InlineInfoChip(
                                 icon: Icons.monitor_weight_outlined,
                                 label: '${user.weightKg} kg',
                               ),
                               if (user.positionRole.trim().isNotEmpty)
-                                _DetailHeroPill(
+                                _InlineInfoChip(
                                   icon: Icons.bolt_rounded,
                                   label: user.positionRole.trim(),
                                   accent: AppTheme.primaryDark,
                                 ),
                               if (user.mbtiType.trim().isNotEmpty)
-                                _DetailHeroPill(
+                                _InlineInfoChip(
                                   icon: MbtiCatalog
                                       .resolve(user.mbtiType.trim())
                                       .avatarAccent,
@@ -397,13 +472,13 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                                   accent: AppTheme.secondary,
                                 ),
                               if (user.zodiacSign.trim().isNotEmpty)
-                                _DetailHeroPill(
+                                _InlineInfoChip(
                                   icon: Icons.auto_awesome_rounded,
                                   label:
                                       ZodiacUtils.displayName(user.zodiacSign.trim()),
                                   accent: AppTheme.tertiary,
                                 ),
-                              _DetailHeroPill(
+                              _InlineInfoChip(
                                 icon: Icons.location_on_outlined,
                                 label: locationText,
                                 accent: AppTheme.primary,
@@ -510,15 +585,25 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                 children: [
                   Expanded(
                     child: FilledButton.icon(
-                      onPressed: () => _sendLike(user, blockStatus.valueOrNull),
+                      onPressed: relation.isMutual
+                          ? null
+                          : relation.canUndoLike
+                              ? () => _undoLike(user, blockStatus.valueOrNull)
+                              : () => _sendLike(user, blockStatus.valueOrNull),
                       style: FilledButton.styleFrom(
-                        backgroundColor: const Color(0xFFEAE7F4),
-                        foregroundColor: AppTheme.primary,
+                        backgroundColor: relation.canUndoLike
+                            ? const Color(0xFFF5E9F2)
+                            : relation.canSendLike
+                            ? const Color(0xFFEAE7F4)
+                            : const Color(0xFFF1EEF8),
+                        foregroundColor: relation.canUndoLike
+                            ? const Color(0xFFB34B83)
+                            : AppTheme.primary,
                         elevation: 0,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
-                      icon: const Icon(Icons.favorite_rounded),
-                      label: const Text('喜欢'),
+                      icon: Icon(relation.likeIcon),
+                      label: Text(relation.label),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -632,6 +717,7 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
           context,
           child: _RelationshipUpgradeOverlay(
             user: user,
+            currentUserAvatar: session.user.avatarOrFallback,
             onPrimary: () {
               Navigator.of(context).pop();
               Navigator.of(context).pushNamed(AppRouter.chat, arguments: user);
@@ -647,6 +733,25 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
       }
     } catch (error) {
       AppFeedback.showError('操作失败：$error');
+    }
+  }
+
+  Future<void> _undoLike(AppUser user, BlockStatus? status) async {
+    if (status?.isBlocked == true) {
+      AppFeedback.showToast(_blockedMessage(status!));
+      return;
+    }
+    final session = ref.read(authControllerProvider).valueOrNull;
+    if (session == null) return;
+
+    try {
+      await ref.read(undoSwipeUseCaseProvider)(session.token, user.id);
+      await ref.read(matchesControllerProvider.notifier).load();
+      await ref.read(matchSummaryControllerProvider.notifier).load();
+      if (!mounted) return;
+      AppFeedback.showToast('已取消喜欢');
+    } catch (error) {
+      AppFeedback.showError('取消失败：$error');
     }
   }
 }
@@ -695,17 +800,14 @@ class _PhotoGalleryViewerState extends State<_PhotoGalleryViewer> {
             itemCount: widget.photos.length,
             onPageChanged: (index) => setState(() => _currentIndex = index),
             itemBuilder: (context, index) {
-              return InteractiveViewer(
-                minScale: 1,
-                maxScale: 3.2,
-                panEnabled: false,
-                child: Center(
-                  child: Hero(
-                    tag: index == 0
-                        ? 'match-avatar-${widget.heroUserId}'
-                        : 'match-avatar-${widget.heroUserId}-$index',
-                    child: Image.network(widget.photos[index],
-                        fit: BoxFit.contain),
+              return Center(
+                child: Hero(
+                  tag: index == 0
+                      ? 'match-avatar-${widget.heroUserId}'
+                      : 'match-avatar-${widget.heroUserId}-$index',
+                  child: Image.network(
+                    widget.photos[index],
+                    fit: BoxFit.contain,
                   ),
                 ),
               );
@@ -777,11 +879,13 @@ Future<void> _showRelationshipOverlay(
 class _RelationshipUpgradeOverlay extends StatelessWidget {
   const _RelationshipUpgradeOverlay({
     required this.user,
+    required this.currentUserAvatar,
     required this.onPrimary,
     required this.onSecondary,
   });
 
   final AppUser user;
+  final String currentUserAvatar;
   final VoidCallback onPrimary;
   final VoidCallback onSecondary;
 
@@ -848,7 +952,7 @@ class _RelationshipUpgradeOverlay extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        '关系升级',
+                        '他主动',
                         style:
                             Theme.of(context).textTheme.labelMedium?.copyWith(
                                   color: const Color(0xFF8B4EE8),
@@ -896,16 +1000,24 @@ class _RelationshipUpgradeOverlay extends StatelessWidget {
                           ),
                           Transform.translate(
                             offset: const Offset(-44, 8),
-                            child: CircleAvatar(
-                              radius: 36,
-                              backgroundColor:
-                                  Colors.white.withValues(alpha: 0.72),
-                              child: Text(
-                                '你',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(color: AppTheme.primaryDark),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.white.withValues(alpha: 0.86),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color:
+                                        AppTheme.primary.withValues(alpha: 0.12),
+                                    blurRadius: 18,
+                                    offset: const Offset(0, 8),
+                                  ),
+                                ],
+                              ),
+                              child: AvatarWidget(
+                                imageUrl: currentUserAvatar,
+                                radius: 40,
+                                isOnline: true,
                               ),
                             ),
                           ),
@@ -974,47 +1086,68 @@ class _RelationshipUpgradeOverlay extends StatelessWidget {
 
 class _UserRelation {
   const _UserRelation({
-    required this.title,
+    required this.label,
     required this.subtitle,
+    required this.likeIcon,
+    required this.canSendLike,
+    required this.canUndoLike,
     required this.isMutual,
   });
 
-  final String title;
+  final String label;
   final String Function(String nickname) subtitle;
+  final IconData likeIcon;
+  final bool canSendLike;
+  final bool canUndoLike;
   final bool isMutual;
 
   factory _UserRelation.fromSummary(MatchSummary? summary, int userId) {
     if (summary == null) {
       return const _UserRelation(
-        title: RelationshipCopy.waitingReplyTitle,
+        label: '喜欢',
         subtitle: _waitingReplySubtitle,
+        likeIcon: Icons.favorite_rounded,
+        canSendLike: true,
+        canUndoLike: false,
         isMutual: false,
       );
     }
     if (summary.mutual.any((item) => item.user.id == userId)) {
       return const _UserRelation(
-        title: RelationshipCopy.mutualLikeTitle,
+        label: '互相喜欢',
         subtitle: _mutualSubtitle,
+        likeIcon: Icons.favorite_rounded,
+        canSendLike: false,
+        canUndoLike: false,
         isMutual: true,
       );
     }
     if (summary.received.any((item) => item.user.id == userId)) {
       return const _UserRelation(
-        title: RelationshipCopy.receiveLikeTitle,
+        label: '已被喜欢',
         subtitle: _receivedSubtitle,
+        likeIcon: Icons.mark_email_read_rounded,
+        canSendLike: true,
+        canUndoLike: false,
         isMutual: false,
       );
     }
     if (summary.sent.any((item) => item.user.id == userId)) {
       return const _UserRelation(
-        title: RelationshipCopy.waitingReplyTitle,
-        subtitle: _waitingReplySubtitle,
+        label: '取消喜欢',
+        subtitle: _sentSubtitle,
+        likeIcon: Icons.favorite_border_rounded,
+        canSendLike: false,
+        canUndoLike: true,
         isMutual: false,
       );
     }
     return const _UserRelation(
-      title: RelationshipCopy.waitingReplyTitle,
+      label: '喜欢',
       subtitle: _defaultSubtitle,
+      likeIcon: Icons.favorite_rounded,
+      canSendLike: true,
+      canUndoLike: false,
       isMutual: false,
     );
   }
@@ -1023,6 +1156,7 @@ class _UserRelation {
 String _mutualSubtitle(String nickname) =>
     RelationshipCopy.mutualLike(nickname);
 String _receivedSubtitle(String nickname) => '$nickname 喜欢了你，回个喜欢就可以聊天。';
+String _sentSubtitle(String nickname) => '你已经喜欢了 $nickname，等待对方回应。';
 String _waitingReplySubtitle(String nickname) =>
     '你喜欢 $nickname 后，对方会收到提醒；互相关注后才可以聊天。';
 String _defaultSubtitle(String nickname) =>
@@ -1038,8 +1172,8 @@ String _blockedMessage(BlockStatus status) {
   return '你们暂时无法建立关系';
 }
 
-class _DetailHeroPill extends StatelessWidget {
-  const _DetailHeroPill({
+class _InlineInfoChip extends StatelessWidget {
+  const _InlineInfoChip({
     required this.icon,
     required this.label,
     this.accent = AppTheme.primary,
@@ -1052,16 +1186,21 @@ class _DetailHeroPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(999),
-        color: Colors.white.withValues(alpha: 0.84),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.7)),
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFFFFFFFF),
+            Color(0xFFF6F2FF),
+          ],
+        ),
+        border: Border.all(color: AppTheme.ghostBorder),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primary.withValues(alpha: 0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+            color: AppTheme.primary.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -1069,12 +1208,15 @@ class _DetailHeroPill extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 16, color: accent),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  color: AppTheme.textPrimary,
-                ),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: AppTheme.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
           ),
         ],
       ),

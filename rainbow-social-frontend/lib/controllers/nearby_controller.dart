@@ -21,7 +21,7 @@ class NearbyController extends StateNotifier<AsyncValue<List<AppUser>>> {
 
   Future<void> load({
     NearbyFilter filter = const NearbyFilter(),
-    bool useDeviceLocation = true,
+    bool useDeviceLocation = false,
   }) async {
     final session = _ref.read(authControllerProvider).valueOrNull;
     if (session == null) {

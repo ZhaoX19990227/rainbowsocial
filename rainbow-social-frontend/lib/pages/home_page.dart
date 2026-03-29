@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../controllers/auth_controller.dart';
 import '../controllers/home_controller.dart';
 import '../controllers/match_controller.dart';
 import '../models/app_user.dart';
@@ -162,6 +163,11 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ? const SizedBox.shrink()
                 : _MatchOverlay(
                     user: _matchUser!,
+                    currentUserAvatar: ref
+                        .watch(authControllerProvider)
+                        .valueOrNull
+                        ?.user
+                        .avatarOrFallback,
                     onClose: () => setState(() => _matchUser = null),
                     onChat: () {
                       final user = _matchUser!;
@@ -592,11 +598,13 @@ class _ActionCircle extends StatelessWidget {
 class _MatchOverlay extends StatefulWidget {
   const _MatchOverlay({
     required this.user,
+    required this.currentUserAvatar,
     required this.onClose,
     required this.onChat,
   });
 
   final AppUser user;
+  final String? currentUserAvatar;
   final VoidCallback onClose;
   final VoidCallback onChat;
 
@@ -628,6 +636,9 @@ class _MatchOverlayState extends State<_MatchOverlay>
     final avatarUrl = widget.user.photos.isNotEmpty
         ? widget.user.photos.first
         : widget.user.avatarOrFallback;
+    final currentUserAvatar = widget.currentUserAvatar?.trim().isNotEmpty == true
+        ? widget.currentUserAvatar!.trim()
+        : 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80';
 
     return Material(
       color: Colors.white.withValues(alpha: 0.92),
@@ -739,22 +750,11 @@ class _MatchOverlayState extends State<_MatchOverlay>
                                   offset: const Offset(0, 8),
                                 ),
                               ],
-                              gradient: const LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Color(0xFFFFF2C8),
-                                  Color(0xFFFFE0B5),
-                                ],
-                              ),
                             ),
-                            child: Center(
-                              child: Text(
-                                '你',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .headlineMedium
-                                    ?.copyWith(color: AppTheme.textPrimary),
+                            child: ClipOval(
+                              child: Image.network(
+                                currentUserAvatar,
+                                fit: BoxFit.cover,
                               ),
                             ),
                           ),
@@ -821,7 +821,7 @@ class _MatchOverlayState extends State<_MatchOverlay>
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
-                        '缘分在此刻开启',
+                        '他主动',
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
                               color: AppTheme.primary,
                             ),

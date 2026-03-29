@@ -20,6 +20,7 @@ func NewUserService(userRepo *repository.UserRepository) *UserService {
 }
 
 func (s *UserService) GetProfile(userID int64) (*model.User, error) {
+	_ = s.userRepo.TouchActive(userID)
 	return s.userRepo.GetByID(userID)
 }
 
@@ -44,6 +45,7 @@ func (s *UserService) UpdateProfile(userID int64, input model.User) (*model.User
 	existing.Lat = input.Lat
 	existing.Lng = input.Lng
 	existing.LocationLabel = strings.TrimSpace(input.LocationLabel)
+	_ = s.userRepo.TouchActive(userID)
 
 	if existing.Nickname == "" {
 		return nil, fmt.Errorf("nickname is required")
@@ -78,27 +80,26 @@ func (s *UserService) ListUsers(limit int) ([]model.User, error) {
 }
 
 func (s *UserService) Nearby(userID int64, lat, lng float64, minAge, maxAge int, onlineOnly bool, tag, mbtiType, zodiacSign string) ([]model.User, error) {
-	users, err := s.userRepo.ListOtherUsers(userID)
-	if err != nil {
-		return nil, err
-	}
-
 	tag = strings.ToLower(strings.TrimSpace(tag))
 	mbtiType = sanitizeMBTIType(mbtiType)
 	zodiacSign = sanitizeZodiacSign(zodiacSign)
+
+	users, err := s.userRepo.ListNearbyCandidates(
+		userID,
+		minAge,
+		maxAge,
+		onlineOnly,
+		tag,
+		mbtiType,
+		zodiacSign,
+		120,
+	)
+	if err != nil {
+		return nil, err
+	}
+	_ = s.userRepo.TouchActive(userID)
+
 	for i := range users {
-		if minAge > 0 && users[i].Age < minAge {
-			users[i].DistanceKM = -1
-			continue
-		}
-		if maxAge > 0 && users[i].Age > maxAge {
-			users[i].DistanceKM = -1
-			continue
-		}
-		if onlineOnly && !users[i].OnlineStatus {
-			users[i].DistanceKM = -1
-			continue
-		}
 		if tag != "" && !containsTag(users[i].Tags, tag) {
 			users[i].DistanceKM = -1
 			continue

@@ -13,6 +13,7 @@ import '../providers/app_providers.dart';
 import '../services/app_feedback.dart';
 import '../services/secure_screen_service.dart';
 import '../theme/app_theme.dart';
+import 'avatar_widget.dart';
 import 'flirty_action_system.dart';
 
 class MessageBubble extends StatelessWidget {
@@ -20,14 +21,18 @@ class MessageBubble extends StatelessWidget {
     super.key,
     required this.message,
     required this.isMine,
+    required this.avatarUrl,
     this.onRetry,
     this.onFlirtyTap,
+    this.onAvatarTap,
   });
 
   final ChatMessageModel message;
   final bool isMine;
+  final String avatarUrl;
   final VoidCallback? onRetry;
   final VoidCallback? onFlirtyTap;
+  final VoidCallback? onAvatarTap;
 
   @override
   Widget build(BuildContext context) {
@@ -58,139 +63,196 @@ class MessageBubble extends StatelessWidget {
         alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 7),
-          constraints: BoxConstraints(
-            maxWidth: message.isAudio ? 250 : 310,
-          ),
-          child: Column(
-            crossAxisAlignment:
-                isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+          child: Row(
+            mainAxisAlignment:
+                isMine ? MainAxisAlignment.end : MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutCubic,
-                padding: isCustomCard
-                    ? EdgeInsets.zero
-                    : isMediaFrame
-                        ? const EdgeInsets.symmetric(
-                            horizontal: 6,
-                            vertical: 6,
-                          )
-                        : const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 14,
-                          ),
-                decoration: BoxDecoration(
-                  borderRadius: radius,
-                  gradient: isCustomCard || isMediaFrame
-                      ? null
-                      : isMine
-                          ? LinearGradient(
-                              colors: message.isFailed
-                                  ? const [Color(0x33FF9A9A), Color(0x22FF6E85)]
-                                  : const [
-                                      Color(0x44EA87FF),
-                                      Color(0x22E470FF)
-                                    ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            )
-                          : null,
-                  color: isCustomCard
-                      ? Colors.transparent
-                      : isMediaFrame
-                          ? (isMine
-                              ? const Color(0xFF151923).withValues(alpha: 0.96)
-                              : AppTheme.surfaceHighest.withValues(alpha: 0.56))
-                          : isMine
-                              ? null
-                              : AppTheme.surfaceHighest.withValues(alpha: 0.72),
-                  border: Border.all(
-                    color: isCustomCard
-                        ? Colors.transparent
-                        : isMediaFrame
-                            ? Colors.white
-                                .withValues(alpha: isMine ? 0.08 : 0.06)
-                            : isMine
-                                ? (message.isFailed
-                                    ? AppTheme.error.withValues(alpha: 0.35)
-                                    : AppTheme.primary.withValues(alpha: 0.18))
-                                : Colors.white.withValues(alpha: 0.06),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: isCustomCard
-                          ? Colors.transparent
-                          : isMediaFrame
-                              ? Colors.black.withValues(alpha: 0.08)
-                              : isMine
-                                  ? (message.isFailed
-                                      ? AppTheme.error.withValues(alpha: 0.12)
-                                      : AppTheme.primary
-                                          .withValues(alpha: 0.12))
-                                  : Colors.black.withValues(alpha: 0.06),
-                      blurRadius: isMediaFrame ? 10 : 18,
-                    ),
-                  ],
+              if (!isMine) ...[
+                _MessageAvatar(
+                  avatarUrl: avatarUrl,
+                  onTap: onAvatarTap,
                 ),
-                child: message.isAudio
-                    ? _AudioMessageContent(message: message, isMine: isMine)
-                    : message.isFlirty
-                        ? _FlirtyActionContent(
-                            message: message,
-                            isMine: isMine,
-                            onTap: onFlirtyTap,
-                          )
-                        : message.isFlashImage
-                            ? _FlashImageContent(
-                                message: message,
-                                isMine: isMine,
-                              )
-                            : message.isImage
-                                ? _ImageMessageContent(message: message)
-                                : Text(message.content),
-              ),
-              if (isMine)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6, right: 6),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 180),
-                        child: _StatusLabel(
-                          key: ValueKey(message.status),
-                          message: message,
-                        ),
-                      ),
-                      if (message.isFailed && onRetry != null)
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(999),
-                            onTap: onRetry,
-                            child: const Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              child: Text(
-                                '重试',
-                                style: TextStyle(
-                                  color: AppTheme.primary,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
+                const SizedBox(width: 10),
+              ],
+              ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: message.isAudio ? 250 : 310,
+                ),
+                child: Column(
+                  crossAxisAlignment:
+                      isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                  children: [
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOutCubic,
+                      padding: isCustomCard
+                          ? EdgeInsets.zero
+                          : isMediaFrame
+                              ? const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 6,
+                                )
+                              : const EdgeInsets.symmetric(
+                                  horizontal: 18,
+                                  vertical: 14,
                                 ),
+                      decoration: BoxDecoration(
+                        borderRadius: radius,
+                        gradient: isCustomCard || isMediaFrame
+                            ? null
+                            : isMine
+                                ? LinearGradient(
+                                    colors: message.isFailed
+                                        ? const [
+                                            Color(0x33FF9A9A),
+                                            Color(0x22FF6E85),
+                                          ]
+                                        : const [
+                                            Color(0x44EA87FF),
+                                            Color(0x22E470FF),
+                                          ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  )
+                                : null,
+                        color: isCustomCard
+                            ? Colors.transparent
+                            : isMediaFrame
+                                ? (isMine
+                                    ? const Color(0xFF151923)
+                                        .withValues(alpha: 0.96)
+                                    : AppTheme.surfaceHighest
+                                        .withValues(alpha: 0.56))
+                                : isMine
+                                    ? null
+                                    : AppTheme.surfaceHighest
+                                        .withValues(alpha: 0.72),
+                        border: Border.all(
+                          color: isCustomCard
+                              ? Colors.transparent
+                              : isMediaFrame
+                                  ? Colors.white.withValues(
+                                      alpha: isMine ? 0.08 : 0.06,
+                                    )
+                                  : isMine
+                                      ? (message.isFailed
+                                          ? AppTheme.error
+                                              .withValues(alpha: 0.35)
+                                          : AppTheme.primary
+                                              .withValues(alpha: 0.18))
+                                      : Colors.white.withValues(alpha: 0.06),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: isCustomCard
+                                ? Colors.transparent
+                                : isMediaFrame
+                                    ? Colors.black.withValues(alpha: 0.08)
+                                    : isMine
+                                        ? (message.isFailed
+                                            ? AppTheme.error
+                                                .withValues(alpha: 0.12)
+                                            : AppTheme.primary
+                                                .withValues(alpha: 0.12))
+                                        : Colors.black.withValues(alpha: 0.06),
+                            blurRadius: isMediaFrame ? 10 : 18,
+                          ),
+                        ],
+                      ),
+                      child: message.isAudio
+                          ? _AudioMessageContent(message: message, isMine: isMine)
+                          : message.isFlirty
+                              ? _FlirtyActionContent(
+                                  message: message,
+                                  isMine: isMine,
+                                  onTap: onFlirtyTap,
+                                )
+                              : message.isFlashImage
+                                  ? _FlashImageContent(
+                                      message: message,
+                                      isMine: isMine,
+                                    )
+                                  : message.isImage
+                                      ? _ImageMessageContent(message: message)
+                                      : Text(message.content),
+                    ),
+                    if (isMine)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 6, right: 6),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 180),
+                              child: _StatusLabel(
+                                key: ValueKey(message.status),
+                                message: message,
                               ),
                             ),
-                          ),
+                            if (message.isFailed && onRetry != null)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: InkWell(
+                                  borderRadius: BorderRadius.circular(999),
+                                  onTap: onRetry,
+                                  child: const Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 4,
+                                    ),
+                                    child: Text(
+                                      '重试',
+                                      style: TextStyle(
+                                        color: AppTheme.primary,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
                 ),
+              ),
+              if (isMine) ...[
+                const SizedBox(width: 10),
+                _MessageAvatar(
+                  avatarUrl: avatarUrl,
+                  onTap: onAvatarTap,
+                ),
+              ],
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _MessageAvatar extends StatelessWidget {
+  const _MessageAvatar({
+    required this.avatarUrl,
+    this.onTap,
+  });
+
+  final String avatarUrl;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final avatar = AvatarWidget(
+      imageUrl: avatarUrl,
+      radius: 18,
+    );
+    if (onTap == null) return avatar;
+    return InkWell(
+      borderRadius: BorderRadius.circular(999),
+      onTap: onTap,
+      child: avatar,
     );
   }
 }

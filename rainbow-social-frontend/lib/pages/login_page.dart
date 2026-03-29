@@ -44,11 +44,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   bool _navigatedAfterAuth = false;
   bool _suppressAuthNavigation = false;
   bool _buttonPressed = false;
-  bool _uploadingAvatar = false;
+  final bool _uploadingAvatar = false;
   bool _resolvingCity = false;
   String _registerAvatarUrl = '';
   XFile? _registerAvatarFile;
-  String _selectedPositionRole = '';
+  String _selectedPositionRole = 'Side';
   DateTime? _selectedBirthday;
   double _lat = 0;
   double _lng = 0;
@@ -218,6 +218,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 ],
                               ),
                               const SizedBox(height: 12),
+                              _RegisterPositionField(
+                                selected: _selectedPositionRole,
+                                onSelected: (value) => setState(
+                                  () => _selectedPositionRole = value,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
                               _PillInputField(
                                 controller: _cityController,
                                 hintText: '城市，可手动输入或定位获取',
@@ -250,13 +257,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 onChanged: (value) {
                                   setState(() => _selectedBirthday = value);
                                 },
-                              ),
-                              const SizedBox(height: 12),
-                              _RegisterPositionField(
-                                selected: _selectedPositionRole,
-                                onSelected: (value) => setState(
-                                  () => _selectedPositionRole = value,
-                                ),
                               ),
                             ],
                             SizedBox(height: compact ? 18 : 22),
@@ -1038,63 +1038,56 @@ class _RegisterPositionField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final itemWidth = (constraints.maxWidth - 8) / 2;
-        return Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Colors.white.withValues(alpha: 0.56),
-                const Color(0xFFF4F1FF).withValues(alpha: 0.48),
-              ],
-            ),
-            borderRadius: BorderRadius.circular(26),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.68)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '属性',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: AppTheme.textSecondary,
+    return Container(
+      height: 52,
+      padding: const EdgeInsets.symmetric(horizontal: 18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.white.withValues(alpha: 0.56),
+            const Color(0xFFF4F1FF).withValues(alpha: 0.48),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.68),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.tune_rounded, size: 20, color: Color(0xFFA78BFA)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: selected,
+                isExpanded: true,
+                borderRadius: BorderRadius.circular(20),
+                icon: const Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: Color(0xFFA78BFA),
+                ),
+                dropdownColor: const Color(0xFFF7F2FF),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.w600,
                     ),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: profilePositionOptions.map((option) {
-                  final active = selected == option;
-                  return SizedBox(
-                    width: itemWidth,
-                    child: ChoiceChip(
-                      selected: active,
-                      label: Center(child: Text(option)),
-                      labelPadding: EdgeInsets.zero,
-                      showCheckmark: false,
-                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      onSelected: (_) => onSelected(option),
-                      selectedColor: AppTheme.primary.withValues(alpha: 0.16),
-                      side: BorderSide(
-                        color: active ? AppTheme.primary : AppTheme.ghostBorder,
-                      ),
-                      labelStyle:
-                          Theme.of(context).textTheme.labelLarge?.copyWith(
-                                color:
-                                    active ? AppTheme.primary : AppTheme.textSecondary,
-                              ),
-                    ),
+                onChanged: (value) {
+                  if (value != null) {
+                    onSelected(value);
+                  }
+                },
+                items: profilePositionOptions.map((option) {
+                  return DropdownMenuItem<String>(
+                    value: option,
+                    child: Text(option),
                   );
                 }).toList(),
               ),
-            ],
+            ),
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 }

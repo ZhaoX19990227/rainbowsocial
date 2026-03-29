@@ -204,7 +204,7 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
                         hasKeyword: _keyword.isNotEmpty,
                         onRefresh: () => ref
                             .read(nearbyControllerProvider.notifier)
-                            .load(filter: _filter, useDeviceLocation: true),
+                            .load(filter: _filter),
                       );
                     }
 
@@ -212,7 +212,6 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
                       onRefresh: () =>
                           ref.read(nearbyControllerProvider.notifier).load(
                                 filter: _filter,
-                                useDeviceLocation: true,
                               ),
                       child: ListView(
                         physics: const AlwaysScrollableScrollPhysics(
@@ -237,7 +236,6 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
                       onPressed: () =>
                           ref.read(nearbyControllerProvider.notifier).load(
                                 filter: _filter,
-                                useDeviceLocation: true,
                               ),
                       child: const Text('重新加载'),
                     ),
@@ -533,7 +531,7 @@ class _NearbyPageState extends ConsumerState<NearbyPage> {
       setState(() => _filter = result);
       await ref
           .read(nearbyControllerProvider.notifier)
-          .load(filter: _filter, useDeviceLocation: true);
+          .load(filter: _filter);
     }
   }
 }

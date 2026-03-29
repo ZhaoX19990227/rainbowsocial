@@ -1,9 +1,8 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../controllers/auth_controller.dart';
+import '../controllers/match_controller.dart';
 import '../models/app_user.dart';
 import '../models/match_summary.dart';
 import '../routes/app_router.dart';
@@ -31,50 +30,14 @@ class LikesOverviewArgs {
   final MatchSummary summary;
 }
 
-class LikesOverviewPage extends ConsumerStatefulWidget {
+class LikesOverviewPage extends ConsumerWidget {
   const LikesOverviewPage({super.key, required this.args});
 
   final LikesOverviewArgs args;
 
   @override
-  ConsumerState<LikesOverviewPage> createState() => _LikesOverviewPageState();
-}
-
-class _LikesOverviewPageState extends ConsumerState<LikesOverviewPage> {
-  late final PageController _pageController;
-  int _currentIndex = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    _pageController = PageController();
-  }
-
-  @override
-  void dispose() {
-    _pageController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final sessionUser = ref.watch(authControllerProvider).valueOrNull?.user;
-    final config = _pageConfig(widget.args);
-
-    if (widget.args.type == LikeOverviewType.sent) {
-      return _SentLikesScaffold(config: config);
-    }
-
-    if (config.items.isEmpty) {
-      return Scaffold(
-        body: SafeArea(
-          child: AppEmptyState(
-            title: config.emptyTitle,
-            subtitle: config.emptySubtitle,
-          ),
-        ),
-      );
-    }
+  Widget build(BuildContext context, WidgetRef ref) {
+    final config = _pageConfig(args);
 
     return Scaffold(
       body: DecoratedBox(
@@ -83,73 +46,50 @@ class _LikesOverviewPageState extends ConsumerState<LikesOverviewPage> {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFFFCFCFF),
+              Color(0xFFFDFDFF),
               Color(0xFFF6F1FF),
               Color(0xFFF7FAFF),
             ],
           ),
         ),
-        child: Stack(
-          children: [
-            const _EtherealBackdrop(),
-            SafeArea(
-              child: PageView.builder(
-                controller: _pageController,
-                itemCount: config.items.length,
-                onPageChanged: (index) {
-                  setState(() => _currentIndex = index);
-                },
-                itemBuilder: (context, index) {
-                  final item = config.items[index];
-                  if (widget.args.type == LikeOverviewType.received) {
-                    return _ReceivedLikeExperience(
-                      user: item.user,
-                      currentIndex: index,
-                      total: config.items.length,
-                      onClose: () => Navigator.of(context).pop(),
-                      onReply: () => _handleReceivedLikeReply(item.user),
-                      onPreview: () => Navigator.of(context)
-                          .pushNamed(AppRouter.detail, arguments: item.user),
-                    );
-                  }
-
-                  return _MutualLikeExperience(
-                    currentUser: sessionUser,
-                    user: item.user,
-                    currentIndex: index,
-                    total: config.items.length,
-                    onChat: () => Navigator.of(context)
-                        .pushNamed(AppRouter.chat, arguments: item.user),
-                    onLater: () => Navigator.of(context).pop(),
-                  );
-                },
-              ),
-            ),
-            if (config.items.length > 1)
-              Positioned(
-                bottom: 22,
-                left: 0,
-                right: 0,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(config.items.length, (index) {
-                    final active = index == _currentIndex;
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 220),
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      width: active ? 18 : 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(999),
-                        color: active
-                            ? AppTheme.primary
-                            : AppTheme.primary.withValues(alpha: 0.18),
-                      ),
-                    );
-                  }),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+            child: Column(
+              children: [
+                _LikesHeader(config: config),
+                const SizedBox(height: 16),
+                Expanded(
+                  child: config.items.isEmpty
+                      ? AppEmptyState(
+                          title: config.emptyTitle,
+                          subtitle: config.emptySubtitle,
+                        )
+                      : ListView.separated(
+                          physics: const BouncingScrollPhysics(
+                            parent: AlwaysScrollableScrollPhysics(),
+                          ),
+                          itemCount: config.items.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 14),
+                          itemBuilder: (context, index) {
+                            final item = config.items[index];
+                            return _LikeOverviewCard(
+                              config: config,
+                              item: item,
+                              onTap: () => Navigator.of(context).pushNamed(
+                                AppRouter.detail,
+                                arguments: item.user,
+                              ),
+                              onPrimary: () =>
+                                  _handlePrimaryAction(context, ref, item.user),
+                            );
+                          },
+                        ),
                 ),
-              ),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -160,34 +100,116 @@ class _LikesOverviewPageState extends ConsumerState<LikesOverviewPage> {
       case LikeOverviewType.received:
         return _LikePageConfig(
           title: '喜欢我的',
+          subtitle: '谁正在向你靠近',
           emptyTitle: '还没有人喜欢你',
           emptySubtitle: '有人向你表达好感后，这里会第一时间出现。',
+          primaryLabel: '回个喜欢',
+          primaryIcon: Icons.favorite_rounded,
           items: args.summary.received
-              .map((item) => _LikeListItem(user: item.user))
+              .map(
+                (item) => _LikeListItem(
+                  user: item.user,
+                  badge: null,
+                  caption: '${item.user.nickname} 喜欢了你',
+                ),
+              )
               .toList(),
         );
       case LikeOverviewType.sent:
         return _LikePageConfig(
           title: '我喜欢的',
+          subtitle: '你主动表达过好感的人',
           emptyTitle: '你还没有点过喜欢',
           emptySubtitle: '你发出的喜欢会显示在这里。',
+          primaryLabel: '查看详情',
+          primaryIcon: Icons.arrow_forward_rounded,
           items: args.summary.sent
-              .map((item) => _LikeListItem(user: item.user))
+              .map(
+                (item) => _LikeListItem(
+                  user: item.user,
+                  badge: null,
+                  caption: '等待对方回应',
+                ),
+              )
               .toList(),
         );
       case LikeOverviewType.mutual:
         return _LikePageConfig(
           title: '互相喜欢',
+          subtitle: '你们已经可以开始聊天了',
           emptyTitle: '还没有互相喜欢',
           emptySubtitle: '互相喜欢后，这里会显示匹配记录。',
+          primaryLabel: '去聊天',
+          primaryIcon: Icons.chat_bubble_rounded,
           items: args.summary.mutual
-              .map((item) => _LikeListItem(user: item.user))
+              .map(
+                (item) => _LikeListItem(
+                  user: item.user,
+                  badge: _mutualInitiatorLabel(args.summary, item.user.id),
+                  caption: _mutualInitiatorCaption(args.summary, item.user),
+                ),
+              )
               .toList(),
         );
     }
   }
 
-  Future<void> _handleReceivedLikeReply(AppUser user) async {
+  String _mutualInitiatorLabel(MatchSummary summary, int userId) {
+    final sent = _findLike(summary.sent, userId);
+    final received = _findLike(summary.received, userId);
+    if (sent == null || received == null) {
+      return '互相喜欢';
+    }
+    return sent.likedAt.isBefore(received.likedAt) ||
+            sent.likedAt.isAtSameMomentAs(received.likedAt)
+        ? '你主动'
+        : '他主动';
+  }
+
+  String _mutualInitiatorCaption(MatchSummary summary, AppUser user) {
+    final sent = _findLike(summary.sent, user.id);
+    final received = _findLike(summary.received, user.id);
+    if (sent == null || received == null) {
+      return '现在可以直接发消息';
+    }
+    return sent.likedAt.isBefore(received.likedAt) ||
+            sent.likedAt.isAtSameMomentAs(received.likedAt)
+        ? '你先喜欢了 ${user.nickname}，他后来回应了你'
+        : '${user.nickname} 先喜欢了你，你后来回应了他';
+  }
+
+  LikeUser? _findLike(List<LikeUser> items, int userId) {
+    for (final item in items) {
+      if (item.user.id == userId) {
+        return item;
+      }
+    }
+    return null;
+  }
+
+  Future<void> _handlePrimaryAction(
+    BuildContext context,
+    WidgetRef ref,
+    AppUser user,
+  ) async {
+    switch (args.type) {
+      case LikeOverviewType.received:
+        await _handleReceivedLikeReply(context, ref, user);
+        break;
+      case LikeOverviewType.sent:
+        Navigator.of(context).pushNamed(AppRouter.detail, arguments: user);
+        break;
+      case LikeOverviewType.mutual:
+        Navigator.of(context).pushNamed(AppRouter.chat, arguments: user);
+        break;
+    }
+  }
+
+  Future<void> _handleReceivedLikeReply(
+    BuildContext context,
+    WidgetRef ref,
+    AppUser user,
+  ) async {
     final session = ref.read(authControllerProvider).valueOrNull;
     if (session == null) {
       AppFeedback.showToast('请先登录');
@@ -198,9 +220,34 @@ class _LikesOverviewPageState extends ConsumerState<LikesOverviewPage> {
         session.token,
         user.id,
       );
-      if (!mounted) return;
+      await ref.read(matchSummaryControllerProvider.notifier).load();
+      await ref.read(matchesControllerProvider.notifier).load();
+      if (!context.mounted) return;
       if (result.matched) {
-        Navigator.of(context).pushNamed(AppRouter.chat, arguments: user);
+        final refreshed =
+            ref.read(matchSummaryControllerProvider).valueOrNull ??
+                MatchSummary.empty();
+        await _showMutualLikeOverlay(
+          context,
+          user: user,
+          currentUserAvatar: session.user.avatar,
+          onChat: () {
+            Navigator.of(context)
+              ..pop()
+              ..pushNamed(AppRouter.chat, arguments: user);
+          },
+          onOpenMutual: () {
+            Navigator.of(context)
+              ..pop()
+              ..pushReplacementNamed(
+                AppRouter.likesOverview,
+                arguments: LikesOverviewArgs(
+                  type: LikeOverviewType.mutual,
+                  summary: refreshed,
+                ),
+              );
+          },
+        );
       } else {
         Navigator.of(context).pushNamed(AppRouter.detail, arguments: user);
       }
@@ -213,690 +260,443 @@ class _LikesOverviewPageState extends ConsumerState<LikesOverviewPage> {
 class _LikePageConfig {
   const _LikePageConfig({
     required this.title,
+    required this.subtitle,
     required this.emptyTitle,
     required this.emptySubtitle,
+    required this.primaryLabel,
+    required this.primaryIcon,
     required this.items,
   });
 
   final String title;
+  final String subtitle;
   final String emptyTitle;
   final String emptySubtitle;
+  final String primaryLabel;
+  final IconData primaryIcon;
   final List<_LikeListItem> items;
 }
 
 class _LikeListItem {
   const _LikeListItem({
     required this.user,
+    required this.badge,
+    required this.caption,
   });
 
   final AppUser user;
+  final String? badge;
+  final String caption;
 }
 
-class _SentLikesScaffold extends StatelessWidget {
-  const _SentLikesScaffold({required this.config});
+class _LikesHeader extends StatelessWidget {
+  const _LikesHeader({required this.config});
 
   final _LikePageConfig config;
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(config.title),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+    return Column(
+      children: [
+        Row(
+          children: [
+            IconButton(
+              onPressed: () => Navigator.of(context).maybePop(),
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.white.withValues(alpha: 0.82),
+              ),
+              icon: const Icon(
+                Icons.arrow_back_rounded,
+                color: AppTheme.primary,
+              ),
+            ),
+            const Spacer(),
+          ],
+        ),
+        const SizedBox(height: 10),
+        GlassCard(
+          borderRadius: BorderRadius.circular(30),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              GlassCard(
-                borderRadius: BorderRadius.circular(28),
-                padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(999),
+                ),
                 child: Text(
                   config.title,
-                  style: Theme.of(context).textTheme.headlineMedium,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: AppTheme.primary,
+                        fontWeight: FontWeight.w800,
+                      ),
                 ),
               ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: config.items.isEmpty
-                    ? AppEmptyState(
-                        title: config.emptyTitle,
-                        subtitle: config.emptySubtitle,
-                      )
-                    : ListView.separated(
-                        itemCount: config.items.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final user = config.items[index].user;
-                          return Material(
-                            color: Colors.transparent,
-                            child: InkWell(
-                              borderRadius: BorderRadius.circular(24),
-                              onTap: () => Navigator.of(context)
-                                  .pushNamed(AppRouter.detail, arguments: user),
-                              child: Container(
-                                padding: const EdgeInsets.all(14),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(24),
-                                  color: Colors.white.withValues(alpha: 0.88),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppTheme.primary
-                                          .withValues(alpha: 0.06),
-                                      blurRadius: 16,
-                                      offset: const Offset(0, 10),
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  children: [
-                                    AvatarWidget(
-                                      imageUrl: user.avatar,
-                                      isOnline: user.onlineStatus,
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            user.nickname,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .titleMedium,
-                                          ),
-                                          const SizedBox(height: 4),
-                                          Text(
-                                            user.basicsLine,
-                                            style: Theme.of(context)
-                                                .textTheme
-                                                .labelLarge
-                                                ?.copyWith(
-                                                  color: AppTheme.textSecondary,
-                                                ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const Icon(
-                                      Icons.chevron_right_rounded,
-                                      color: AppTheme.textSecondary,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      ),
+              const SizedBox(height: 12),
+              Text(
+                config.subtitle,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
               ),
             ],
           ),
         ),
-      ),
+      ],
     );
   }
 }
 
-class _ReceivedLikeExperience extends StatelessWidget {
-  const _ReceivedLikeExperience({
-    required this.user,
-    required this.currentIndex,
-    required this.total,
-    required this.onClose,
-    required this.onReply,
-    required this.onPreview,
+class _LikeOverviewCard extends StatelessWidget {
+  const _LikeOverviewCard({
+    required this.config,
+    required this.item,
+    required this.onTap,
+    required this.onPrimary,
   });
 
-  final AppUser user;
-  final int currentIndex;
-  final int total;
-  final VoidCallback onClose;
-  final VoidCallback onReply;
-  final VoidCallback onPreview;
+  final _LikePageConfig config;
+  final _LikeListItem item;
+  final VoidCallback onTap;
+  final VoidCallback onPrimary;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(28, 12, 28, 42),
+    final user = item.user;
+    final location = user.locationLabel.trim().isNotEmpty
+        ? user.locationLabel.trim()
+        : '就在附近';
+
+    return GlassCard(
+      borderRadius: BorderRadius.circular(30),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       child: Column(
         children: [
-          Align(
-            alignment: Alignment.centerRight,
-            child: IconButton(
-              onPressed: onClose,
-              style: IconButton.styleFrom(
-                backgroundColor: Colors.white.withValues(alpha: 0.55),
-                shadowColor: AppTheme.primary.withValues(alpha: 0.08),
-              ),
-              icon: const Icon(Icons.close_rounded),
-            ),
-          ),
-          const Spacer(),
-          Text(
-            '有人喜欢了你',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  fontSize: 34,
-                  foreground: Paint()
-                    ..shader = const LinearGradient(
-                      colors: [
-                        AppTheme.primary,
-                        AppTheme.primaryDark,
-                        AppTheme.tertiary,
-                      ],
-                    ).createShader(const Rect.fromLTWH(0, 0, 260, 60)),
+          InkWell(
+            borderRadius: BorderRadius.circular(24),
+            onTap: onTap,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AvatarWidget(
+                  imageUrl: user.avatar,
+                  radius: 34,
+                  isOnline: user.onlineStatus,
                 ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            '查看谁喜欢了你',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.textSecondary.withValues(alpha: 0.82),
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-          const SizedBox(height: 32),
-          _ReceivedIdentityGlow(user: user),
-          const Spacer(),
-          SizedBox(
-            width: double.infinity,
-            child: GradientButton(
-              label: '回个喜欢',
-              icon: Icons.favorite_rounded,
-              onPressed: onReply,
-            ),
-          ),
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: onPreview,
-              style: OutlinedButton.styleFrom(
-                backgroundColor: Colors.white.withValues(alpha: 0.64),
-                foregroundColor: AppTheme.primary,
-                side: BorderSide.none,
-                padding: const EdgeInsets.symmetric(vertical: 18),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(28),
-                ),
-              ),
-              child: const Text('先看看'),
-            ),
-          ),
-          if (total > 1) ...[
-            const SizedBox(height: 10),
-            Text(
-              '${currentIndex + 1} / $total',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: AppTheme.textSecondary.withValues(alpha: 0.74),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              user.nickname,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                          if (item.badge != null && item.badge!.trim().isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                item.badge!,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelMedium
+                                    ?.copyWith(
+                                      color: AppTheme.primary,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        item.caption,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: AppTheme.textSecondary,
+                            ),
+                      ),
+                      const SizedBox(height: 10),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _MetaChip(
+                            icon: Icons.cake_outlined,
+                            label: '${user.age} 岁',
+                          ),
+                          if (user.positionRole.trim().isNotEmpty)
+                            _MetaChip(
+                              icon: Icons.bolt_rounded,
+                              label: user.positionRole.trim(),
+                              accent: AppTheme.primaryDark,
+                            ),
+                          if (user.mbtiType.trim().isNotEmpty)
+                            _MetaChip(
+                              icon: Icons.psychology_alt_rounded,
+                              label: user.mbtiType.trim(),
+                              accent: AppTheme.secondary,
+                            ),
+                          _MetaChip(
+                            icon: Icons.location_on_outlined,
+                            label: location,
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
+                ),
+              ],
             ),
-          ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: onTap,
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(
+                      color: AppTheme.primary.withValues(alpha: 0.14),
+                    ),
+                    minimumSize: const Size.fromHeight(50),
+                  ),
+                  child: const Text('查看资料'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: GradientButton(
+                  label: config.primaryLabel,
+                  icon: config.primaryIcon,
+                  onPressed: onPrimary,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
     );
   }
 }
 
-class _ReceivedIdentityGlow extends StatelessWidget {
-  const _ReceivedIdentityGlow({required this.user});
+Future<void> _showMutualLikeOverlay(
+  BuildContext context, {
+  required AppUser user,
+  required String currentUserAvatar,
+  required VoidCallback onChat,
+  required VoidCallback onOpenMutual,
+}) {
+  return showGeneralDialog<void>(
+    context: context,
+    barrierLabel: 'mutual-like',
+    barrierDismissible: true,
+    barrierColor: Colors.black.withValues(alpha: 0.72),
+    transitionDuration: const Duration(milliseconds: 300),
+    pageBuilder: (context, _, __) {
+      return _MutualLikeOverlay(
+        user: user,
+        currentUserAvatar: currentUserAvatar,
+        onChat: onChat,
+        onOpenMutual: onOpenMutual,
+      );
+    },
+    transitionBuilder: (context, animation, _, child) {
+      final curved = CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+      );
+      return FadeTransition(
+        opacity: curved,
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.92, end: 1).animate(curved),
+          child: child,
+        ),
+      );
+    },
+  );
+}
+
+class _MutualLikeOverlay extends StatelessWidget {
+  const _MutualLikeOverlay({
+    required this.user,
+    required this.currentUserAvatar,
+    required this.onChat,
+    required this.onOpenMutual,
+  });
 
   final AppUser user;
+  final String currentUserAvatar;
+  final VoidCallback onChat;
+  final VoidCallback onOpenMutual;
 
   @override
   Widget build(BuildContext context) {
-    final image =
-        user.photos.isNotEmpty ? user.photos.first : user.avatarOrFallback;
-
-    return SizedBox(
-      width: 320,
-      height: 320,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 300,
-            height: 300,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  AppTheme.primary.withValues(alpha: 0.1),
-                  AppTheme.secondary.withValues(alpha: 0.06),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-          Container(
-            width: 260,
-            height: 260,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.28),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primary.withValues(alpha: 0.18),
-                  blurRadius: 40,
-                  spreadRadius: 6,
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            top: 34,
-            right: 18,
-            child: _FloatingBadge(
-              size: 48,
-              child: const Icon(
-                Icons.favorite_rounded,
-                color: AppTheme.tertiary,
-              ),
-            ),
-          ),
-          Positioned(
-            left: 14,
-            bottom: 72,
-            child: _FloatingBadge(
-              size: 36,
-              child: const Icon(
-                Icons.auto_awesome_rounded,
-                size: 18,
-                color: AppTheme.primary,
-              ),
-            ),
-          ),
-          GestureDetector(
-            onTap: onTapHint,
-            child: Container(
-              width: 214,
-              height: 214,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.92),
-                  width: 8,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppTheme.primary.withValues(alpha: 0.2),
-                    blurRadius: 34,
-                    offset: const Offset(0, 18),
+    return Material(
+      color: Colors.transparent,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: GlassCard(
+            borderRadius: BorderRadius.circular(34),
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(999),
                   ),
-                ],
-              ),
-              child: ClipOval(
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.network(image, fit: BoxFit.cover),
-                    ImageFiltered(
-                      imageFilter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-                      child: Image.network(
-                        image,
-                        fit: BoxFit.cover,
-                        color: Colors.white.withValues(alpha: 0.18),
-                        colorBlendMode: BlendMode.lighten,
+                  child: Text(
+                    '互相喜欢',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: AppTheme.primary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  '你们已经可以开始聊天了',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w900,
                       ),
-                    ),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            AppTheme.primary.withValues(alpha: 0.18),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '${user.nickname} 先喜欢了你，你刚刚回应了他。',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: AppTheme.textSecondary,
+                        height: 1.55,
+                      ),
+                ),
+                const SizedBox(height: 22),
+                SizedBox(
+                  width: 220,
+                  height: 120,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Transform.translate(
+                        offset: const Offset(-36, 0),
+                        child: AvatarWidget(
+                          imageUrl: currentUserAvatar,
+                          radius: 34,
+                          isOnline: true,
+                        ),
+                      ),
+                      Transform.translate(
+                        offset: const Offset(36, 0),
+                        child: AvatarWidget(
+                          imageUrl: user.avatar,
+                          radius: 34,
+                          isOnline: user.onlineStatus,
+                        ),
+                      ),
+                      Container(
+                        width: 42,
+                        height: 42,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white.withValues(alpha: 0.94),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppTheme.primary.withValues(alpha: 0.14),
+                              blurRadius: 18,
+                              offset: const Offset(0, 8),
+                            ),
                           ],
                         ),
+                        child: const Icon(
+                          Icons.favorite_rounded,
+                          color: AppTheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: onOpenMutual,
+                        child: const Text('看看互相喜欢'),
                       ),
                     ),
-                    Center(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(999),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 26,
-                              vertical: 13,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.3),
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.52),
-                              ),
-                            ),
-                            child: Text(
-                              '点击解锁',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelLarge
-                                  ?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                            ),
-                          ),
-                        ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: GradientButton(
+                        label: '去聊天',
+                        icon: Icons.chat_bubble_rounded,
+                        onPressed: onChat,
                       ),
                     ),
                   ],
                 ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void onTapHint() {}
-}
-
-class _MutualLikeExperience extends StatelessWidget {
-  const _MutualLikeExperience({
-    required this.currentUser,
-    required this.user,
-    required this.currentIndex,
-    required this.total,
-    required this.onChat,
-    required this.onLater,
-  });
-
-  final AppUser? currentUser;
-  final AppUser user;
-  final int currentIndex;
-  final int total;
-  final VoidCallback onChat;
-  final VoidCallback onLater;
-
-  @override
-  Widget build(BuildContext context) {
-    final leftAvatar = currentUser?.avatarOrFallback ?? user.avatarOrFallback;
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(28, 46, 28, 42),
-      child: Column(
-        children: [
-          Text(
-            '互相喜欢',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  fontSize: 34,
-                  fontWeight: FontWeight.w800,
-                ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            '现在你们可以开始聊天了',
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: AppTheme.textSecondary.withValues(alpha: 0.76),
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-          const Spacer(),
-          _MutualConnectionVisual(
-            leftAvatar: leftAvatar,
-            rightAvatar: user.avatarOrFallback,
-          ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              '缘分在此刻开启',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: AppTheme.primary,
-                    fontWeight: FontWeight.w800,
-                  ),
-            ),
-          ),
-          const SizedBox(height: 28),
-          SizedBox(
-            width: double.infinity,
-            child: GradientButton(
-              label: '去聊天',
-              icon: Icons.send_rounded,
-              onPressed: onChat,
-            ),
-          ),
-          const SizedBox(height: 14),
-          TextButton(
-            onPressed: onLater,
-            child: Text(
-              '稍后再说',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppTheme.textSecondary.withValues(alpha: 0.78),
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-          ),
-          if (total > 1) ...[
-            const SizedBox(height: 6),
-            Text(
-              '${currentIndex + 1} / $total',
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: AppTheme.textSecondary.withValues(alpha: 0.74),
-                  ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _MutualConnectionVisual extends StatelessWidget {
-  const _MutualConnectionVisual({
-    required this.leftAvatar,
-    required this.rightAvatar,
-  });
-
-  final String leftAvatar;
-  final String rightAvatar;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 300,
-      height: 210,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Container(
-            width: 260,
-            height: 1.2,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.transparent,
-                  AppTheme.primary.withValues(alpha: 0.36),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-          Container(
-            width: 220,
-            height: 220,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: [
-                  AppTheme.primary.withValues(alpha: 0.12),
-                  Colors.transparent,
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            left: 28,
-            child: _ConnectedAvatar(
-              imageUrl: leftAvatar,
-              angle: -0.06,
-            ),
-          ),
-          Positioned(
-            right: 28,
-            child: _ConnectedAvatar(
-              imageUrl: rightAvatar,
-              angle: 0.06,
-            ),
-          ),
-          Container(
-            width: 82,
-            height: 82,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.white.withValues(alpha: 0.38),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
-              boxShadow: [
-                BoxShadow(
-                  color: AppTheme.primary.withValues(alpha: 0.16),
-                  blurRadius: 24,
-                  offset: const Offset(0, 12),
-                ),
               ],
             ),
-            child: ClipOval(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                child: const Center(
-                  child: Icon(
-                    Icons.favorite_rounded,
-                    size: 34,
-                    color: AppTheme.primary,
-                  ),
-                ),
-              ),
-            ),
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _ConnectedAvatar extends StatelessWidget {
-  const _ConnectedAvatar({
-    required this.imageUrl,
-    required this.angle,
+class _MetaChip extends StatelessWidget {
+  const _MetaChip({
+    required this.icon,
+    required this.label,
+    this.accent = AppTheme.primary,
   });
 
-  final String imageUrl;
-  final double angle;
+  final IconData icon;
+  final String label;
+  final Color accent;
 
   @override
   Widget build(BuildContext context) {
-    return Transform.rotate(
-      angle: angle,
-      child: Container(
-        width: 120,
-        height: 120,
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primary.withValues(alpha: 0.16),
-              blurRadius: 24,
-              offset: const Offset(0, 12),
-            ),
-          ],
-        ),
-        child: ClipOval(
-          child: Image.network(
-            imageUrl,
-            fit: BoxFit.cover,
-          ),
-        ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.8),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppTheme.ghostBorder),
       ),
-    );
-  }
-}
-
-class _FloatingBadge extends StatelessWidget {
-  const _FloatingBadge({
-    required this.size,
-    required this.child,
-  });
-
-  final double size;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipOval(
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-        child: Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white.withValues(alpha: 0.46),
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.primary.withValues(alpha: 0.08),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Center(child: child),
-        ),
-      ),
-    );
-  }
-}
-
-class _EtherealBackdrop extends StatelessWidget {
-  const _EtherealBackdrop();
-
-  @override
-  Widget build(BuildContext context) {
-    return IgnorePointer(
-      child: Stack(
-        fit: StackFit.expand,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Positioned(
-            top: -80,
-            left: -80,
-            child: Container(
-              width: 240,
-              height: 240,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.primary.withValues(alpha: 0.08),
-              ),
-            ),
-          ),
-          Positioned(
-            right: -100,
-            bottom: -90,
-            child: Container(
-              width: 260,
-              height: 260,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppTheme.secondary.withValues(alpha: 0.07),
-              ),
-            ),
-          ),
-          BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 90, sigmaY: 90),
-            child: const SizedBox.expand(),
+          Icon(icon, size: 14, color: accent),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppTheme.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
           ),
         ],
       ),

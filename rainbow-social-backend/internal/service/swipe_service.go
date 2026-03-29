@@ -32,6 +32,7 @@ func NewSwipeService(
 }
 
 func (s *SwipeService) Swipe(userID, targetUserID int64, action string) (bool, error) {
+	_ = s.userRepo.TouchActive(userID)
 	if userID == targetUserID {
 		return false, fmt.Errorf("cannot swipe yourself")
 	}
@@ -71,34 +72,19 @@ func (s *SwipeService) Swipe(userID, targetUserID int64, action string) (bool, e
 }
 
 func (s *SwipeService) Recommendations(userID int64) ([]model.User, error) {
+	_ = s.userRepo.TouchActive(userID)
 	currentUser, err := s.userRepo.GetByID(userID)
 	if err != nil {
 		return nil, err
 	}
 
-	candidates, err := s.userRepo.ListOtherUsers(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	blockedUserIDs, err := s.safetyRepo.GetBlockedUserIDs(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	swipedUserIDs, err := s.swipeRepo.GetSwipedTargetIDs(userID)
+	candidates, err := s.userRepo.ListRecommendationCandidates(userID, 80)
 	if err != nil {
 		return nil, err
 	}
 
 	filtered := make([]model.User, 0)
 	for _, candidate := range candidates {
-		if _, blocked := blockedUserIDs[candidate.ID]; blocked {
-			continue
-		}
-		if _, swiped := swipedUserIDs[candidate.ID]; swiped {
-			continue
-		}
 		candidate.DistanceKM = utils.DistanceKM(currentUser.Lat, currentUser.Lng, candidate.Lat, candidate.Lng)
 		filtered = append(filtered, candidate)
 	}

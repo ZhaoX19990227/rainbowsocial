@@ -121,9 +121,9 @@ class ApiClient {
     try {
       return await request().timeout(ApiConfig.requestTimeout);
     } on TimeoutException {
-      throw const ApiException('连接超时，请检查当前后端地址或网络状态', statusCode: 0);
+      throw const ApiException('连接超时，请检查当前网络状态', statusCode: 0);
     } on SocketException {
-      throw const ApiException('无法连接服务器，请检查当前后端地址或网络状态', statusCode: 0);
+      throw const ApiException('无法连接服务器，请检查当前网络状态', statusCode: 0);
     } on http.ClientException {
       throw const ApiException('请求发送失败，请稍后重试', statusCode: 0);
     }

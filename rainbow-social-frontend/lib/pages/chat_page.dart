@@ -81,6 +81,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(authControllerProvider).valueOrNull;
+    final currentUserAvatar = session?.user.avatar ?? '';
     final roomState = ref.watch(chatControllerProvider(widget.peer));
     ref.listen(chatControllerProvider(widget.peer), (previous, next) {
       final shouldAllowAutoReplay = _hasHydratedHistory;
@@ -116,34 +117,30 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Row(
-          children: [
-            AvatarWidget(
-              imageUrl: widget.peer.avatar,
-              radius: 20,
-              isOnline: widget.peer.onlineStatus,
-            ),
-            const SizedBox(width: 12),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(widget.peer.nickname),
-                Text(
-                  widget.peer.onlineStatus ? '在线' : '最近活跃',
-                  style: Theme.of(context).textTheme.labelMedium,
-                ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            tooltip: '查看 Lune 互动设计稿',
-            onPressed: () =>
-                Navigator.of(context).pushNamed(AppRouter.flirtyDesign),
-            icon: const Icon(Icons.design_services_rounded),
+        title: InkWell(
+          borderRadius: BorderRadius.circular(999),
+          onTap: _openPeerProfile,
+          child: Row(
+            children: [
+              AvatarWidget(
+                imageUrl: widget.peer.avatar,
+                radius: 20,
+                isOnline: widget.peer.onlineStatus,
+              ),
+              const SizedBox(width: 12),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(widget.peer.nickname),
+                  Text(
+                    widget.peer.onlineStatus ? '在线' : '最近活跃',
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                ],
+              ),
+            ],
           ),
-        ],
+        ),
       ),
       body: Stack(
         children: [
@@ -241,6 +238,16 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                                       isMine: message.isMine(
                                         session?.user.id ?? -1,
                                       ),
+                                      avatarUrl: message.isMine(
+                                        session?.user.id ?? -1,
+                                      )
+                                          ? currentUserAvatar
+                                          : widget.peer.avatar,
+                                      onAvatarTap: message.isMine(
+                                        session?.user.id ?? -1,
+                                      )
+                                          ? null
+                                          : _openPeerProfile,
                                       onFlirtyTap: message.isFlirty
                                           ? () => _playFlirtyBurst(
                                                 message,
@@ -278,15 +285,6 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                       ),
                       child: Row(
                         children: [
-                          _ChatCircleButton(
-                            icon: Icons.auto_awesome_rounded,
-                            gradient: const [
-                              AppTheme.primary,
-                              AppTheme.primaryDark,
-                            ],
-                            onTap: _openFlirtyActions,
-                          ),
-                          const SizedBox(width: 8),
                           _ChatCircleButton(
                             icon: Icons.add_rounded,
                             backgroundColor: AppTheme.surfaceHighest,
@@ -452,6 +450,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     setState(() {});
   }
 
+  void _openPeerProfile() {
+    Navigator.of(context).pushNamed(AppRouter.detail, arguments: widget.peer);
+  }
+
   Future<void> _openMediaActions() async {
     final mode = await AppFeedback.showJellySheet<String>(
       context: context,
@@ -483,18 +485,6 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     await ref
         .read(chatControllerProvider(widget.peer).notifier)
         .sendImageMessage(file: picked);
-  }
-
-  Future<void> _openFlirtyActions() async {
-    final action = await AppFeedback.showJellySheet<FlirtyAction>(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => const FlirtyActionPickerSheet(),
-    );
-    if (action == null || !mounted) return;
-    await ref
-        .read(chatControllerProvider(widget.peer).notifier)
-        .sendFlirtyAction(action);
   }
 
   void _playFlirtyBurst(ChatMessageModel message, {bool isReplay = false}) {

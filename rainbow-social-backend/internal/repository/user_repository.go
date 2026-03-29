@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"rainbow-social-backend/internal/model"
@@ -112,6 +113,91 @@ func (r *UserRepository) ListOtherUsers(userID int64) ([]model.User, error) {
 	return scanUsers(rows)
 }
 
+func (r *UserRepository) ListRecommendationCandidates(userID int64, limit int) ([]model.User, error) {
+	if limit <= 0 {
+		limit = 80
+	}
+	activeSince := time.Now().UTC().Add(-5 * time.Minute)
+	rows, err := r.db.Query(`
+		SELECT id, account, email, nickname, avatar, photos, age, height_cm, weight_kg, birthday, zodiac_sign, mbti_type, bio, tags, position_role, lat, lng, location_label, online_status, created_at, last_active_at
+		FROM users u
+		WHERE u.id != ?
+		  AND NOT EXISTS (
+			SELECT 1 FROM swipes s
+			WHERE s.from_user_id = ? AND s.to_user_id = u.id
+		  )
+		  AND NOT EXISTS (
+			SELECT 1 FROM blocks b
+			WHERE (b.blocker_user_id = ? AND b.blocked_user_id = u.id)
+			   OR (b.blocker_user_id = u.id AND b.blocked_user_id = ?)
+		  )
+		ORDER BY CASE WHEN u.online_status = 1 OR u.last_active_at >= ? THEN 1 ELSE 0 END DESC, u.last_active_at DESC
+		LIMIT ?
+	`, userID, userID, userID, userID, activeSince, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanUsers(rows)
+}
+
+func (r *UserRepository) ListNearbyCandidates(
+	userID int64,
+	minAge, maxAge int,
+	onlineOnly bool,
+	tag, mbtiType, zodiacSign string,
+	limit int,
+) ([]model.User, error) {
+	if limit <= 0 {
+		limit = 120
+	}
+	activeSince := time.Now().UTC().Add(-5 * time.Minute)
+	query := `
+		SELECT id, account, email, nickname, avatar, photos, age, height_cm, weight_kg, birthday, zodiac_sign, mbti_type, bio, tags, position_role, lat, lng, location_label, online_status, created_at, last_active_at
+		FROM users u
+		WHERE u.id != ?
+		  AND NOT EXISTS (
+			SELECT 1 FROM blocks b
+			WHERE (b.blocker_user_id = ? AND b.blocked_user_id = u.id)
+			   OR (b.blocker_user_id = u.id AND b.blocked_user_id = ?)
+		  )`
+	args := []any{userID, userID, userID}
+	if minAge > 0 {
+		query += ` AND u.age >= ?`
+		args = append(args, minAge)
+	}
+	if maxAge > 0 {
+		query += ` AND u.age <= ?`
+		args = append(args, maxAge)
+	}
+	if onlineOnly {
+		query += ` AND (u.online_status = 1 OR u.last_active_at >= ?)`
+		args = append(args, activeSince)
+	}
+	if tag != "" {
+		query += ` AND u.tags LIKE ?`
+		args = append(args, fmt.Sprintf("%%%s%%", tag))
+	}
+	if mbtiType != "" {
+		query += ` AND u.mbti_type = ?`
+		args = append(args, mbtiType)
+	}
+	if zodiacSign != "" {
+		query += ` AND u.zodiac_sign = ?`
+		args = append(args, zodiacSign)
+	}
+	query += ` ORDER BY CASE WHEN u.online_status = 1 OR u.last_active_at >= ? THEN 1 ELSE 0 END DESC, u.last_active_at DESC LIMIT ?`
+	args = append(args, activeSince)
+	args = append(args, limit)
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanUsers(rows)
+}
+
 func (r *UserRepository) SetOnlineStatus(userID int64, online bool) error {
 	value := 0
 	if online {
@@ -123,6 +209,15 @@ func (r *UserRepository) SetOnlineStatus(userID int64, online bool) error {
 		SET online_status = ?, last_active_at = ?
 		WHERE id = ?
 	`, value, time.Now().UTC(), userID)
+	return err
+}
+
+func (r *UserRepository) TouchActive(userID int64) error {
+	_, err := r.db.Exec(`
+		UPDATE users
+		SET last_active_at = ?
+		WHERE id = ?
+	`, time.Now().UTC(), userID)
 	return err
 }
 
@@ -190,6 +285,9 @@ func scanUser(scanner interface{ Scan(dest ...any) error }) (*model.User, error)
 	}
 
 	user.OnlineStatus = online == 1
+	if !user.OnlineStatus {
+		user.OnlineStatus = user.LastActiveAt.After(time.Now().UTC().Add(-5 * time.Minute))
+	}
 	user.Photos = decodeTags(photosJSON)
 	user.Tags = decodeTags(tagsJSON)
 	return &user, nil

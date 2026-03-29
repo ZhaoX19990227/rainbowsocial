@@ -32,8 +32,19 @@ class AuthController extends StateNotifier<AsyncValue<AuthSession?>> {
           return null;
         }
         try {
-          final user =
+          final remoteUser =
               await _ref.read(getProfileUseCaseProvider)(savedSession.token);
+          final user = remoteUser.copyWith(
+            statusId: remoteUser.statusId.trim().isEmpty
+                ? savedSession.user.statusId
+                : remoteUser.statusId,
+            statusLabel: remoteUser.statusLabel.trim().isEmpty
+                ? savedSession.user.statusLabel
+                : remoteUser.statusLabel,
+            statusExpiresAt: remoteUser.statusExpiresAt.trim().isEmpty
+                ? savedSession.user.statusExpiresAt
+                : remoteUser.statusExpiresAt,
+          );
           final refreshedSession =
               AuthSession(token: savedSession.token, user: user);
           await _ref.read(saveSessionUseCaseProvider)(refreshedSession);
