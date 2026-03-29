@@ -11,18 +11,12 @@ COPY . .
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/rainbow-social-backend ./main.go
 
-FROM debian:bookworm-slim
-
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates tzdata \
-  && rm -rf /var/lib/apt/lists/*
+FROM gcr.io/distroless/static-debian12
 
 WORKDIR /app
 
 COPY --from=builder /out/rainbow-social-backend /app/rainbow-social-backend
 COPY --from=builder /src/downloads /app/downloads
-
-RUN mkdir -p /data/uploads /app/downloads
 
 ENV APP_ENV=production
 ENV GIN_MODE=release
