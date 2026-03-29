@@ -10,5 +10,4 @@ social_app.db-wal
 uploads
 tmp
 build
-dist
 *.log

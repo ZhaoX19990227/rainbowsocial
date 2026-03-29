@@ -19,11 +19,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: rainbow-social-backend/go.mod
+          cache-dependency-path: rainbow-social-backend/go.sum
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
+
+      - name: Build backend binary
+        working-directory: rainbow-social-backend
+        run: |
+          mkdir -p dist
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/rainbow-social-backend ./main.go
 
       - name: Install frontend dependencies
         working-directory: rainbow-social-frontend
