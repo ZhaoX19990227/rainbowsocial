@@ -42,8 +42,12 @@ jobs:
         run: |
           mkdir -p .artifacts
           tar -czf .artifacts/rainbowsocial-src.tgz \
+            --exclude='rainbow-social-backend/*.db' \
+            --exclude='rainbow-social-backend/*.db-*' \
+            --exclude='rainbow-social-backend/downloads' \
+            --exclude='rainbow-social-backend/tmp' \
+            --exclude='rainbow-social-backend/logs' \
             rainbow-social-backend \
-            rainbow-social-frontend \
             rainbow-share-static \
             deploy
 

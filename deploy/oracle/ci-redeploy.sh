@@ -11,7 +11,6 @@ HEALTHCHECK_URL="${HEALTHCHECK_URL:-}"
 ROLLBACK_NEEDED=0
 DEPLOY_TARGETS=(
   "rainbow-social-backend"
-  "rainbow-social-frontend"
   "rainbow-share-static"
   "deploy"
 )
@@ -69,7 +68,6 @@ detect_layout() {
     LEGACY_LAYOUT=1
     SYNC_PAIRS=(
       "rainbow-social-backend:backend"
-      "rainbow-social-frontend:rainbow-social-frontend"
       "rainbow-share-static:rainbow-share-static"
       "deploy:deploy"
     )
@@ -78,7 +76,6 @@ detect_layout() {
 
   SYNC_PAIRS=(
     "rainbow-social-backend:rainbow-social-backend"
-    "rainbow-social-frontend:rainbow-social-frontend"
     "rainbow-share-static:rainbow-share-static"
     "deploy:deploy"
   )
