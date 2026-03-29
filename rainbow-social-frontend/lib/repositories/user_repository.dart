@@ -9,6 +9,9 @@ class UserRepository {
 
   Future<AppUser> getProfile(String token) => _service.getProfile(token);
 
+  Future<AppUser> getUserById(String token, int userId) =>
+      _service.getUserById(token, userId);
+
   Future<AppUser> updateProfile(String token, AppUser user) =>
       _service.updateProfile(token, user);
 

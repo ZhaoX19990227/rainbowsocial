@@ -13,6 +13,10 @@ final getProfileUseCaseProvider = Provider<GetProfileUseCase>((ref) {
   return GetProfileUseCase(ref.read(userRepositoryProvider));
 });
 
+final getUserByIdUseCaseProvider = Provider<GetUserByIdUseCase>((ref) {
+  return GetUserByIdUseCase(ref.read(userRepositoryProvider));
+});
+
 final updateProfileUseCaseProvider = Provider<UpdateProfileUseCase>((ref) {
   return UpdateProfileUseCase(ref.read(userRepositoryProvider));
 });
@@ -30,6 +34,14 @@ class GetProfileUseCase {
   final UserRepository _repository;
 
   Future<AppUser> call(String token) => _repository.getProfile(token);
+}
+
+class GetUserByIdUseCase {
+  const GetUserByIdUseCase(this._repository);
+  final UserRepository _repository;
+
+  Future<AppUser> call(String token, int userId) =>
+      _repository.getUserById(token, userId);
 }
 
 class UpdateProfileUseCase {

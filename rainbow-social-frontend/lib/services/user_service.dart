@@ -12,6 +12,11 @@ class UserService {
     return AppUser.fromJson(response['data'] as Map<String, dynamic>);
   }
 
+  Future<AppUser> getUserById(String token, int userId) async {
+    final response = await _client.get('/users/$userId', token: token);
+    return AppUser.fromJson(response['data'] as Map<String, dynamic>);
+  }
+
   Future<AppUser> updateProfile(String token, AppUser user) async {
     final response = await _client.put(
       '/user/profile',

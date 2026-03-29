@@ -20,13 +20,15 @@ import 'auth_controller.dart';
 
 final chatThreadsControllerProvider =
     StateNotifierProvider<ChatThreadsController, ChatListState>((ref) {
-  ref.watch(authControllerProvider.select((state) => state.valueOrNull?.user.id));
+  ref.watch(
+      authControllerProvider.select((state) => state.valueOrNull?.user.id));
   return ChatThreadsController(ref);
 });
 
 final chatControllerProvider = StateNotifierProvider.autoDispose
     .family<ChatController, ChatRoomState, AppUser>((ref, peer) {
-  ref.watch(authControllerProvider.select((state) => state.valueOrNull?.user.id));
+  ref.watch(
+      authControllerProvider.select((state) => state.valueOrNull?.user.id));
   return ChatController(ref, peer);
 });
 
@@ -52,7 +54,7 @@ class ChatThreadsController extends StateNotifier<ChatListState> {
     try {
       final threads = await _ref
           .read(getConversationSummariesUseCaseProvider)(session.token);
-      state = ChatListState(threads: threads);
+      state = ChatListState(threads: _sortThreads(threads));
     } catch (error) {
       state = state.copyWith(
         isLoading: false,
@@ -106,7 +108,8 @@ class ChatThreadsController extends StateNotifier<ChatListState> {
     final session = _ref.read(authControllerProvider).valueOrNull;
     if (session == null) return;
     final currentUserId = session.user.id;
-    final peerId = message.fromUser == currentUserId ? message.toUser : message.fromUser;
+    final peerId =
+        message.fromUser == currentUserId ? message.toUser : message.fromUser;
     if (peerId <= 0) return;
 
     final index = state.threads.indexWhere((item) => item.peer.id == peerId);
@@ -159,27 +162,30 @@ class ChatThreadsController extends StateNotifier<ChatListState> {
   }
 
   void deleteThread(ChatThread thread) {
-    final updatedThreads = state.threads
-        .where((item) => item.peer.id != thread.peer.id)
-        .toList();
+    final updatedThreads =
+        state.threads.where((item) => item.peer.id != thread.peer.id).toList();
     state = state.copyWith(threads: updatedThreads, clearError: true);
   }
 
   void deleteThreadsByPeerIds(Set<int> peerIds) {
     if (peerIds.isEmpty) return;
-    final updatedThreads = state.threads
-        .where((item) => !peerIds.contains(item.peer.id))
-        .toList();
+    final updatedThreads =
+        state.threads.where((item) => !peerIds.contains(item.peer.id)).toList();
     state = state.copyWith(threads: updatedThreads, clearError: true);
   }
 
-  Future<void> refreshAfterRead(int peerId) async {
+  Future<void> refreshAfterRead(int peerId, {bool reload = true}) async {
     final updatedThreads = state.threads
         .map((item) =>
             item.peer.id == peerId ? item.copyWith(unreadCount: 0) : item)
         .toList();
-    state = state.copyWith(threads: updatedThreads, clearError: true);
-    await loadThreads();
+    state = state.copyWith(
+      threads: _sortThreads(updatedThreads),
+      clearError: true,
+    );
+    if (reload) {
+      await loadThreads();
+    }
   }
 
   void upsertThreadPreview(
@@ -223,24 +229,22 @@ class ChatThreadsController extends StateNotifier<ChatListState> {
   }) {
     final currentUserId =
         _ref.read(authControllerProvider).valueOrNull?.user.id ?? -1;
-    final updated = state.threads
-        .map((item) {
-          if (item.peer.id != peerId) {
-            return item;
-          }
-          final lastMessage = item.lastMessage;
-          if (lastMessage.fromUser == currentUserId &&
-              lastMessage.toUser == peerId &&
-              !lastMessage.timestamp.isAfter(readAt)) {
-            return item.copyWith(
-              lastMessage: lastMessage.copyWith(
-                deliveryStatus: ChatDeliveryStatus.read,
-              ),
-            );
-          }
-          return item;
-        })
-        .toList();
+    final updated = state.threads.map((item) {
+      if (item.peer.id != peerId) {
+        return item;
+      }
+      final lastMessage = item.lastMessage;
+      if (lastMessage.fromUser == currentUserId &&
+          lastMessage.toUser == peerId &&
+          !lastMessage.timestamp.isAfter(readAt)) {
+        return item.copyWith(
+          lastMessage: lastMessage.copyWith(
+            deliveryStatus: ChatDeliveryStatus.read,
+          ),
+        );
+      }
+      return item;
+    }).toList();
     state = state.copyWith(threads: updated, clearError: true);
   }
 
@@ -249,6 +253,11 @@ class ChatThreadsController extends StateNotifier<ChatListState> {
     sorted.sort((left, right) {
       if (left.isPinned != right.isPinned) {
         return left.isPinned ? -1 : 1;
+      }
+      final leftUnread = left.unreadCount > 0;
+      final rightUnread = right.unreadCount > 0;
+      if (leftUnread != rightUnread) {
+        return leftUnread ? -1 : 1;
       }
       return right.lastMessage.timestamp.compareTo(left.lastMessage.timestamp);
     });
@@ -275,6 +284,7 @@ class ChatController extends StateNotifier<ChatRoomState> {
   final AppUser peer;
   WebSocketChannel? _channel;
   StreamSubscription? _subscription;
+  bool _readSyncInFlight = false;
 
   void _initialize() {
     _loadHistory();
@@ -327,11 +337,17 @@ class ChatController extends StateNotifier<ChatRoomState> {
 
   Future<void> loadMoreHistory() => _loadHistory(loadMore: true);
 
+  Future<void> ensureConversationRead() => _markConversationRead();
+
   Future<void> _markConversationRead() async {
     final session = _ref.read(authControllerProvider).valueOrNull;
-    if (session == null) return;
+    if (session == null || _readSyncInFlight) return;
 
     try {
+      _readSyncInFlight = true;
+      await _ref
+          .read(chatThreadsControllerProvider.notifier)
+          .refreshAfterRead(peer.id, reload: false);
       await _ref.read(markConversationReadUseCaseProvider).call(
             token: session.token,
             peerId: peer.id,
@@ -341,6 +357,8 @@ class ChatController extends StateNotifier<ChatRoomState> {
           .refreshAfterRead(peer.id);
     } catch (_) {
       // Ignore read-state sync failures in the room UI.
+    } finally {
+      _readSyncInFlight = false;
     }
   }
 

@@ -1,0 +1,89 @@
+name: Deploy To Server
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: rainbow-social-backend/go.mod
+
+      - name: Run backend tests
+        working-directory: rainbow-social-backend
+        run: go test ./...
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install frontend dependencies
+        working-directory: rainbow-social-frontend
+        run: flutter pub get
+
+      - name: Analyze frontend
+        working-directory: rainbow-social-frontend
+        run: flutter analyze
+
+      - name: Build frontend web
+        working-directory: rainbow-social-frontend
+        run: flutter build web --release
+
+      - name: Pack source bundle
+        run: |
+          mkdir -p .artifacts
+          tar -czf .artifacts/rainbowsocial-src.tgz \
+            rainbow-social-backend \
+            rainbow-social-frontend \
+            rainbow-share-static \
+            deploy
+
+      - name: Pack web bundle
+        run: |
+          mkdir -p .artifacts
+          tar -czf .artifacts/rainbowsocial-web.tgz \
+            -C rainbow-social-frontend/build/web .
+
+      - name: Copy deploy artifacts
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || '22' }}
+          source: ".artifacts/rainbowsocial-src.tgz,.artifacts/rainbowsocial-web.tgz,deploy/oracle/ci-redeploy.sh"
+          target: "/tmp"
+          overwrite: true
+
+      - name: Deploy on server
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || '22' }}
+          script_stop: true
+          envs: DEPLOY_PATH
+          script: |
+            chmod +x /tmp/deploy/oracle/ci-redeploy.sh
+            DEPLOY_ROOT="${{ secrets.DEPLOY_PATH }}" \
+            REPO_ARCHIVE="/tmp/.artifacts/rainbowsocial-src.tgz" \
+            WEB_ARCHIVE="/tmp/.artifacts/rainbowsocial-web.tgz" \
+            /tmp/deploy/oracle/ci-redeploy.sh

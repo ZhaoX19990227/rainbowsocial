@@ -107,7 +107,8 @@ class _ChatListPageState extends ConsumerState<ChatListPage> {
                 onDiscoverFriends: widget.onDiscoverFriends,
               ),
             ),
-            if (threadsState.errorMessage != null && threadsState.threads.isNotEmpty)
+            if (threadsState.errorMessage != null &&
+                threadsState.threads.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
                 child: Text(
@@ -159,7 +160,8 @@ class _ChatListPageState extends ConsumerState<ChatListPage> {
       _toggleSelection(thread.peer.id);
       return;
     }
-    await Navigator.of(context).pushNamed(AppRouter.chat, arguments: thread.peer);
+    await Navigator.of(context)
+        .pushNamed(AppRouter.chat, arguments: thread.peer);
     if (!mounted) return;
     await ref.read(chatThreadsControllerProvider.notifier).loadThreads();
   }
@@ -357,9 +359,8 @@ class _ChatListBody extends ConsumerWidget {
         subtitle: state.errorMessage!,
         icon: Icons.wifi_off_rounded,
         actionLabel: '重新加载',
-        onAction: () => ref
-            .read(chatThreadsControllerProvider.notifier)
-            .loadThreads(),
+        onAction: () =>
+            ref.read(chatThreadsControllerProvider.notifier).loadThreads(),
       );
     }
 
@@ -505,8 +506,9 @@ class _SwipeableThreadCardState extends State<_SwipeableThreadCard> {
                   ? null
                   : (_) {
                       setState(() {
-                        _dragOffset =
-                            _dragOffset.abs() > _actionWidth * 0.38 ? -_actionWidth : 0;
+                        _dragOffset = _dragOffset.abs() > _actionWidth * 0.38
+                            ? -_actionWidth
+                            : 0;
                       });
                     },
               onTap: widget.isEditing ? widget.onToggleSelection : widget.onTap,
@@ -624,14 +626,18 @@ class _SwipeableThreadCardState extends State<_SwipeableThreadCard> {
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  if (thread.peer.positionRole.trim().isNotEmpty)
-                                    _RoleBadge(role: thread.peer.positionRole.trim()),
+                                  if (thread.peer.positionRole
+                                      .trim()
+                                      .isNotEmpty)
+                                    _RoleBadge(
+                                        role: thread.peer.positionRole.trim()),
                                   if (thread.isPinned) ...[
                                     const SizedBox(width: 6),
                                     Icon(
                                       Icons.push_pin_rounded,
                                       size: 16,
-                                      color: AppTheme.primary.withValues(alpha: 0.68),
+                                      color: AppTheme.primary
+                                          .withValues(alpha: 0.68),
                                     ),
                                   ],
                                 ],
@@ -641,12 +647,18 @@ class _SwipeableThreadCardState extends State<_SwipeableThreadCard> {
                                 _messagePreview(thread.lastMessage),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
                                       color: isUnread
-                                          ? AppTheme.textPrimary.withValues(alpha: 0.84)
-                                          : AppTheme.textSecondary.withValues(alpha: 0.72),
-                                      fontWeight:
-                                          isUnread ? FontWeight.w700 : FontWeight.w500,
+                                          ? AppTheme.textPrimary
+                                              .withValues(alpha: 0.84)
+                                          : AppTheme.textSecondary
+                                              .withValues(alpha: 0.72),
+                                      fontWeight: isUnread
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
                                     ),
                               ),
                             ],
@@ -660,8 +672,12 @@ class _SwipeableThreadCardState extends State<_SwipeableThreadCard> {
                               ChatTimeFormatter.formatThreadTime(
                                 thread.lastMessage.timestamp,
                               ),
-                              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                                    color: AppTheme.textSecondary.withValues(alpha: 0.72),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelMedium
+                                  ?.copyWith(
+                                    color: AppTheme.textSecondary
+                                        .withValues(alpha: 0.72),
                                   ),
                             ),
                             const Spacer(),
@@ -674,19 +690,25 @@ class _SwipeableThreadCardState extends State<_SwipeableThreadCard> {
                                 ),
                                 decoration: BoxDecoration(
                                   gradient: const LinearGradient(
-                                    colors: [AppTheme.primary, AppTheme.primaryDark],
+                                    colors: [
+                                      AppTheme.primary,
+                                      AppTheme.primaryDark
+                                    ],
                                   ),
                                   borderRadius: BorderRadius.circular(999),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: AppTheme.primary.withValues(alpha: 0.28),
+                                      color: AppTheme.primary
+                                          .withValues(alpha: 0.28),
                                       blurRadius: 14,
                                       offset: const Offset(0, 8),
                                     ),
                                   ],
                                 ),
                                 child: Text(
-                                  '${thread.unreadCount}',
+                                  thread.unreadCount > 99
+                                      ? '99+'
+                                      : '${thread.unreadCount}',
                                   textAlign: TextAlign.center,
                                   style: Theme.of(context)
                                       .textTheme
@@ -978,9 +1000,9 @@ class _ChatsEmptyState extends StatelessWidget {
           Text(
             title,
             style: textTheme.headlineSmall?.copyWith(
-                  color: AppTheme.textSecondary.withValues(alpha: 0.88),
-                  fontWeight: FontWeight.w800,
-                ),
+              color: AppTheme.textSecondary.withValues(alpha: 0.88),
+              fontWeight: FontWeight.w800,
+            ),
           ),
           const SizedBox(height: 10),
           DefaultTextStyle(

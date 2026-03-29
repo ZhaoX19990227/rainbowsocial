@@ -48,6 +48,16 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   bool _isStartingRecording = false;
   int _recordingSeconds = 0;
 
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref
+          .read(chatControllerProvider(widget.peer).notifier)
+          .ensureConversationRead();
+    });
+  }
+
   void _scrollToLatest({bool animated = false}) {
     void performScroll() {
       if (!_scrollController.hasClients) return;
@@ -343,6 +353,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                                       AppTheme.primary,
                                       AppTheme.primaryDark,
                                     ],
+                                    onTap: _sendCurrentMessage,
                                     child: roomState.isSending
                                         ? const SizedBox(
                                             width: 18,
@@ -353,7 +364,6 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                                             ),
                                           )
                                         : null,
-                                    onTap: _sendCurrentMessage,
                                   )
                                 : GestureDetector(
                                     key: const ValueKey('record-button'),

@@ -39,6 +39,21 @@ func (h *UserHandler) GetProfile(c *gin.Context) {
 	success(c, user)
 }
 
+func (h *UserHandler) GetUser(c *gin.Context) {
+	userID, err := strconv.ParseInt(c.Param("userID"), 10, 64)
+	if err != nil || userID <= 0 {
+		failure(c, http.StatusBadRequest, "invalid user id")
+		return
+	}
+
+	user, err := h.userService.GetUser(middleware.GetUserID(c), userID)
+	if err != nil {
+		failure(c, http.StatusNotFound, "user not found")
+		return
+	}
+	success(c, user)
+}
+
 func (h *UserHandler) UpdateProfile(c *gin.Context) {
 	var req model.User
 	if err := c.ShouldBindJSON(&req); err != nil {

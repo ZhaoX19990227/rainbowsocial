@@ -18,9 +18,19 @@ import '../services/user_status_catalog.dart';
 import '../services/zodiac_utils.dart';
 import '../theme/app_theme.dart';
 import '../usecases/swipe_usecases.dart';
+import '../usecases/user_usecases.dart';
 import '../widgets/avatar_widget.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/tag_chip.dart';
+
+final userDetailProvider =
+    FutureProvider.autoDispose.family<AppUser, int>((ref, userId) async {
+  final session = ref.read(authControllerProvider).valueOrNull;
+  if (session == null) {
+    throw StateError('未登录，无法加载资料');
+  }
+  return ref.read(getUserByIdUseCaseProvider)(session.token, userId);
+});
 
 class UserDetailPage extends ConsumerStatefulWidget {
   const UserDetailPage({super.key, required this.user});
@@ -35,10 +45,10 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
   late final PageController _photoController;
   int _selectedPhotoIndex = 0;
 
-  List<String> get _galleryPhotos {
+  List<String> _galleryPhotosFor(AppUser user) {
     final result = <String>[];
     final seen = <String>{};
-    for (final photo in [widget.user.avatarOrFallback, ...widget.user.photos]) {
+    for (final photo in [user.avatarOrFallback, ...user.photos]) {
       final normalized = photo.trim();
       if (normalized.isEmpty || seen.contains(normalized)) {
         continue;
@@ -72,7 +82,9 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final user = widget.user;
+    final userAsync = ref.watch(userDetailProvider(widget.user.id));
+    final user = userAsync.valueOrNull ?? widget.user;
+    final galleryPhotos = _galleryPhotosFor(user);
     final summary = ref.watch(matchSummaryControllerProvider).valueOrNull;
     final relation = _UserRelation.fromSummary(summary, user.id);
     final blockStatus = ref.watch(blockStatusProvider(user.id));
@@ -157,15 +169,15 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  DecoratedBox(
+                  const DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          const Color(0xFFFDFCFF),
-                          const Color(0xFFF7F3FF),
-                          const Color(0xFFF8FAFF),
+                          Color(0xFFFDFCFF),
+                          Color(0xFFF7F3FF),
+                          Color(0xFFF8FAFF),
                         ],
                       ),
                     ),
@@ -184,7 +196,7 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                             controller: _photoController,
                             physics: const BouncingScrollPhysics(),
                             allowImplicitScrolling: true,
-                            itemCount: _galleryPhotos.length,
+                            itemCount: galleryPhotos.length,
                             onPageChanged: (index) {
                               setState(() => _selectedPhotoIndex = index);
                             },
@@ -196,9 +208,10 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                                 child: Material(
                                   color: Colors.transparent,
                                   child: InkWell(
-                                    onTap: () => _openFullScreenGallery(index),
+                                    onTap: () =>
+                                        _openFullScreenGallery(user, index),
                                     child: Image.network(
-                                      _galleryPhotos[index],
+                                      galleryPhotos[index],
                                       fit: BoxFit.cover,
                                     ),
                                   ),
@@ -207,7 +220,7 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                             },
                           ),
                         ),
-                        if (_galleryPhotos.length > 1)
+                        if (galleryPhotos.length > 1)
                           Positioned(
                             left: 0,
                             top: 0,
@@ -216,11 +229,12 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                             child: GestureDetector(
                               behavior: HitTestBehavior.translucent,
                               onTap: _selectedPhotoIndex > 0
-                                  ? () => _animateToPhoto(_selectedPhotoIndex - 1)
+                                  ? () =>
+                                      _animateToPhoto(_selectedPhotoIndex - 1)
                                   : null,
                             ),
                           ),
-                        if (_galleryPhotos.length > 1)
+                        if (galleryPhotos.length > 1)
                           Positioned(
                             right: 0,
                             top: 0,
@@ -228,8 +242,10 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                             width: 80,
                             child: GestureDetector(
                               behavior: HitTestBehavior.translucent,
-                              onTap: _selectedPhotoIndex < _galleryPhotos.length - 1
-                                  ? () => _animateToPhoto(_selectedPhotoIndex + 1)
+                              onTap: _selectedPhotoIndex <
+                                      galleryPhotos.length - 1
+                                  ? () =>
+                                      _animateToPhoto(_selectedPhotoIndex + 1)
                                   : null,
                             ),
                           ),
@@ -249,7 +265,7 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                             ),
                           ),
                         ),
-                        if (_galleryPhotos.length > 1)
+                        if (galleryPhotos.length > 1)
                           Positioned(
                             left: 0,
                             right: 0,
@@ -257,21 +273,22 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children:
-                                  List.generate(_galleryPhotos.length, (index) {
+                                  List.generate(galleryPhotos.length, (index) {
                                 final active = index == _selectedPhotoIndex;
                                 return GestureDetector(
                                   onTap: () => _animateToPhoto(index),
                                   child: AnimatedContainer(
                                     duration: const Duration(milliseconds: 180),
-                                    margin:
-                                        const EdgeInsets.symmetric(horizontal: 4),
+                                    margin: const EdgeInsets.symmetric(
+                                        horizontal: 4),
                                     width: active ? 18 : 7,
                                     height: 7,
                                     decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(999),
                                       color: active
                                           ? Colors.white
-                                          : Colors.white.withValues(alpha: 0.42),
+                                          : Colors.white
+                                              .withValues(alpha: 0.42),
                                     ),
                                   ),
                                 );
@@ -330,18 +347,20 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                                               const SizedBox(width: 6),
                                               if (activeStatus.isNotEmpty)
                                                 Container(
-                                                  margin:
-                                                      const EdgeInsets.only(right: 6),
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
+                                                  margin: const EdgeInsets.only(
+                                                      right: 6),
+                                                  padding: const EdgeInsets
+                                                      .symmetric(
                                                     horizontal: 10,
                                                     vertical: 5,
                                                   ),
                                                   decoration: BoxDecoration(
                                                     borderRadius:
-                                                        BorderRadius.circular(999),
+                                                        BorderRadius.circular(
+                                                            999),
                                                     gradient: UserStatusCatalog
-                                                        .gradientFor(user.statusId),
+                                                        .gradientFor(
+                                                            user.statusId),
                                                   ),
                                                   child: Text(
                                                     activeStatus,
@@ -435,11 +454,13 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                         children: [
                           Text(
                             '他的气味',
-                            style:
-                                Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                      color: AppTheme.primary,
-                                    ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: AppTheme.primary,
+                                ),
                           ),
                           const SizedBox(height: 16),
                           Wrap(
@@ -466,17 +487,17 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                                 ),
                               if (user.mbtiType.trim().isNotEmpty)
                                 _InlineInfoChip(
-                                  icon: MbtiCatalog
-                                      .resolve(user.mbtiType.trim())
-                                      .avatarAccent,
+                                  icon:
+                                      MbtiCatalog.resolve(user.mbtiType.trim())
+                                          .avatarAccent,
                                   label: user.mbtiType.trim(),
                                   accent: AppTheme.secondary,
                                 ),
                               if (user.zodiacSign.trim().isNotEmpty)
                                 _InlineInfoChip(
                                   icon: Icons.auto_awesome_rounded,
-                                  label:
-                                      ZodiacUtils.displayName(user.zodiacSign.trim()),
+                                  label: ZodiacUtils.displayName(
+                                      user.zodiacSign.trim()),
                                   accent: AppTheme.tertiary,
                                 ),
                               _InlineInfoChip(
@@ -586,17 +607,17 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                 children: [
                   Expanded(
                     child: FilledButton.icon(
-                      onPressed: relation.isMutual
-                          ? null
-                          : relation.canUndoLike
-                              ? () => _undoLike(user, blockStatus.valueOrNull)
-                              : () => _sendLike(user, blockStatus.valueOrNull),
+                      onPressed: relation.canUndoLike
+                          ? () => _undoLike(user, blockStatus.valueOrNull)
+                          : relation.canSendLike
+                              ? () => _sendLike(user, blockStatus.valueOrNull)
+                              : null,
                       style: FilledButton.styleFrom(
                         backgroundColor: relation.canUndoLike
                             ? const Color(0xFFF5E9F2)
                             : relation.canSendLike
-                            ? const Color(0xFFEAE7F4)
-                            : const Color(0xFFF1EEF8),
+                                ? const Color(0xFFEAE7F4)
+                                : const Color(0xFFF1EEF8),
                         foregroundColor: relation.canUndoLike
                             ? const Color(0xFFB34B83)
                             : AppTheme.primary,
@@ -672,7 +693,7 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
     }
   }
 
-  Future<void> _openFullScreenGallery(int initialIndex) {
+  Future<void> _openFullScreenGallery(AppUser user, int initialIndex) {
     return showGeneralDialog<void>(
       context: context,
       barrierLabel: 'photo-gallery',
@@ -680,9 +701,9 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
       barrierColor: Colors.black.withValues(alpha: 0.92),
       transitionDuration: const Duration(milliseconds: 220),
       pageBuilder: (context, _, __) => _PhotoGalleryViewer(
-        photos: _galleryPhotos,
+        photos: _galleryPhotosFor(user),
         initialIndex: initialIndex,
-        heroUserId: widget.user.id,
+        heroUserId: user.id,
       ),
       transitionBuilder: (context, animation, _, child) {
         return FadeTransition(
@@ -758,9 +779,24 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
     }
   }
 
+  Future<bool> _confirmUndoMutualLike(AppUser user) async {
+    final result = await AppFeedback.showJellyDialog<bool>(
+      context: context,
+      builder: (_) => _ConfirmCancelLikeDialog(user: user),
+    );
+    return result == true;
+  }
+
   Future<void> _undoLike(AppUser user, BlockStatus? status) async {
     if (status?.isBlocked == true) {
       AppFeedback.showToast(_blockedMessage(status!));
+      return;
+    }
+    if (_UserRelation.fromSummary(
+          ref.read(matchSummaryControllerProvider).valueOrNull,
+          user.id,
+        ).isMutual &&
+        !await _confirmUndoMutualLike(user)) {
       return;
     }
     final session = ref.read(authControllerProvider).valueOrNull;
@@ -770,6 +806,7 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
       await ref.read(undoSwipeUseCaseProvider)(session.token, user.id);
       await ref.read(matchesControllerProvider.notifier).load();
       await ref.read(matchSummaryControllerProvider.notifier).load();
+      ref.invalidate(userDetailProvider(user.id));
       if (!mounted) return;
       AppFeedback.showToast('已取消喜欢');
     } catch (error) {
@@ -913,7 +950,7 @@ class _RelationshipUpgradeOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = '互相喜欢';
+    const title = '互相喜欢';
     final body = RelationshipCopy.mutualLike(user.nickname);
 
     return Material(
@@ -1029,8 +1066,8 @@ class _RelationshipUpgradeOverlay extends StatelessWidget {
                                 color: Colors.white.withValues(alpha: 0.86),
                                 boxShadow: [
                                   BoxShadow(
-                                    color:
-                                        AppTheme.primary.withValues(alpha: 0.12),
+                                    color: AppTheme.primary
+                                        .withValues(alpha: 0.12),
                                     blurRadius: 18,
                                     offset: const Offset(0, 8),
                                   ),
@@ -1063,11 +1100,11 @@ class _RelationshipUpgradeOverlay extends StatelessWidget {
                               ),
                             ),
                           ),
-                          Text(
+                          const Text(
                             '❤',
                             style: TextStyle(
                               fontSize: 28,
-                              color: const Color(0xFFF6C5B8),
+                              color: Color(0xFFF6C5B8),
                             ),
                           ),
                         ],
@@ -1136,11 +1173,11 @@ class _UserRelation {
     }
     if (summary.mutual.any((item) => item.user.id == userId)) {
       return const _UserRelation(
-        label: '互相喜欢',
-        subtitle: _mutualSubtitle,
-        likeIcon: Icons.favorite_rounded,
+        label: '取消喜欢',
+        subtitle: _mutualUndoSubtitle,
+        likeIcon: Icons.heart_broken_rounded,
         canSendLike: false,
-        canUndoLike: false,
+        canUndoLike: true,
         isMutual: true,
       );
     }
@@ -1175,8 +1212,8 @@ class _UserRelation {
   }
 }
 
-String _mutualSubtitle(String nickname) =>
-    RelationshipCopy.mutualLike(nickname);
+String _mutualUndoSubtitle(String nickname) =>
+    '你和 $nickname 已经互相喜欢了；如果确认取消，这段连接会一起解除。';
 String _receivedSubtitle(String nickname) => '$nickname 喜欢了你，回个喜欢就可以聊天。';
 String _sentSubtitle(String nickname) => '你已经喜欢了 $nickname，等待对方回应。';
 String _waitingReplySubtitle(String nickname) =>
@@ -1239,6 +1276,97 @@ class _InlineInfoChip extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ConfirmCancelLikeDialog extends StatelessWidget {
+  const _ConfirmCancelLikeDialog({required this.user});
+
+  final AppUser user;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 320,
+      padding: const EdgeInsets.fromLTRB(22, 22, 22, 18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFFFFFFF),
+            Color(0xFFF6F0FF),
+            Color(0xFFFFF4F7),
+          ],
+        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withValues(alpha: 0.14),
+            blurRadius: 28,
+            offset: const Offset(0, 18),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(999),
+              color: const Color(0xFFF2E8FF),
+            ),
+            child: Text(
+              '解除互相喜欢',
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: AppTheme.primary,
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            '确认不再喜欢 ${user.nickname}？',
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '取消后，你们会从互相喜欢里移除，也不能继续直接聊天。',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppTheme.textSecondary,
+                  height: 1.6,
+                ),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: const Text('先保留'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFFD85486),
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('确认取消'),
+                ),
+              ),
+            ],
           ),
         ],
       ),

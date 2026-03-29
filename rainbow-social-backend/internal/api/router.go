@@ -81,6 +81,7 @@ func NewRouter(cfg *config.Config, deps Dependencies) *gin.Engine {
 		protected.POST("/user/location", userHandler.UpdateLocation)
 		protected.GET("/users/list", userHandler.ListUsers)
 		protected.GET("/users/nearby", userHandler.Nearby)
+		protected.GET("/users/:userID", userHandler.GetUser)
 		protected.GET("/horoscope/today", horoscopeHandler.Today)
 		protected.POST("/uploads/image", uploadHandler.UploadImage)
 		protected.POST("/uploads/audio", uploadHandler.UploadAudio)

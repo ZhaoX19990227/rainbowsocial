@@ -24,6 +24,11 @@ func (s *UserService) GetProfile(userID int64) (*model.User, error) {
 	return s.userRepo.GetByID(userID)
 }
 
+func (s *UserService) GetUser(requesterUserID, targetUserID int64) (*model.User, error) {
+	_ = s.userRepo.TouchActive(requesterUserID)
+	return s.userRepo.GetByID(targetUserID)
+}
+
 func (s *UserService) UpdateProfile(userID int64, input model.User) (*model.User, error) {
 	existing, err := s.userRepo.GetByID(userID)
 	if err != nil {

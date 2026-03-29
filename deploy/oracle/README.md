@@ -49,3 +49,29 @@ bash /Users/zhaoxiang/GolandProjects/rainbow/deploy/oracle/deploy-remote.sh
 - This path keeps SQLite data in a Docker volume on the VM, so it survives container restarts.
 - You still need a fixed domain and HTTPS later if you want polished mobile distribution.
 - Oracle VM public IPs are stable only if you keep the reserved/public IP configuration stable in OCI.
+
+## GitHub Actions 自动部署
+
+仓库已经补了 `.github/workflows/deploy.yml`，当你 push 到 `master` 时会自动：
+
+1. 跑后端 `go test ./...`
+2. 跑前端 `flutter analyze`
+3. 构建 Flutter Web
+4. 把代码和 web 构建产物传到服务器
+5. 在服务器上执行 `deploy/oracle/ci-redeploy.sh`
+6. 自动重建并重启 `api`，如果 compose 里有 `web` 也会一起重建
+7. 在 GitHub Actions 里直接看到完整构建和部署日志
+
+你需要在 GitHub 仓库里配置这些 Secrets：
+
+- `DEPLOY_HOST`: 服务器 IP 或域名
+- `DEPLOY_USER`: SSH 用户名
+- `DEPLOY_SSH_KEY`: GitHub Actions 用的私钥
+- `DEPLOY_PORT`: 可选，默认 `22`
+- `DEPLOY_PATH`: 可选，默认 `/opt/rainbowsocial-deploy`
+
+推荐做法：
+
+- 为 GitHub Actions 单独生成一把部署用 SSH key
+- 把公钥追加到服务器用户的 `~/.ssh/authorized_keys`
+- 不要在 Actions 里直接使用 root 密码
