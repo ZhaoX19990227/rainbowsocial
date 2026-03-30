@@ -51,6 +51,7 @@ func migrate(db *sql.DB) error {
 			nickname TEXT NOT NULL,
 			avatar TEXT NOT NULL DEFAULT '',
 			photos TEXT NOT NULL DEFAULT '[]',
+			moments TEXT NOT NULL DEFAULT '[]',
 			age INTEGER NOT NULL DEFAULT 18,
 			height_cm INTEGER NOT NULL DEFAULT 175,
 			weight_kg INTEGER NOT NULL DEFAULT 70,
@@ -122,6 +123,11 @@ func migrate(db *sql.DB) error {
 			type TEXT NOT NULL DEFAULT 'text',
 			media_url TEXT NOT NULL DEFAULT '',
 			duration_seconds INTEGER NOT NULL DEFAULT 0,
+			reply_to_message_id INTEGER NOT NULL DEFAULT 0,
+			reply_to_type TEXT NOT NULL DEFAULT '',
+			reply_to_content TEXT NOT NULL DEFAULT '',
+			reply_to_media_url TEXT NOT NULL DEFAULT '',
+			reply_to_sender_id INTEGER NOT NULL DEFAULT 0,
 			timestamp DATETIME NOT NULL,
 			FOREIGN KEY(from_user_id) REFERENCES users(id) ON DELETE CASCADE,
 			FOREIGN KEY(to_user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -187,6 +193,21 @@ func migrate(db *sql.DB) error {
 	if err := addColumnIfNotExists(db, "messages", "duration_seconds", "INTEGER NOT NULL DEFAULT 0"); err != nil {
 		return err
 	}
+	if err := addColumnIfNotExists(db, "messages", "reply_to_message_id", "INTEGER NOT NULL DEFAULT 0"); err != nil {
+		return err
+	}
+	if err := addColumnIfNotExists(db, "messages", "reply_to_type", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
+	if err := addColumnIfNotExists(db, "messages", "reply_to_content", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
+	if err := addColumnIfNotExists(db, "messages", "reply_to_media_url", "TEXT NOT NULL DEFAULT ''"); err != nil {
+		return err
+	}
+	if err := addColumnIfNotExists(db, "messages", "reply_to_sender_id", "INTEGER NOT NULL DEFAULT 0"); err != nil {
+		return err
+	}
 	if err := addColumnIfNotExists(db, "users", "account", "TEXT NOT NULL DEFAULT ''"); err != nil {
 		return err
 	}
@@ -197,6 +218,9 @@ func migrate(db *sql.DB) error {
 		return err
 	}
 	if err := addColumnIfNotExists(db, "users", "photos", "TEXT NOT NULL DEFAULT '[]'"); err != nil {
+		return err
+	}
+	if err := addColumnIfNotExists(db, "users", "moments", "TEXT NOT NULL DEFAULT '[]'"); err != nil {
 		return err
 	}
 	if err := addColumnIfNotExists(db, "users", "height_cm", "INTEGER NOT NULL DEFAULT 175"); err != nil {

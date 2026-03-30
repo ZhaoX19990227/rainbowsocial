@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"rainbow-social-backend/internal/model"
 	"rainbow-social-backend/internal/repository"
@@ -46,7 +47,11 @@ func (s *UserService) UpdateProfile(userID int64, input model.User) (*model.User
 	existing.Bio = strings.TrimSpace(input.Bio)
 	existing.Tags = sanitizeTags(input.Tags)
 	existing.PositionRole = strings.TrimSpace(input.PositionRole)
+	existing.StatusID = strings.TrimSpace(input.StatusID)
+	existing.StatusLabel = strings.TrimSpace(input.StatusLabel)
+	existing.StatusExpiresAt = strings.TrimSpace(input.StatusExpiresAt)
 	existing.Photos = sanitizePhotos(input.Photos)
+	existing.Moments = sanitizeMoments(input.Moments)
 	existing.Lat = input.Lat
 	existing.Lng = input.Lng
 	existing.LocationLabel = strings.TrimSpace(input.LocationLabel)
@@ -186,6 +191,62 @@ func sanitizePhotos(photos []string) []string {
 		seen[photo] = struct{}{}
 		result = append(result, photo)
 		if len(result) >= 6 {
+			break
+		}
+	}
+	return result
+}
+
+func sanitizeMoments(moments []model.Moment) []model.Moment {
+	result := make([]model.Moment, 0, len(moments))
+	seen := make(map[string]struct{}, len(moments))
+	for _, moment := range moments {
+		moment.ImageURL = strings.TrimSpace(moment.ImageURL)
+		moment.ImageURLs = sanitizeMomentImages(moment.ImageURLs, moment.ImageURL)
+		if len(moment.ImageURLs) > 0 {
+			moment.ImageURL = moment.ImageURLs[0]
+		}
+		moment.Caption = strings.TrimSpace(moment.Caption)
+		moment.LocationLabel = strings.TrimSpace(moment.LocationLabel)
+		if moment.ImageURL == "" {
+			continue
+		}
+		identity := strings.Join(moment.ImageURLs, "|")
+		if _, ok := seen[identity]; ok {
+			continue
+		}
+		seen[identity] = struct{}{}
+		if moment.CreatedAt.IsZero() {
+			moment.CreatedAt = time.Now().UTC()
+		} else {
+			moment.CreatedAt = moment.CreatedAt.UTC()
+		}
+		result = append(result, moment)
+		if len(result) >= 20 {
+			break
+		}
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].CreatedAt.Before(result[j].CreatedAt)
+	})
+	return result
+}
+
+func sanitizeMomentImages(imageURLs []string, fallback string) []string {
+	result := make([]string, 0, len(imageURLs)+1)
+	seen := make(map[string]struct{}, len(imageURLs)+1)
+	for _, candidate := range append(imageURLs, fallback) {
+		candidate = strings.TrimSpace(candidate)
+		if candidate == "" {
+			continue
+		}
+		if _, ok := seen[candidate]; ok {
+			continue
+		}
+		seen[candidate] = struct{}{}
+		result = append(result, candidate)
+		if len(result) >= 9 {
 			break
 		}
 	}

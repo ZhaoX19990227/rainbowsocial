@@ -18,8 +18,7 @@ class UserGridCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final heroImage =
-        user.photos.isNotEmpty ? user.photos.first : user.avatarOrFallback;
+    final heroImage = user.avatarOrFallback;
     final title = user.nickname.trim().isEmpty ? '未命名用户' : user.nickname.trim();
 
     return GestureDetector(

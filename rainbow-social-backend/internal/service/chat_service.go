@@ -30,7 +30,12 @@ func NewChatService(
 	}
 }
 
-func (s *ChatService) SaveMessage(fromUserID, toUserID int64, content, messageType, clientMessageID, mediaURL string, durationSeconds int) (*model.ChatMessage, error) {
+func (s *ChatService) SaveMessage(
+	fromUserID, toUserID int64,
+	content, messageType, clientMessageID, mediaURL string,
+	durationSeconds int,
+	replyToMessageID int64,
+) (*model.ChatMessage, error) {
 	content = strings.TrimSpace(content)
 	mediaURL = strings.TrimSpace(mediaURL)
 	if content == "" && mediaURL == "" {
@@ -72,14 +77,35 @@ func (s *ChatService) SaveMessage(fromUserID, toUserID int64, content, messageTy
 		return nil, fmt.Errorf("对方当前不可见，暂时无法聊天")
 	}
 
+	var replyPreview *model.ChatReplyPreview
+	if replyToMessageID > 0 {
+		target, err := s.chatRepo.GetMessageByID(replyToMessageID)
+		if err != nil {
+			return nil, fmt.Errorf("引用的消息不存在")
+		}
+		if !belongsToConversation(target, fromUserID, toUserID) {
+			return nil, fmt.Errorf("只能引用当前聊天中的消息")
+		}
+		replyPreview = &model.ChatReplyPreview{
+			MessageID:       target.ID,
+			ClientMessageID: target.ClientMessageID,
+			FromUser:        target.FromUser,
+			Type:            target.Type,
+			Content:         quotedPreviewContent(target),
+			MediaURL:        target.MediaURL,
+		}
+	}
+
 	message := model.ChatMessage{
-		ClientMessageID: clientMessageID,
-		FromUser:        fromUserID,
-		ToUser:          toUserID,
-		Content:         content,
-		Type:            messageType,
-		MediaURL:        mediaURL,
-		DurationSeconds: durationSeconds,
+		ClientMessageID:  clientMessageID,
+		FromUser:         fromUserID,
+		ToUser:           toUserID,
+		Content:          content,
+		Type:             messageType,
+		MediaURL:         mediaURL,
+		DurationSeconds:  durationSeconds,
+		ReplyToMessageID: replyToMessageID,
+		ReplyPreview:     replyPreview,
 	}
 	return s.chatRepo.SaveMessage(message)
 }
@@ -148,4 +174,32 @@ func (s *ChatService) validateConversationAccess(userID, peerUserID int64) error
 	}
 
 	return nil
+}
+
+func belongsToConversation(message *model.ChatMessage, userID, peerUserID int64) bool {
+	return (message.FromUser == userID && message.ToUser == peerUserID) ||
+		(message.FromUser == peerUserID && message.ToUser == userID)
+}
+
+func quotedPreviewContent(message *model.ChatMessage) string {
+	switch message.Type {
+	case "image":
+		if strings.TrimSpace(message.Content) != "" {
+			return strings.TrimSpace(message.Content)
+		}
+		return "[图片]"
+	case "flash_image":
+		return "[闪照]"
+	case "audio":
+		return "[语音]"
+	case "video":
+		return "[视频]"
+	case "flirt":
+		if strings.TrimSpace(message.Content) != "" {
+			return strings.TrimSpace(message.Content)
+		}
+		return "[心动动作]"
+	default:
+		return strings.TrimSpace(message.Content)
+	}
 }

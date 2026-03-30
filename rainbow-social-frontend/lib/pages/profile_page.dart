@@ -11,6 +11,7 @@ import '../controllers/profile_controller.dart';
 import '../models/app_user.dart';
 import '../models/match_summary.dart';
 import '../routes/app_router.dart';
+import '../providers/app_providers.dart';
 import '../services/api_config.dart';
 import '../services/app_feedback.dart';
 import '../services/mbti_catalog.dart';
@@ -136,35 +137,95 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     );
     if (source == null) return;
 
-    final picked = await _picker.pickImage(
-      source: source,
-      imageQuality: 88,
-      maxWidth: 1800,
-    );
-    if (picked == null) return;
+    final List<XFile> pickedFiles;
+    if (source == ImageSource.gallery) {
+      pickedFiles = await _picker.pickMultiImage(
+        imageQuality: 88,
+        maxWidth: 1800,
+      );
+    } else {
+      final captured = await _picker.pickImage(
+        source: source,
+        imageQuality: 88,
+        maxWidth: 1800,
+      );
+      pickedFiles = captured == null ? <XFile>[] : <XFile>[captured];
+    }
+    if (pickedFiles.isEmpty) return;
+
+    final draft = await _collectMomentDraft();
+    if (!mounted || draft == null) return;
+    final momentLocation = await _resolveMomentLocation(profile);
+    if (!mounted) return;
 
     setState(() => _uploadingMoment = true);
     try {
-      final rawUrl = await ref.read(uploadImageUseCaseProvider).call(
-            token: session.token,
-            file: picked,
-          );
-      final uploadedUrl =
-          rawUrl.startsWith('http') ? rawUrl : '${ApiConfig.baseUrl}$rawUrl';
+      final uploadedUrls = <String>[];
+      for (final file in pickedFiles) {
+        final rawUrl = await ref.read(uploadImageUseCaseProvider).call(
+              token: session.token,
+              file: file,
+            );
+        uploadedUrls.add(
+          rawUrl.startsWith('http') ? rawUrl : '${ApiConfig.baseUrl}$rawUrl',
+        );
+      }
       final normalizedPhotos = [
         ...profile.photos.where((item) => item.trim().isNotEmpty),
-        uploadedUrl,
+        ...uploadedUrls,
       ];
-      final updated = profile.copyWith(photos: normalizedPhotos);
+      final normalizedMoments = [
+        ...profile.moments.where((item) => item.imageUrl.trim().isNotEmpty),
+        AppMoment(
+          imageUrl: uploadedUrls.first,
+          imageUrls: uploadedUrls,
+          caption: draft.caption,
+          locationLabel: momentLocation,
+          createdAt: DateTime.now(),
+        ),
+      ];
+      final updated = profile.copyWith(
+        photos: normalizedPhotos,
+        moments: normalizedMoments,
+      );
       await ref.read(profileControllerProvider.notifier).save(updated);
       if (!mounted) return;
-      AppFeedback.showToast('内容已上传');
+      AppFeedback.showToast(
+        uploadedUrls.length > 1 ? '动态已发布' : '内容已上传',
+      );
     } catch (error) {
       AppFeedback.showError('上传失败：$error');
     } finally {
       if (mounted) {
         setState(() => _uploadingMoment = false);
       }
+    }
+  }
+
+  Future<_MomentDraft?> _collectMomentDraft() {
+    return AppFeedback.showJellyDialog<_MomentDraft>(
+      context: context,
+      builder: (dialogContext) => _MomentDraftDialog(
+        onCancel: () => Navigator.of(dialogContext).pop(),
+        onSubmit: (draft) => Navigator.of(dialogContext).pop(draft),
+      ),
+    );
+  }
+
+  Future<String> _resolveMomentLocation(AppUser profile) async {
+    final existing = profile.locationLabel.trim();
+    if (existing.isNotEmpty) {
+      return existing;
+    }
+    try {
+      final position = await ref.read(locationServiceProvider).getCurrentPosition();
+      return (await ref.read(locationLabelServiceProvider).getLocationLabel(
+            lat: position.latitude,
+            lng: position.longitude,
+          ))
+          .trim();
+    } catch (_) {
+      return '';
     }
   }
 
@@ -780,10 +841,7 @@ class _MomentsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final moments = user.photos
-        .where((photo) =>
-            photo.trim().isNotEmpty && photo.trim() != user.avatar.trim())
-        .toList();
+    final moments = user.timelineMoments;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -813,9 +871,8 @@ class _MomentsSection extends StatelessWidget {
               return SizedBox(
                 width: 128,
                 child: _MomentPhotoCard(
-                  imageUrl: moments[index],
+                  moment: moments[index],
                   aspectRatio: 0.76,
-                  emptyLabel: 'MOMENT',
                 ),
               );
             },
@@ -943,18 +1000,16 @@ class _SectionHeader extends StatelessWidget {
 
 class _MomentPhotoCard extends StatelessWidget {
   const _MomentPhotoCard({
-    required this.imageUrl,
+    required this.moment,
     required this.aspectRatio,
-    this.emptyLabel,
   });
 
-  final String? imageUrl;
+  final AppMoment moment;
   final double aspectRatio;
-  final String? emptyLabel;
 
   @override
   Widget build(BuildContext context) {
-    final hasImage = imageUrl != null && imageUrl!.trim().isNotEmpty;
+    final hasImage = moment.imageUrl.trim().isNotEmpty;
 
     return AspectRatio(
       aspectRatio: aspectRatio,
@@ -985,25 +1040,200 @@ class _MomentPhotoCard extends StatelessWidget {
                 fit: StackFit.expand,
                 children: [
                   Image.network(
-                    imageUrl!,
+                    moment.imageUrl,
                     fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) =>
-                        _MomentFallback(emptyLabel: emptyLabel),
+                    errorBuilder: (_, __, ___) => const _MomentFallback(),
                   ),
+                  if (moment.caption.trim().isNotEmpty ||
+                      moment.locationLabel.trim().isNotEmpty)
+                    Positioned(
+                      left: 10,
+                      right: 10,
+                      bottom: 10,
+                      child: Container(
+                        padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.34),
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (moment.caption.trim().isNotEmpty)
+                              Text(
+                                moment.caption.trim(),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelMedium
+                                    ?.copyWith(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      height: 1.25,
+                                    ),
+                              ),
+                            if (moment.locationLabel.trim().isNotEmpty) ...[
+                              const SizedBox(height: 6),
+                              Align(
+                                alignment: Alignment.centerRight,
+                                child: Text(
+                                  moment.locationLabel.trim(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelSmall
+                                      ?.copyWith(
+                                        color: Colors.white.withValues(alpha: 0.9),
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (moment.createdAt != null)
+                    Positioned(
+                      left: 12,
+                      top: 12,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.82),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          _MomentTimeFormatter.shortDate(moment.createdAt!),
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                fontWeight: FontWeight.w800,
+                                color: AppTheme.textPrimary,
+                              ),
+                        ),
+                      ),
+                    ),
                 ],
               )
-            : _MomentFallback(emptyLabel: emptyLabel),
+            : const _MomentFallback(),
+      ),
+    );
+  }
+}
+
+class _MomentDraft {
+  const _MomentDraft({
+    required this.caption,
+  });
+
+  final String caption;
+}
+
+class _MomentDraftDialog extends StatefulWidget {
+  const _MomentDraftDialog({
+    required this.onCancel,
+    required this.onSubmit,
+  });
+
+  final VoidCallback onCancel;
+  final ValueChanged<_MomentDraft> onSubmit;
+
+  @override
+  State<_MomentDraftDialog> createState() => _MomentDraftDialogState();
+}
+
+class _MomentDraftDialogState extends State<_MomentDraftDialog> {
+  late final TextEditingController _captionController;
+
+  @override
+  void initState() {
+    super.initState();
+    _captionController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _captionController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: AnimatedPadding(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 420),
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 18),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.96),
+            borderRadius: BorderRadius.circular(30),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '把这一刻留给会心动的人',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                ),
+                const SizedBox(height: 6),
+                const SizedBox(height: 18),
+                TextField(
+                  controller: _captionController,
+                  maxLines: 3,
+                  minLines: 2,
+                  maxLength: 80,
+                  decoration: const InputDecoration(
+                    labelText: '想让他先读到哪一句',
+                    hintText: '可选，比如 今晚的风，刚好吹得人想见面',
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: widget.onCancel,
+                      child: const Text('取消'),
+                    ),
+                    const Spacer(),
+                    FilledButton(
+                      onPressed: () {
+                        widget.onSubmit(
+                          _MomentDraft(
+                            caption: _captionController.text.trim(),
+                          ),
+                        );
+                      },
+                      child: const Text('发布动态'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 }
 
 class _MomentFallback extends StatelessWidget {
-  const _MomentFallback({
-    this.emptyLabel,
-  });
-
-  final String? emptyLabel;
+  const _MomentFallback();
 
   @override
   Widget build(BuildContext context) {
@@ -1024,7 +1254,7 @@ class _MomentFallback extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              emptyLabel ?? 'MOMENT',
+              'MOMENT',
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: const Color(0xFFC9A884),
                     letterSpacing: 2,
@@ -1035,6 +1265,15 @@ class _MomentFallback extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _MomentTimeFormatter {
+  static String shortDate(DateTime value) {
+    final local = value.toLocal();
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    return '$month.$day';
   }
 }
 
@@ -1092,89 +1331,6 @@ class _MomentUploadCard extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SocialStatCard extends StatelessWidget {
-  const _SocialStatCard({
-    required this.data,
-    required this.summary,
-  });
-
-  final _SocialStatData data;
-  final MatchSummary summary;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(28),
-      onTap: () {
-        Navigator.of(context).pushNamed(
-          AppRouter.likesOverview,
-          arguments: LikesOverviewArgs(
-            type: data.type,
-            summary: summary,
-          ),
-        );
-      },
-      child: Ink(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.white.withValues(alpha: 0.92),
-              const Color(0xFFF8F5FF).withValues(alpha: 0.9),
-            ],
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.primary.withValues(alpha: 0.08),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Container(
-              width: 46,
-              height: 46,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                gradient: data.accent,
-              ),
-              child: Icon(
-                data.icon,
-                color: data.iconColor,
-                size: 22,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              '${data.value}',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: data.type == LikeOverviewType.mutual
-                        ? AppTheme.primary
-                        : AppTheme.textPrimary,
-                  ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              data.label,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: AppTheme.textSecondary.withValues(alpha: 0.75),
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-          ],
         ),
       ),
     );
@@ -1387,22 +1543,4 @@ class _HeroChipData {
 
   final String label;
   final bool highlighted;
-}
-
-class _SocialStatData {
-  const _SocialStatData({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.accent,
-    required this.iconColor,
-    required this.type,
-  });
-
-  final String label;
-  final int value;
-  final IconData icon;
-  final Gradient accent;
-  final Color iconColor;
-  final LikeOverviewType type;
 }

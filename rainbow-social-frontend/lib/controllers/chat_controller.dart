@@ -40,6 +40,7 @@ class ChatThreadsController extends StateNotifier<ChatListState> {
   }
 
   final Ref _ref;
+  final Map<int, DateTime> _localReadCuts = <int, DateTime>{};
   WebSocketChannel? _channel;
   StreamSubscription? _subscription;
 
@@ -54,7 +55,7 @@ class ChatThreadsController extends StateNotifier<ChatListState> {
     try {
       final threads = await _ref
           .read(getConversationSummariesUseCaseProvider)(session.token);
-      state = ChatListState(threads: _sortThreads(threads));
+      state = ChatListState(threads: _sortThreads(_mergeLocalReadCuts(threads)));
     } catch (error) {
       state = state.copyWith(
         isLoading: false,
@@ -175,6 +176,7 @@ class ChatThreadsController extends StateNotifier<ChatListState> {
   }
 
   Future<void> refreshAfterRead(int peerId, {bool reload = true}) async {
+    _localReadCuts[peerId] = DateTime.now();
     final updatedThreads = state.threads
         .map((item) =>
             item.peer.id == peerId ? item.copyWith(unreadCount: 0) : item)
@@ -210,9 +212,13 @@ class ChatThreadsController extends StateNotifier<ChatListState> {
     }
 
     final current = state.threads[index];
+    final readCut = _localReadCuts[peer.id];
+    final shouldKeepRead = readCut != null &&
+        message.fromUser == peer.id &&
+        !message.timestamp.isAfter(readCut);
     final updated = current.copyWith(
       lastMessage: message.copyWith(status: ChatMessageStatus.sent),
-      unreadCount: resetUnread
+      unreadCount: resetUnread || shouldKeepRead
           ? 0
           : incrementUnread
               ? current.unreadCount + 1
@@ -227,6 +233,7 @@ class ChatThreadsController extends StateNotifier<ChatListState> {
     required int peerId,
     required DateTime readAt,
   }) {
+    _localReadCuts[peerId] = readAt;
     final currentUserId =
         _ref.read(authControllerProvider).valueOrNull?.user.id ?? -1;
     final updated = state.threads.map((item) {
@@ -262,6 +269,24 @@ class ChatThreadsController extends StateNotifier<ChatListState> {
       return right.lastMessage.timestamp.compareTo(left.lastMessage.timestamp);
     });
     return sorted;
+  }
+
+  List<ChatThread> _mergeLocalReadCuts(List<ChatThread> threads) {
+    return threads.map((thread) {
+      final readCut = _localReadCuts[thread.peer.id];
+      if (readCut == null) {
+        return thread;
+      }
+      final lastMessage = thread.lastMessage;
+      final shouldSuppressUnread =
+          lastMessage.fromUser == thread.peer.id &&
+              !lastMessage.timestamp.isAfter(readCut);
+      if (!shouldSuppressUnread) {
+        _localReadCuts.remove(thread.peer.id);
+        return thread;
+      }
+      return thread.copyWith(unreadCount: 0);
+    }).toList(growable: false);
   }
 
   @override
@@ -338,6 +363,17 @@ class ChatController extends StateNotifier<ChatRoomState> {
   Future<void> loadMoreHistory() => _loadHistory(loadMore: true);
 
   Future<void> ensureConversationRead() => _markConversationRead();
+
+  void startReply(ChatMessageModel message) {
+    state = state.copyWith(
+      replyingTo: message,
+      clearError: true,
+    );
+  }
+
+  void clearReply() {
+    state = state.copyWith(clearReplyingTo: true, clearError: true);
+  }
 
   Future<void> _markConversationRead() async {
     final session = _ref.read(authControllerProvider).valueOrNull;
@@ -550,6 +586,8 @@ class ChatController extends StateNotifier<ChatRoomState> {
       content: text,
       type: 'text',
       timestamp: DateTime.now(),
+      replyToMessageId: state.replyingTo?.id ?? 0,
+      replyPreview: _buildReplyPreview(state.replyingTo),
       status: ChatMessageStatus.sending,
     );
 
@@ -557,6 +595,7 @@ class ChatController extends StateNotifier<ChatRoomState> {
       messages: [...state.messages, optimisticMessage]
         ..sort((left, right) => left.timestamp.compareTo(right.timestamp)),
       sendingCount: state.sendingCount + 1,
+      clearReplyingTo: true,
       clearError: true,
     );
     _ref.read(chatThreadsControllerProvider.notifier).upsertThreadPreview(
@@ -586,6 +625,8 @@ class ChatController extends StateNotifier<ChatRoomState> {
       mediaUrl: '',
       localFilePath: file.path,
       durationSeconds: durationSeconds,
+      replyToMessageId: state.replyingTo?.id ?? 0,
+      replyPreview: _buildReplyPreview(state.replyingTo),
       status: ChatMessageStatus.sending,
     );
 
@@ -593,6 +634,7 @@ class ChatController extends StateNotifier<ChatRoomState> {
       messages: [...state.messages, optimisticMessage]
         ..sort((left, right) => left.timestamp.compareTo(right.timestamp)),
       sendingCount: state.sendingCount + 1,
+      clearReplyingTo: true,
       clearError: true,
     );
     _ref.read(chatThreadsControllerProvider.notifier).upsertThreadPreview(
@@ -648,6 +690,8 @@ class ChatController extends StateNotifier<ChatRoomState> {
       timestamp: DateTime.now(),
       mediaUrl: '',
       localFilePath: file.path,
+      replyToMessageId: state.replyingTo?.id ?? 0,
+      replyPreview: _buildReplyPreview(state.replyingTo),
       status: ChatMessageStatus.sending,
     );
 
@@ -655,6 +699,7 @@ class ChatController extends StateNotifier<ChatRoomState> {
       messages: [...state.messages, optimisticMessage]
         ..sort((left, right) => left.timestamp.compareTo(right.timestamp)),
       sendingCount: state.sendingCount + 1,
+      clearReplyingTo: true,
       clearError: true,
     );
     _ref.read(chatThreadsControllerProvider.notifier).upsertThreadPreview(
@@ -709,6 +754,8 @@ class ChatController extends StateNotifier<ChatRoomState> {
       timestamp: DateTime.now(),
       mediaUrl: '',
       localFilePath: file.path,
+      replyToMessageId: state.replyingTo?.id ?? 0,
+      replyPreview: _buildReplyPreview(state.replyingTo),
       status: ChatMessageStatus.sending,
     );
 
@@ -716,6 +763,7 @@ class ChatController extends StateNotifier<ChatRoomState> {
       messages: [...state.messages, optimisticMessage]
         ..sort((left, right) => left.timestamp.compareTo(right.timestamp)),
       sendingCount: state.sendingCount + 1,
+      clearReplyingTo: true,
       clearError: true,
     );
     _ref.read(chatThreadsControllerProvider.notifier).upsertThreadPreview(
@@ -767,6 +815,8 @@ class ChatController extends StateNotifier<ChatRoomState> {
       type: 'flirt',
       timestamp: DateTime.now(),
       mediaUrl: action.id,
+      replyToMessageId: state.replyingTo?.id ?? 0,
+      replyPreview: _buildReplyPreview(state.replyingTo),
       status: ChatMessageStatus.sending,
     );
 
@@ -774,6 +824,7 @@ class ChatController extends StateNotifier<ChatRoomState> {
       messages: [...state.messages, optimisticMessage]
         ..sort((left, right) => left.timestamp.compareTo(right.timestamp)),
       sendingCount: state.sendingCount + 1,
+      clearReplyingTo: true,
       clearError: true,
     );
     _ref.read(chatThreadsControllerProvider.notifier).upsertThreadPreview(
@@ -828,6 +879,7 @@ class ChatController extends StateNotifier<ChatRoomState> {
               type: message.type,
               mediaUrl: message.mediaUrl,
               durationSeconds: message.durationSeconds,
+              replyToMessageId: message.replyToMessageId,
             ),
       );
     } catch (error) {
@@ -850,6 +902,35 @@ class ChatController extends StateNotifier<ChatRoomState> {
   String _buildClientMessageId() {
     final userId = _ref.read(authControllerProvider).valueOrNull?.user.id ?? 0;
     return '${userId}_${peer.id}_${DateTime.now().microsecondsSinceEpoch}';
+  }
+
+  ChatReplyPreview? _buildReplyPreview(ChatMessageModel? message) {
+    if (message == null) return null;
+    return ChatReplyPreview(
+      messageId: message.id,
+      clientMessageId: message.clientMessageId,
+      fromUser: message.fromUser,
+      type: message.type,
+      content: _quotedPreviewContent(message),
+      mediaUrl: message.mediaUrl,
+    );
+  }
+
+  String _quotedPreviewContent(ChatMessageModel message) {
+    switch (message.type) {
+      case 'image':
+        return message.content.trim().isEmpty ? '[图片]' : message.content.trim();
+      case 'flash_image':
+        return '[闪照]';
+      case 'audio':
+        return '[语音]';
+      case 'video':
+        return '[视频]';
+      case 'flirt':
+        return message.content.trim().isEmpty ? '[心动动作]' : message.content.trim();
+      default:
+        return message.content.trim();
+    }
   }
 
   List<ChatMessageModel> _dedupeMessages(List<ChatMessageModel> items) {

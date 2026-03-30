@@ -77,6 +77,7 @@ class ChatService {
     String type = 'text',
     String mediaUrl = '',
     int durationSeconds = 0,
+    int replyToMessageId = 0,
   }) {
     return jsonEncode({
       'client_message_id': clientMessageId,
@@ -85,6 +86,7 @@ class ChatService {
       'type': type,
       'media_url': mediaUrl,
       'duration_seconds': durationSeconds,
+      'reply_to_message_id': replyToMessageId,
     });
   }
 }

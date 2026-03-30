@@ -101,6 +101,7 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
             fallback: user.statusLabel.trim(),
           )
         : '';
+    final moments = user.timelineMoments;
 
     return Scaffold(
       body: CustomScrollView(
@@ -445,6 +446,17 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  _MomentsTimelineSection(
+                    user: user,
+                    moments: moments,
+                    onOpenMoment: (momentIndex, imageIndex) =>
+                        _openMomentGallery(
+                      moments,
+                      momentIndex: momentIndex,
+                      imageIndex: imageIndex,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
                   GlassCard(
                     borderRadius: BorderRadius.circular(34),
                     child: Padding(
@@ -479,12 +491,6 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                                 icon: Icons.monitor_weight_outlined,
                                 label: '${user.weightKg} kg',
                               ),
-                              if (user.positionRole.trim().isNotEmpty)
-                                _InlineInfoChip(
-                                  icon: Icons.bolt_rounded,
-                                  label: user.positionRole.trim(),
-                                  accent: AppTheme.primaryDark,
-                                ),
                               if (user.mbtiType.trim().isNotEmpty)
                                 _InlineInfoChip(
                                   icon:
@@ -500,11 +506,6 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
                                       user.zodiacSign.trim()),
                                   accent: AppTheme.tertiary,
                                 ),
-                              _InlineInfoChip(
-                                icon: Icons.location_on_outlined,
-                                label: locationText,
-                                accent: AppTheme.primary,
-                              ),
                             ],
                           ),
                           if (user.tags.isNotEmpty) ...[
@@ -717,6 +718,44 @@ class _UserDetailPageState extends ConsumerState<UserDetailPage> {
     );
   }
 
+  Future<void> _openMomentGallery(
+    List<AppMoment> moments, {
+    required int momentIndex,
+    required int imageIndex,
+  }) {
+    final safeMomentIndex =
+        momentIndex < 0 || momentIndex >= moments.length ? 0 : momentIndex;
+    final moment = moments[safeMomentIndex];
+    final images = moment.resolvedImageUrls;
+    if (images.isEmpty) {
+      return Future.value();
+    }
+    final safeImageIndex =
+        imageIndex < 0 || imageIndex >= images.length ? 0 : imageIndex;
+
+    return showGeneralDialog<void>(
+      context: context,
+      barrierLabel: 'moment-gallery',
+      barrierDismissible: true,
+      barrierColor: Colors.black.withValues(alpha: 0.94),
+      transitionDuration: const Duration(milliseconds: 220),
+      pageBuilder: (context, _, __) => _MomentGalleryViewer(
+        images: images,
+        initialIndex: safeImageIndex,
+        moment: moment,
+      ),
+      transitionBuilder: (context, animation, _, child) {
+        return FadeTransition(
+          opacity: CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutCubic,
+          ),
+          child: child,
+        );
+      },
+    );
+  }
+
   Future<void> _sendLike(AppUser user, BlockStatus? status) async {
     if (status?.isBlocked == true) {
       AppFeedback.showToast(_blockedMessage(status!));
@@ -903,6 +942,524 @@ class _PhotoGalleryViewerState extends State<_PhotoGalleryViewer> {
         ],
       ),
     );
+  }
+}
+
+class _MomentsTimelineSection extends StatelessWidget {
+  const _MomentsTimelineSection({
+    required this.user,
+    required this.moments,
+    required this.onOpenMoment,
+  });
+
+  final AppUser user;
+  final List<AppMoment> moments;
+  final void Function(int momentIndex, int imageIndex) onOpenMoment;
+
+  @override
+  Widget build(BuildContext context) {
+    if (moments.isEmpty) {
+      return GlassCard(
+        borderRadius: BorderRadius.circular(34),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(22, 22, 22, 22),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '他的动态',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '他还没把这一面给别人看。',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppTheme.textSecondary,
+                      height: 1.55,
+                    ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return GlassCard(
+      borderRadius: BorderRadius.circular(34),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(22, 22, 22, 22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '他的瞬间',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '往左翻一点，也许会看到他更让人上头的模样。',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppTheme.textSecondary,
+                    height: 1.5,
+                  ),
+            ),
+            const SizedBox(height: 18),
+            SizedBox(
+              height: 392,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                itemCount: moments.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 16),
+                itemBuilder: (context, index) {
+                  return SizedBox(
+                    width: 304,
+                    child: _MomentTimelineCard(
+                      moment: moments[index],
+                      onOpenMoment: (imageIndex) =>
+                          onOpenMoment(index, imageIndex),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MomentTimelineCard extends StatelessWidget {
+  const _MomentTimelineCard({
+    required this.moment,
+    required this.onOpenMoment,
+  });
+
+  final AppMoment moment;
+  final ValueChanged<int> onOpenMoment;
+
+  @override
+  Widget build(BuildContext context) {
+    final images = moment.resolvedImageUrls;
+    final hasCaption = moment.caption.trim().isNotEmpty;
+    final hasLocation = moment.locationLabel.trim().isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(30),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white.withValues(alpha: 0.95),
+            const Color(0xFFF7F2FF).withValues(alpha: 0.92),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppTheme.primary.withValues(alpha: 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (hasCaption)
+            Text(
+              moment.caption.trim(),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    height: 1.35,
+                  ),
+            ),
+          if (hasCaption && hasLocation) const SizedBox(height: 8),
+          if (hasLocation)
+            Align(
+              alignment: Alignment.centerRight,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF7F1EA),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  'IP ${moment.locationLabel.trim()}',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: const Color(0xFF9B6A32),
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+              ),
+            ),
+          if (hasCaption || hasLocation) const SizedBox(height: 12),
+          Expanded(
+            child: InkWell(
+              borderRadius: BorderRadius.circular(26),
+              onTap: () => onOpenMoment(0),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  if (images.length >= 3)
+                    Positioned(
+                      left: 22,
+                      right: 18,
+                      top: 18,
+                      bottom: 8,
+                      child: _MomentStackLayer(
+                        imageUrl: images[2],
+                        angle: 0.08,
+                        opacity: 0.48,
+                      ),
+                    ),
+                  if (images.length >= 2)
+                    Positioned(
+                      left: 12,
+                      right: 10,
+                      top: 10,
+                      bottom: 4,
+                      child: _MomentStackLayer(
+                        imageUrl: images[1],
+                        angle: -0.05,
+                        opacity: 0.72,
+                      ),
+                    ),
+                  Positioned.fill(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(26),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.network(
+                            moment.primaryImageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: AppTheme.surfaceHighest,
+                              alignment: Alignment.center,
+                              child: Icon(
+                                Icons.broken_image_rounded,
+                                color: AppTheme.primary.withValues(alpha: 0.5),
+                              ),
+                            ),
+                          ),
+                          DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.black.withValues(alpha: 0.02),
+                                  Colors.black.withValues(alpha: 0.12),
+                                  Colors.black.withValues(alpha: 0.34),
+                                ],
+                              ),
+                            ),
+                          ),
+                          if (images.length > 1)
+                            Positioned(
+                              right: 12,
+                              top: 12,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withValues(alpha: 0.38),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  '${images.length} 张',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelMedium
+                                      ?.copyWith(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                ),
+                              ),
+                            ),
+                          Positioned(
+                            left: 12,
+                            right: 12,
+                            bottom: 12,
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    images.length > 1 ? '点击查看大图并左右滑动' : '点击查看大图',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium
+                                        ?.copyWith(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                  ),
+                                ),
+                                const Icon(
+                                  Icons.open_in_full_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (hasLocation)
+                      Text(
+                        'IP ${moment.locationLabel.trim()}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color:
+                                  AppTheme.textSecondary.withValues(alpha: 0.82),
+                              fontWeight: FontWeight.w700,
+                            ),
+                      ),
+                  ],
+                ),
+              ),
+              Text(
+                _MomentTimelineTime.full(moment.createdAt),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: AppTheme.textSecondary,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MomentStackLayer extends StatelessWidget {
+  const _MomentStackLayer({
+    required this.imageUrl,
+    required this.angle,
+    required this.opacity,
+  });
+
+  final String imageUrl;
+  final double angle;
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.rotate(
+      angle: angle,
+      child: Opacity(
+        opacity: opacity,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: Image.network(
+            imageUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => Container(
+              color: AppTheme.surfaceHighest,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MomentGalleryViewer extends StatefulWidget {
+  const _MomentGalleryViewer({
+    required this.images,
+    required this.initialIndex,
+    required this.moment,
+  });
+
+  final List<String> images;
+  final int initialIndex;
+  final AppMoment moment;
+
+  @override
+  State<_MomentGalleryViewer> createState() => _MomentGalleryViewerState();
+}
+
+class _MomentGalleryViewerState extends State<_MomentGalleryViewer> {
+  late final PageController _controller;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    _controller = PageController(initialPage: widget.initialIndex);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final moment = widget.moment;
+    final hasCaption = moment.caption.trim().isNotEmpty;
+    final hasLocation = moment.locationLabel.trim().isNotEmpty;
+    return Material(
+      color: Colors.transparent,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          PageView.builder(
+            controller: _controller,
+            itemCount: widget.images.length,
+            onPageChanged: (index) => setState(() => _currentIndex = index),
+            itemBuilder: (context, index) {
+              return InteractiveViewer(
+                minScale: 0.9,
+                maxScale: 4,
+                child: Center(
+                  child: Image.network(
+                    widget.images[index],
+                    fit: BoxFit.contain,
+                  ),
+                ),
+              );
+            },
+          ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 12,
+            left: 16,
+            child: IconButton.filledTonal(
+              onPressed: () => Navigator.of(context).pop(),
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.white.withValues(alpha: 0.16),
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.close_rounded),
+            ),
+          ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 18,
+            right: 20,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                '${_currentIndex + 1}/${widget.images.length}',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: 18,
+            right: 18,
+            bottom: 30,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.42),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.12),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (moment.caption.trim().isNotEmpty) ...[
+                    Text(
+                      moment.caption.trim(),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Colors.white,
+                            height: 1.45,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                  ],
+                  if (hasCaption && (hasLocation || moment.createdAt != null))
+                    const SizedBox(height: 10),
+                  if (hasLocation || moment.createdAt != null)
+                    Row(
+                      children: [
+                        if (moment.createdAt != null)
+                          Expanded(
+                            child: Text(
+                              _MomentTimelineTime.full(moment.createdAt),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelMedium
+                                  ?.copyWith(
+                                    color: Colors.white.withValues(alpha: 0.84),
+                                  ),
+                            ),
+                          ),
+                        if (hasLocation)
+                          Text(
+                            'IP ${moment.locationLabel.trim()}',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelMedium
+                                ?.copyWith(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                          ),
+                      ],
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MomentTimelineTime {
+  static String full(DateTime? value) {
+    if (value == null) return '';
+    final local = value.toLocal();
+    final year = local.year.toString();
+    final month = local.month.toString().padLeft(2, '0');
+    final day = local.day.toString().padLeft(2, '0');
+    final hour = local.hour.toString().padLeft(2, '0');
+    final minute = local.minute.toString().padLeft(2, '0');
+    final second = local.second.toString().padLeft(2, '0');
+    return '$year-$month-$day $hour:$minute:$second';
   }
 }
 

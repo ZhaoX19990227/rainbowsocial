@@ -82,13 +82,16 @@ class _MainTabPageState extends ConsumerState<MainTabPage> {
     final store = ref.read(matchAlertStateServiceProvider);
     final seenReceivedAt = await store.loadLastReceivedAt(session.user.id);
     final seenMutualAt = await store.loadLastMutualAt(session.user.id);
-    final latestReceived = _latestReceivedAt(summary);
     final latestMutual = _latestMutualAt(summary);
+    final latestReceived = _latestReceivedAt(summary);
 
-    final newReceivedCount = summary.received.where((item) {
-      if (seenReceivedAt == null) return true;
+    final newReceivedItems = summary.received.where((item) {
+      if (seenReceivedAt == null) {
+        return false;
+      }
       return item.likedAt.isAfter(seenReceivedAt);
-    }).length;
+    }).toList(growable: false);
+    final newReceivedCount = newReceivedItems.length;
     final newMutualCount = summary.mutual.where((item) {
       if (seenMutualAt == null) return true;
       return item.matchedAt.isAfter(seenMutualAt);
@@ -98,11 +101,13 @@ class _MainTabPageState extends ConsumerState<MainTabPage> {
       return;
     }
 
-    if (latestReceived != null) {
-      await store.saveLastReceivedAt(session.user.id, latestReceived);
-    }
     if (latestMutual != null) {
       await store.saveLastMutualAt(session.user.id, latestMutual);
+    }
+    if (latestReceived != null && newReceivedCount > 0) {
+      await store.saveLastReceivedAt(session.user.id, latestReceived);
+    } else if (latestReceived != null && seenReceivedAt == null) {
+      await store.saveLastReceivedAt(session.user.id, latestReceived);
     }
 
     if (newMutualCount > 0 && mounted) {
@@ -118,23 +123,12 @@ class _MainTabPageState extends ConsumerState<MainTabPage> {
 
     if (newReceivedCount > 0 && mounted) {
       _showingMatchDialog = true;
-      final receivedKeys = summary.received
-          .where((item) {
-            if (seenReceivedAt == null) return true;
-            return item.likedAt.isAfter(seenReceivedAt);
-          })
-          .map((item) => store.receivedItemKey(
-                targetUserId: item.user.id,
-                likedAt: item.likedAt,
-              ))
-          .toList();
       AppFeedback.showRelationshipToast(
         title: newReceivedCount > 1 ? '有 $newReceivedCount 个新喜欢' : '有人喜欢了你',
         subtitle: newReceivedCount > 1
             ? '这段时间有几个人向你表达了好感，去看看是谁在靠近。'
-            : '${summary.received.first.user.nickname} 喜欢了你，回个喜欢就能聊天。',
+            : '${newReceivedItems.first.user.nickname} 喜欢了你，回个喜欢就能聊天。',
         onTap: () async {
-          await store.markReceivedItemsSeen(session.user.id, receivedKeys);
           if (!mounted) return;
           Navigator.of(context).pushNamed(
             AppRouter.likesOverview,
@@ -149,17 +143,17 @@ class _MainTabPageState extends ConsumerState<MainTabPage> {
     }
   }
 
-  DateTime? _latestReceivedAt(MatchSummary summary) {
-    if (summary.received.isEmpty) return null;
-    return summary.received
-        .map((item) => item.likedAt)
-        .reduce((left, right) => left.isAfter(right) ? left : right);
-  }
-
   DateTime? _latestMutualAt(MatchSummary summary) {
     if (summary.mutual.isEmpty) return null;
     return summary.mutual
         .map((item) => item.matchedAt)
+        .reduce((left, right) => left.isAfter(right) ? left : right);
+  }
+
+  DateTime? _latestReceivedAt(MatchSummary summary) {
+    if (summary.received.isEmpty) return null;
+    return summary.received
+        .map((item) => item.likedAt)
         .reduce((left, right) => left.isAfter(right) ? left : right);
   }
 

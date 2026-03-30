@@ -25,6 +25,9 @@ class MessageBubble extends StatelessWidget {
     this.onRetry,
     this.onFlirtyTap,
     this.onAvatarTap,
+    this.onReply,
+    this.onReplyTap,
+    this.isHighlighted = false,
   });
 
   final ChatMessageModel message;
@@ -33,6 +36,9 @@ class MessageBubble extends StatelessWidget {
   final VoidCallback? onRetry;
   final VoidCallback? onFlirtyTap;
   final VoidCallback? onAvatarTap;
+  final VoidCallback? onReply;
+  final VoidCallback? onReplyTap;
+  final bool isHighlighted;
 
   @override
   Widget build(BuildContext context) {
@@ -54,9 +60,20 @@ class MessageBubble extends StatelessWidget {
       duration: const Duration(milliseconds: 260),
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
-        return Transform.scale(
-          scale: value,
-          child: Opacity(opacity: value.clamp(0, 1), child: child),
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutCubic,
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            color: isHighlighted
+                ? AppTheme.primary.withValues(alpha: 0.08)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(26),
+          ),
+          child: Transform.scale(
+            scale: value,
+            child: Opacity(opacity: value.clamp(0, 1), child: child),
+          ),
         );
       },
       child: Align(
@@ -83,99 +100,125 @@ class MessageBubble extends StatelessWidget {
                   crossAxisAlignment:
                       isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                   children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeOutCubic,
-                      padding: isCustomCard
-                          ? EdgeInsets.zero
-                          : isMediaFrame
-                              ? const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 6,
-                                )
-                              : const EdgeInsets.symmetric(
-                                  horizontal: 18,
-                                  vertical: 14,
-                                ),
-                      decoration: BoxDecoration(
-                        borderRadius: radius,
-                        gradient: isCustomCard || isMediaFrame
-                            ? null
-                            : isMine
-                                ? LinearGradient(
-                                    colors: message.isFailed
-                                        ? const [
-                                            Color(0x33FF9A9A),
-                                            Color(0x22FF6E85),
-                                          ]
-                                        : const [
-                                            Color(0x44EA87FF),
-                                            Color(0x22E470FF),
-                                          ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  )
-                                : null,
-                        color: isCustomCard
-                            ? Colors.transparent
+                    GestureDetector(
+                      onLongPress: onReply,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOutCubic,
+                        padding: isCustomCard
+                            ? EdgeInsets.zero
                             : isMediaFrame
-                                ? (isMine
-                                    ? const Color(0xFF151923)
-                                        .withValues(alpha: 0.96)
-                                    : AppTheme.surfaceHighest
-                                        .withValues(alpha: 0.56))
-                                : isMine
-                                    ? null
-                                    : AppTheme.surfaceHighest
-                                        .withValues(alpha: 0.72),
-                        border: Border.all(
+                                ? const EdgeInsets.symmetric(
+                                    horizontal: 6,
+                                    vertical: 6,
+                                  )
+                                : const EdgeInsets.symmetric(
+                                    horizontal: 18,
+                                    vertical: 14,
+                                  ),
+                        decoration: BoxDecoration(
+                          borderRadius: radius,
+                          gradient: isCustomCard || isMediaFrame
+                              ? null
+                              : isMine
+                                  ? LinearGradient(
+                                      colors: message.isFailed
+                                          ? const [
+                                              Color(0x33FF9A9A),
+                                              Color(0x22FF6E85),
+                                            ]
+                                          : const [
+                                              Color(0x44EA87FF),
+                                              Color(0x22E470FF),
+                                            ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    )
+                                  : null,
                           color: isCustomCard
                               ? Colors.transparent
                               : isMediaFrame
-                                  ? Colors.white.withValues(
-                                      alpha: isMine ? 0.08 : 0.06,
-                                    )
+                                  ? (isMine
+                                      ? const Color(0xFF151923)
+                                          .withValues(alpha: 0.96)
+                                      : AppTheme.surfaceHighest
+                                          .withValues(alpha: 0.56))
                                   : isMine
-                                      ? (message.isFailed
-                                          ? AppTheme.error
-                                              .withValues(alpha: 0.35)
-                                          : AppTheme.primary
-                                              .withValues(alpha: 0.18))
-                                      : Colors.white.withValues(alpha: 0.06),
-                        ),
-                        boxShadow: [
-                          BoxShadow(
+                                      ? null
+                                      : AppTheme.surfaceHighest
+                                          .withValues(alpha: 0.72),
+                          border: Border.all(
                             color: isCustomCard
                                 ? Colors.transparent
                                 : isMediaFrame
-                                    ? Colors.black.withValues(alpha: 0.08)
+                                    ? Colors.white.withValues(
+                                        alpha: isMine ? 0.08 : 0.06,
+                                      )
                                     : isMine
                                         ? (message.isFailed
                                             ? AppTheme.error
-                                                .withValues(alpha: 0.12)
+                                                .withValues(alpha: 0.35)
                                             : AppTheme.primary
-                                                .withValues(alpha: 0.12))
-                                        : Colors.black.withValues(alpha: 0.06),
-                            blurRadius: isMediaFrame ? 10 : 18,
+                                                .withValues(alpha: 0.18))
+                                        : Colors.white.withValues(alpha: 0.06),
                           ),
-                        ],
+                          boxShadow: [
+                            BoxShadow(
+                              color: isCustomCard
+                                  ? Colors.transparent
+                                  : isMediaFrame
+                                      ? Colors.black.withValues(alpha: 0.08)
+                                      : isMine
+                                          ? (message.isFailed
+                                              ? AppTheme.error
+                                                  .withValues(alpha: 0.12)
+                                              : AppTheme.primary
+                                                  .withValues(alpha: 0.12))
+                                          : Colors.black.withValues(alpha: 0.06),
+                              blurRadius: isMediaFrame ? 10 : 18,
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (message.replyPreview != null)
+                              _QuotedMessagePreview(
+                                reply: message.replyPreview!,
+                                isMine: isMine,
+                                onTap: onReplyTap,
+                              ),
+                            if (message.replyPreview != null &&
+                                !message.isAudio &&
+                                !message.isImage &&
+                                !message.isFlashImage &&
+                                !message.isFlirty &&
+                                message.content.trim().isNotEmpty)
+                              const SizedBox(height: 10),
+                            if (message.isAudio)
+                              _AudioMessageContent(
+                                message: message,
+                                isMine: isMine,
+                              )
+                            else if (message.isFlirty)
+                              _FlirtyActionContent(
+                                message: message,
+                                isMine: isMine,
+                                onTap: onFlirtyTap,
+                              )
+                            else if (message.isFlashImage)
+                              _FlashImageContent(
+                                message: message,
+                                isMine: isMine,
+                              )
+                            else if (message.isImage)
+                              _ImageMessageContent(message: message)
+                            else
+                              Text(message.content),
+                          ],
+                        ),
                       ),
-                      child: message.isAudio
-                          ? _AudioMessageContent(message: message, isMine: isMine)
-                          : message.isFlirty
-                              ? _FlirtyActionContent(
-                                  message: message,
-                                  isMine: isMine,
-                                  onTap: onFlirtyTap,
-                                )
-                              : message.isFlashImage
-                                  ? _FlashImageContent(
-                                      message: message,
-                                      isMine: isMine,
-                                    )
-                                  : message.isImage
-                                      ? _ImageMessageContent(message: message)
-                                      : Text(message.content),
                     ),
                     if (isMine)
                       Padding(
@@ -230,6 +273,143 @@ class MessageBubble extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _QuotedMessagePreview extends StatelessWidget {
+  const _QuotedMessagePreview({
+    required this.reply,
+    required this.isMine,
+    this.onTap,
+  });
+
+  final ChatReplyPreview reply;
+  final bool isMine;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = _previewLabel(reply);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 10),
+          child: Ink(
+            padding: const EdgeInsets.fromLTRB(10, 9, 10, 9),
+            decoration: BoxDecoration(
+              color: isMine
+                  ? Colors.white.withValues(alpha: 0.14)
+                  : Colors.black.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isMine
+                    ? Colors.white.withValues(alpha: 0.16)
+                    : AppTheme.primary.withValues(alpha: 0.08),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 3,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: isMine ? Colors.white : AppTheme.primary,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '引用消息',
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: isMine
+                                  ? Colors.white.withValues(alpha: 0.82)
+                                  : AppTheme.primary,
+                              fontWeight: FontWeight.w800,
+                            ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        label,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                              color: isMine
+                                  ? Colors.white.withValues(alpha: 0.94)
+                                  : AppTheme.textSecondary,
+                              height: 1.25,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (reply.mediaUrl.trim().isNotEmpty &&
+                    (reply.isImage || reply.isFlashImage || reply.isVideo))
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: SizedBox(
+                        width: 38,
+                        height: 38,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.network(
+                              reply.mediaUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                color: Colors.white.withValues(alpha: 0.12),
+                              ),
+                            ),
+                            if (reply.isFlashImage || reply.isVideo)
+                              Container(
+                                color: Colors.black.withValues(alpha: 0.18),
+                                alignment: Alignment.center,
+                                child: Icon(
+                                  reply.isVideo
+                                      ? Icons.play_arrow_rounded
+                                      : Icons.local_fire_department_rounded,
+                                  size: 18,
+                                  color: Colors.white,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _previewLabel(ChatReplyPreview reply) {
+    switch (reply.type) {
+      case 'image':
+        return reply.content.trim().isEmpty ? '[图片]' : reply.content.trim();
+      case 'flash_image':
+        return '[闪照]';
+      case 'audio':
+        return '[语音]';
+      case 'video':
+        return '[视频]';
+      case 'flirt':
+        return reply.content.trim().isEmpty ? '[心动动作]' : reply.content.trim();
+      default:
+        return reply.content.trim().isEmpty ? '消息内容' : reply.content.trim();
+    }
   }
 }
 

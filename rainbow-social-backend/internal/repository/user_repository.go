@@ -20,7 +20,7 @@ func NewUserRepository(db *sql.DB) *UserRepository {
 
 func (r *UserRepository) GetByID(id int64) (*model.User, error) {
 	row := r.db.QueryRow(`
-		SELECT id, account, email, nickname, avatar, photos, age, height_cm, weight_kg, birthday, zodiac_sign, mbti_type, bio, tags, position_role, status_id, status_label, status_expires_at, lat, lng, location_label, online_status, created_at, last_active_at
+		SELECT id, account, email, nickname, avatar, photos, moments, age, height_cm, weight_kg, birthday, zodiac_sign, mbti_type, bio, tags, position_role, status_id, status_label, status_expires_at, lat, lng, location_label, online_status, created_at, last_active_at
 		FROM users
 		WHERE id = ?
 	`, id)
@@ -29,7 +29,7 @@ func (r *UserRepository) GetByID(id int64) (*model.User, error) {
 
 func (r *UserRepository) GetByEmail(email string) (*model.User, error) {
 	row := r.db.QueryRow(`
-		SELECT id, account, email, nickname, avatar, photos, age, height_cm, weight_kg, birthday, zodiac_sign, mbti_type, bio, tags, position_role, status_id, status_label, status_expires_at, lat, lng, location_label, online_status, created_at, last_active_at
+		SELECT id, account, email, nickname, avatar, photos, moments, age, height_cm, weight_kg, birthday, zodiac_sign, mbti_type, bio, tags, position_role, status_id, status_label, status_expires_at, lat, lng, location_label, online_status, created_at, last_active_at
 		FROM users
 		WHERE email = ?
 	`, email)
@@ -38,7 +38,7 @@ func (r *UserRepository) GetByEmail(email string) (*model.User, error) {
 
 func (r *UserRepository) GetByAccount(account string) (*model.User, error) {
 	row := r.db.QueryRow(`
-		SELECT id, account, email, nickname, avatar, photos, age, height_cm, weight_kg, birthday, zodiac_sign, mbti_type, bio, tags, position_role, status_id, status_label, status_expires_at, lat, lng, location_label, online_status, created_at, last_active_at
+		SELECT id, account, email, nickname, avatar, photos, moments, age, height_cm, weight_kg, birthday, zodiac_sign, mbti_type, bio, tags, position_role, status_id, status_label, status_expires_at, lat, lng, location_label, online_status, created_at, last_active_at
 		FROM users
 		WHERE account = ?
 	`, account)
@@ -48,8 +48,8 @@ func (r *UserRepository) GetByAccount(account string) (*model.User, error) {
 func (r *UserRepository) Create(email, account, nickname, passwordHash string) (*model.User, error) {
 	now := time.Now().UTC()
 	result, err := r.db.Exec(`
-		INSERT INTO users (email, account, password_hash, nickname, avatar, photos, age, height_cm, weight_kg, birthday, zodiac_sign, mbti_type, bio, tags, position_role, status_id, status_label, status_expires_at, lat, lng, location_label, online_status, created_at, last_active_at)
-		VALUES (?, ?, ?, ?, '', '[]', 18, 175, 70, '', '', '', '', '[]', '', '', '', '', 0, 0, '', 0, ?, ?)
+		INSERT INTO users (email, account, password_hash, nickname, avatar, photos, moments, age, height_cm, weight_kg, birthday, zodiac_sign, mbti_type, bio, tags, position_role, status_id, status_label, status_expires_at, lat, lng, location_label, online_status, created_at, last_active_at)
+		VALUES (?, ?, ?, ?, '', '[]', '[]', 18, 175, 70, '', '', '', '', '[]', '', '', '', '', 0, 0, '', 0, ?, ?)
 	`, email, account, passwordHash, nickname, now, now)
 	if err != nil {
 		return nil, err
@@ -71,12 +71,16 @@ func (r *UserRepository) UpdateProfile(user *model.User) (*model.User, error) {
 	if err != nil {
 		return nil, err
 	}
+	momentsJSON, err := json.Marshal(user.Moments)
+	if err != nil {
+		return nil, err
+	}
 
 	_, err = r.db.Exec(`
 		UPDATE users
-		SET nickname = ?, avatar = ?, photos = ?, age = ?, height_cm = ?, weight_kg = ?, birthday = ?, zodiac_sign = ?, mbti_type = ?, bio = ?, tags = ?, position_role = ?, status_id = ?, status_label = ?, status_expires_at = ?, lat = ?, lng = ?, location_label = ?, last_active_at = ?
+		SET nickname = ?, avatar = ?, photos = ?, moments = ?, age = ?, height_cm = ?, weight_kg = ?, birthday = ?, zodiac_sign = ?, mbti_type = ?, bio = ?, tags = ?, position_role = ?, status_id = ?, status_label = ?, status_expires_at = ?, lat = ?, lng = ?, location_label = ?, last_active_at = ?
 		WHERE id = ?
-	`, user.Nickname, user.Avatar, string(photosJSON), user.Age, user.HeightCM, user.WeightKG, user.Birthday, user.ZodiacSign, user.MBTIType, user.Bio, string(tagsJSON), user.PositionRole, user.StatusID, user.StatusLabel, user.StatusExpiresAt, user.Lat, user.Lng, user.LocationLabel, time.Now().UTC(), user.ID)
+	`, user.Nickname, user.Avatar, string(photosJSON), string(momentsJSON), user.Age, user.HeightCM, user.WeightKG, user.Birthday, user.ZodiacSign, user.MBTIType, user.Bio, string(tagsJSON), user.PositionRole, user.StatusID, user.StatusLabel, user.StatusExpiresAt, user.Lat, user.Lng, user.LocationLabel, time.Now().UTC(), user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +90,7 @@ func (r *UserRepository) UpdateProfile(user *model.User) (*model.User, error) {
 
 func (r *UserRepository) ListUsers(limit int) ([]model.User, error) {
 	rows, err := r.db.Query(`
-		SELECT id, account, email, nickname, avatar, photos, age, height_cm, weight_kg, birthday, zodiac_sign, mbti_type, bio, tags, position_role, status_id, status_label, status_expires_at, lat, lng, location_label, online_status, created_at, last_active_at
+		SELECT id, account, email, nickname, avatar, photos, moments, age, height_cm, weight_kg, birthday, zodiac_sign, mbti_type, bio, tags, position_role, status_id, status_label, status_expires_at, lat, lng, location_label, online_status, created_at, last_active_at
 		FROM users
 		ORDER BY online_status DESC, last_active_at DESC
 		LIMIT ?
@@ -101,7 +105,7 @@ func (r *UserRepository) ListUsers(limit int) ([]model.User, error) {
 
 func (r *UserRepository) ListOtherUsers(userID int64) ([]model.User, error) {
 	rows, err := r.db.Query(`
-		SELECT id, account, email, nickname, avatar, photos, age, height_cm, weight_kg, birthday, zodiac_sign, mbti_type, bio, tags, position_role, status_id, status_label, status_expires_at, lat, lng, location_label, online_status, created_at, last_active_at
+		SELECT id, account, email, nickname, avatar, photos, moments, age, height_cm, weight_kg, birthday, zodiac_sign, mbti_type, bio, tags, position_role, status_id, status_label, status_expires_at, lat, lng, location_label, online_status, created_at, last_active_at
 		FROM users
 		WHERE id != ?
 	`, userID)
@@ -119,7 +123,7 @@ func (r *UserRepository) ListRecommendationCandidates(userID int64, limit int) (
 	}
 	activeSince := time.Now().UTC().Add(-5 * time.Minute)
 	rows, err := r.db.Query(`
-		SELECT id, account, email, nickname, avatar, photos, age, height_cm, weight_kg, birthday, zodiac_sign, mbti_type, bio, tags, position_role, status_id, status_label, status_expires_at, lat, lng, location_label, online_status, created_at, last_active_at
+		SELECT id, account, email, nickname, avatar, photos, moments, age, height_cm, weight_kg, birthday, zodiac_sign, mbti_type, bio, tags, position_role, status_id, status_label, status_expires_at, lat, lng, location_label, online_status, created_at, last_active_at
 		FROM users u
 		WHERE u.id != ?
 		  AND NOT EXISTS (
@@ -153,7 +157,7 @@ func (r *UserRepository) ListNearbyCandidates(
 	}
 	activeSince := time.Now().UTC().Add(-5 * time.Minute)
 	query := `
-		SELECT id, account, email, nickname, avatar, photos, age, height_cm, weight_kg, birthday, zodiac_sign, mbti_type, bio, tags, position_role, status_id, status_label, status_expires_at, lat, lng, location_label, online_status, created_at, last_active_at
+		SELECT id, account, email, nickname, avatar, photos, moments, age, height_cm, weight_kg, birthday, zodiac_sign, mbti_type, bio, tags, position_role, status_id, status_label, status_expires_at, lat, lng, location_label, online_status, created_at, last_active_at
 		FROM users u
 		WHERE u.id != ?
 		  AND NOT EXISTS (
@@ -252,6 +256,7 @@ func (r *UserRepository) DeleteDeviceToken(userID int64, token string) error {
 func scanUser(scanner interface{ Scan(dest ...any) error }) (*model.User, error) {
 	var user model.User
 	var photosJSON string
+	var momentsJSON string
 	var tagsJSON string
 	var online int
 	err := scanner.Scan(
@@ -261,6 +266,7 @@ func scanUser(scanner interface{ Scan(dest ...any) error }) (*model.User, error)
 		&user.Nickname,
 		&user.Avatar,
 		&photosJSON,
+		&momentsJSON,
 		&user.Age,
 		&user.HeightCM,
 		&user.WeightKG,
@@ -292,6 +298,9 @@ func scanUser(scanner interface{ Scan(dest ...any) error }) (*model.User, error)
 		user.OnlineStatus = user.LastActiveAt.After(time.Now().UTC().Add(-5 * time.Minute))
 	}
 	user.Photos = decodeTags(photosJSON)
+	if err := json.Unmarshal([]byte(momentsJSON), &user.Moments); err != nil {
+		user.Moments = nil
+	}
 	user.Tags = decodeTags(tagsJSON)
 	return &user, nil
 }

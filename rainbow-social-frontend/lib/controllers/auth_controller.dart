@@ -72,8 +72,23 @@ class AuthController extends StateNotifier<AsyncValue<AuthSession?>> {
     state = const AsyncValue.loading();
     state = await AsyncValue.guard(() async {
       final session = await _ref.read(loginUseCaseProvider)(account, password);
-      await _ref.read(saveSessionUseCaseProvider)(session);
-      return session;
+      final remoteUser = await _ref.read(getProfileUseCaseProvider)(session.token);
+      final refreshedSession = AuthSession(
+        token: session.token,
+        user: remoteUser.copyWith(
+          statusId: remoteUser.statusId.trim().isEmpty
+              ? session.user.statusId
+              : remoteUser.statusId,
+          statusLabel: remoteUser.statusLabel.trim().isEmpty
+              ? session.user.statusLabel
+              : remoteUser.statusLabel,
+          statusExpiresAt: remoteUser.statusExpiresAt.trim().isEmpty
+              ? session.user.statusExpiresAt
+              : remoteUser.statusExpiresAt,
+        ),
+      );
+      await _ref.read(saveSessionUseCaseProvider)(refreshedSession);
+      return refreshedSession;
     });
   }
 

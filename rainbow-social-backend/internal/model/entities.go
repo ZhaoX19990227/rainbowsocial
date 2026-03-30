@@ -2,32 +2,41 @@ package model
 
 import "time"
 
-type User struct {
-	ID            int64     `json:"id"`
-	Account       string    `json:"account,omitempty"`
-	Email         string    `json:"email"`
-	Nickname      string    `json:"nickname"`
-	Avatar        string    `json:"avatar"`
-	Photos        []string  `json:"photos"`
-	Age           int       `json:"age"`
-	HeightCM      int       `json:"height_cm"`
-	WeightKG      int       `json:"weight_kg"`
-	Birthday      string    `json:"birthday,omitempty"`
-	ZodiacSign    string    `json:"zodiac_sign,omitempty"`
-	MBTIType      string    `json:"mbti_type,omitempty"`
-	Bio           string    `json:"bio"`
-	Tags          []string  `json:"tags"`
-	PositionRole  string    `json:"position_role,omitempty"`
-	StatusID      string    `json:"status_id,omitempty"`
-	StatusLabel   string    `json:"status_label,omitempty"`
-	StatusExpiresAt string  `json:"status_expires_at,omitempty"`
-	Lat           float64   `json:"lat"`
-	Lng           float64   `json:"lng"`
+type Moment struct {
+	ImageURL      string    `json:"image_url"`
+	ImageURLs     []string  `json:"image_urls,omitempty"`
+	Caption       string    `json:"caption,omitempty"`
 	LocationLabel string    `json:"location_label,omitempty"`
-	OnlineStatus  bool      `json:"online_status"`
-	DistanceKM    float64   `json:"distance_km,omitempty"`
 	CreatedAt     time.Time `json:"created_at"`
-	LastActiveAt  time.Time `json:"last_active_at"`
+}
+
+type User struct {
+	ID              int64     `json:"id"`
+	Account         string    `json:"account,omitempty"`
+	Email           string    `json:"email"`
+	Nickname        string    `json:"nickname"`
+	Avatar          string    `json:"avatar"`
+	Photos          []string  `json:"photos"`
+	Moments         []Moment  `json:"moments,omitempty"`
+	Age             int       `json:"age"`
+	HeightCM        int       `json:"height_cm"`
+	WeightKG        int       `json:"weight_kg"`
+	Birthday        string    `json:"birthday,omitempty"`
+	ZodiacSign      string    `json:"zodiac_sign,omitempty"`
+	MBTIType        string    `json:"mbti_type,omitempty"`
+	Bio             string    `json:"bio"`
+	Tags            []string  `json:"tags"`
+	PositionRole    string    `json:"position_role,omitempty"`
+	StatusID        string    `json:"status_id,omitempty"`
+	StatusLabel     string    `json:"status_label,omitempty"`
+	StatusExpiresAt string    `json:"status_expires_at,omitempty"`
+	Lat             float64   `json:"lat"`
+	Lng             float64   `json:"lng"`
+	LocationLabel   string    `json:"location_label,omitempty"`
+	OnlineStatus    bool      `json:"online_status"`
+	DistanceKM      float64   `json:"distance_km,omitempty"`
+	CreatedAt       time.Time `json:"created_at"`
+	LastActiveAt    time.Time `json:"last_active_at"`
 }
 
 type OTPCode struct {
@@ -94,16 +103,27 @@ type BlockStatus struct {
 }
 
 type ChatMessage struct {
-	ID              int64     `json:"id"`
-	ClientMessageID string    `json:"client_message_id,omitempty"`
-	FromUser        int64     `json:"from_user"`
-	ToUser          int64     `json:"to_user"`
-	Content         string    `json:"content"`
-	Type            string    `json:"type"`
-	MediaURL        string    `json:"media_url,omitempty"`
-	DurationSeconds int       `json:"duration_seconds,omitempty"`
-	DeliveryStatus  string    `json:"delivery_status,omitempty"`
-	Timestamp       time.Time `json:"timestamp"`
+	ID               int64             `json:"id"`
+	ClientMessageID  string            `json:"client_message_id,omitempty"`
+	FromUser         int64             `json:"from_user"`
+	ToUser           int64             `json:"to_user"`
+	Content          string            `json:"content"`
+	Type             string            `json:"type"`
+	MediaURL         string            `json:"media_url,omitempty"`
+	DurationSeconds  int               `json:"duration_seconds,omitempty"`
+	ReplyToMessageID int64             `json:"reply_to_message_id,omitempty"`
+	ReplyPreview     *ChatReplyPreview `json:"reply_preview,omitempty"`
+	DeliveryStatus   string            `json:"delivery_status,omitempty"`
+	Timestamp        time.Time         `json:"timestamp"`
+}
+
+type ChatReplyPreview struct {
+	MessageID       int64  `json:"message_id"`
+	ClientMessageID string `json:"client_message_id,omitempty"`
+	FromUser        int64  `json:"from_user"`
+	Type            string `json:"type"`
+	Content         string `json:"content,omitempty"`
+	MediaURL        string `json:"media_url,omitempty"`
 }
 
 type ConversationState struct {

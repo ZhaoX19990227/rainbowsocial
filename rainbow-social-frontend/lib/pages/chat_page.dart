@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +15,7 @@ import '../models/flirty_action.dart';
 import '../providers/app_providers.dart';
 import '../routes/app_router.dart';
 import '../services/app_feedback.dart';
+import '../state/chat_room_state.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_empty_state.dart';
 import '../widgets/app_skeleton.dart';
@@ -38,10 +40,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   final _picker = ImagePicker();
+  final Map<String, GlobalKey> _messageKeys = <String, GlobalKey>{};
   Timer? _recordingTicker;
+  Timer? _highlightTimer;
   String? _activeFlirtyClientId;
   FlirtyReplayData? _activeBurst;
   bool _hasHydratedHistory = false;
+  String? _highlightedMessageKey;
 
   bool _isRecording = false;
   bool _willCancelRecording = false;
@@ -83,6 +88,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   @override
   void dispose() {
     _recordingTicker?.cancel();
+    _highlightTimer?.cancel();
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
@@ -243,7 +249,13 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                                     }
                                     final message =
                                         roomState.messages[index - 2];
+                                    final messageKey =
+                                        _messageKeyFor(message);
                                     return MessageBubble(
+                                      key: _messageKeys.putIfAbsent(
+                                        messageKey,
+                                        () => GlobalKey(),
+                                      ),
                                       message: message,
                                       isMine: message.isMine(
                                         session?.user.id ?? -1,
@@ -273,6 +285,23 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                                               )
                                               .retryMessage(message)
                                           : null,
+                                      onReply: message.isPending
+                                          ? null
+                                          : () => ref
+                                              .read(
+                                                chatControllerProvider(
+                                                        widget.peer)
+                                                    .notifier,
+                                              )
+                                              .startReply(message),
+                                      onReplyTap: message.replyPreview == null
+                                          ? null
+                                          : () => _jumpToQuotedMessage(
+                                                roomState,
+                                                message,
+                                              ),
+                                      isHighlighted:
+                                          _highlightedMessageKey == messageKey,
                                     );
                                   },
                                 ),
@@ -295,135 +324,254 @@ class _ChatPageState extends ConsumerState<ChatPage> {
                       ),
                       child: Row(
                         children: [
-                          _ChatCircleButton(
-                            icon: Icons.add_rounded,
-                            backgroundColor: AppTheme.surfaceHighest,
-                            iconColor: AppTheme.textSecondary,
-                            onTap: _openMediaActions,
-                          ),
-                          const SizedBox(width: 10),
                           Expanded(
-                            child: Container(
-                              height: 50,
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 16),
-                              decoration: BoxDecoration(
-                                color: AppTheme.surfaceHighest,
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Center(
-                                child: TextField(
-                                  controller: _controller,
-                                  minLines: 1,
-                                  maxLines: 1,
-                                  keyboardType: TextInputType.text,
-                                  textAlignVertical: TextAlignVertical.center,
-                                  enableSuggestions: true,
-                                  autocorrect: true,
-                                  onChanged: (_) => setState(() {}),
-                                  decoration: InputDecoration(
-                                    isCollapsed: true,
-                                    hintText:
-                                        _isRecording ? '松开发送，向上取消' : '输入消息',
-                                    border: InputBorder.none,
-                                    enabledBorder: InputBorder.none,
-                                    focusedBorder: InputBorder.none,
-                                    disabledBorder: InputBorder.none,
-                                    filled: false,
-                                  ),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyLarge
-                                      ?.copyWith(
-                                        height: 1.15,
-                                      ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 220),
-                            transitionBuilder: (child, animation) {
-                              return ScaleTransition(
-                                scale: animation,
-                                child: FadeTransition(
-                                  opacity: animation,
-                                  child: child,
-                                ),
-                              );
-                            },
-                            child: _controller.text.trim().isNotEmpty
-                                ? _ChatCircleButton(
-                                    key: const ValueKey('send-button'),
-                                    icon: roomState.isSending
-                                        ? null
-                                        : Icons.send_rounded,
-                                    gradient: const [
-                                      AppTheme.primary,
-                                      AppTheme.primaryDark,
-                                    ],
-                                    onTap: _sendCurrentMessage,
-                                    child: roomState.isSending
-                                        ? const SizedBox(
-                                            width: 18,
-                                            height: 18,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: Colors.white,
-                                            ),
-                                          )
-                                        : null,
-                                  )
-                                : GestureDetector(
-                                    key: const ValueKey('record-button'),
-                                    onLongPressStart: _handleRecordStart,
-                                    onLongPressMoveUpdate:
-                                        _handleRecordMoveUpdate,
-                                    onLongPressEnd: _handleRecordEnd,
-                                    child: AnimatedContainer(
-                                      duration:
-                                          const Duration(milliseconds: 180),
-                                      width: 42,
-                                      height: 42,
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        gradient: LinearGradient(
-                                          colors: _isRecording
-                                              ? _willCancelRecording
-                                                  ? const [
-                                                      Color(0xFFFF9387),
-                                                      Color(0xFFFF6E85),
-                                                    ]
-                                                  : const [
-                                                      AppTheme.primary,
-                                                      AppTheme.primaryDark,
-                                                    ]
-                                              : const [
-                                                  Color(0xFFFFFFFF),
-                                                  Color(0xFFF4F1FF),
-                                                ],
-                                        ),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: AppTheme.primary.withValues(
-                                              alpha: _isRecording ? 0.24 : 0.08,
-                                            ),
-                                            blurRadius: 16,
-                                            offset: const Offset(0, 8),
-                                          ),
-                                        ],
-                                      ),
-                                      child: Icon(
-                                        _isRecording
-                                            ? Icons.mic_rounded
-                                            : Icons.mic_none_rounded,
-                                        color: _isRecording
-                                            ? Colors.white
-                                            : AppTheme.primary,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (roomState.replyingTo != null)
+                                  Container(
+                                    margin: const EdgeInsets.only(bottom: 8),
+                                    padding: const EdgeInsets.fromLTRB(
+                                      14,
+                                      10,
+                                      10,
+                                      10,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppTheme.surfaceHighest,
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: AppTheme.primary
+                                            .withValues(alpha: 0.16),
                                       ),
                                     ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Text(
+                                                roomState.replyingTo!.isMine(
+                                                        session?.user.id ?? -1)
+                                                    ? '回复自己'
+                                                    : '回复 ${widget.peer.nickname}',
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .labelMedium
+                                                    ?.copyWith(
+                                                      color: AppTheme.primary,
+                                                      fontWeight: FontWeight.w800,
+                                                    ),
+                                              ),
+                                              const SizedBox(height: 4),
+                                              Text(
+                                                _quotedPreviewLabel(
+                                                  roomState.replyingTo!,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodyMedium
+                                                    ?.copyWith(
+                                                      color:
+                                                          AppTheme.textSecondary,
+                                                    ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        IconButton(
+                                          onPressed: () => ref
+                                              .read(
+                                                chatControllerProvider(
+                                                        widget.peer)
+                                                    .notifier,
+                                              )
+                                              .clearReply(),
+                                          icon: const Icon(
+                                            Icons.close_rounded,
+                                            size: 18,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
+                                Row(
+                                  children: [
+                                    _ChatCircleButton(
+                                      icon: Icons.add_rounded,
+                                      backgroundColor: AppTheme.surfaceHighest,
+                                      iconColor: AppTheme.textSecondary,
+                                      onTap: _openMediaActions,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Container(
+                                        height: 50,
+                                        decoration: BoxDecoration(
+                                          color: AppTheme.surfaceHighest,
+                                          borderRadius:
+                                              BorderRadius.circular(999),
+                                        ),
+                                        child: Center(
+                                          child: TextField(
+                                            controller: _controller,
+                                            minLines: 1,
+                                            maxLines: 1,
+                                            keyboardType: TextInputType.text,
+                                            textAlignVertical:
+                                                TextAlignVertical.center,
+                                            enableSuggestions: true,
+                                            autocorrect: true,
+                                            onChanged: (_) => setState(() {}),
+                                            decoration: InputDecoration(
+                                              isCollapsed: true,
+                                              hintText: _isRecording
+                                                  ? '松开发送，向上取消'
+                                                  : '输入消息',
+                                              border: InputBorder.none,
+                                              enabledBorder: InputBorder.none,
+                                              focusedBorder: InputBorder.none,
+                                              disabledBorder: InputBorder.none,
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 16,
+                                              ),
+                                              hintStyle: Theme.of(context)
+                                                  .textTheme
+                                                  .bodyLarge
+                                                  ?.copyWith(
+                                                    height: 1.15,
+                                                    color: AppTheme
+                                                        .textSecondary
+                                                        .withValues(
+                                                          alpha: 0.7,
+                                                        ),
+                                                  ),
+                                            ),
+                                            style: Theme.of(context)
+                                                .textTheme
+                                                .bodyLarge
+                                                ?.copyWith(
+                                                  height: 1.15,
+                                                ),
+                                            strutStyle: const StrutStyle(
+                                              forceStrutHeight: true,
+                                              height: 1.15,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    AnimatedSwitcher(
+                                      duration:
+                                          const Duration(milliseconds: 220),
+                                      transitionBuilder: (child, animation) {
+                                        return ScaleTransition(
+                                          scale: animation,
+                                          child: FadeTransition(
+                                            opacity: animation,
+                                            child: child,
+                                          ),
+                                        );
+                                      },
+                                      child: _controller.text.trim().isNotEmpty
+                                          ? _ChatCircleButton(
+                                              key: const ValueKey(
+                                                  'send-button'),
+                                              icon: roomState.isSending
+                                                  ? null
+                                                  : Icons.send_rounded,
+                                              gradient: const [
+                                                AppTheme.primary,
+                                                AppTheme.primaryDark,
+                                              ],
+                                              onTap: _sendCurrentMessage,
+                                              child: roomState.isSending
+                                                  ? const SizedBox(
+                                                      width: 18,
+                                                      height: 18,
+                                                      child:
+                                                          CircularProgressIndicator(
+                                                        strokeWidth: 2,
+                                                        color: Colors.white,
+                                                      ),
+                                                    )
+                                                  : null,
+                                            )
+                                          : GestureDetector(
+                                              key: const ValueKey(
+                                                  'record-button'),
+                                              onLongPressStart:
+                                                  _handleRecordStart,
+                                              onLongPressMoveUpdate:
+                                                  _handleRecordMoveUpdate,
+                                              onLongPressEnd: _handleRecordEnd,
+                                              child: AnimatedContainer(
+                                                duration: const Duration(
+                                                    milliseconds: 180),
+                                                width: 42,
+                                                height: 42,
+                                                decoration: BoxDecoration(
+                                                  shape: BoxShape.circle,
+                                                  gradient: LinearGradient(
+                                                    colors: _isRecording
+                                                        ? _willCancelRecording
+                                                            ? const [
+                                                                Color(
+                                                                    0xFFFF9387),
+                                                                Color(
+                                                                    0xFFFF6E85),
+                                                              ]
+                                                            : const [
+                                                                AppTheme
+                                                                    .primary,
+                                                                AppTheme
+                                                                    .primaryDark,
+                                                              ]
+                                                        : const [
+                                                            Color(0xFFFFFFFF),
+                                                            Color(0xFFF4F1FF),
+                                                          ],
+                                                  ),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: AppTheme.primary
+                                                          .withValues(
+                                                        alpha: _isRecording
+                                                            ? 0.24
+                                                            : 0.08,
+                                                      ),
+                                                      blurRadius: 16,
+                                                      offset:
+                                                          const Offset(0, 8),
+                                                    ),
+                                                  ],
+                                                ),
+                                                child: Icon(
+                                                  _isRecording
+                                                      ? Icons.mic_rounded
+                                                      : Icons.mic_none_rounded,
+                                                  color: _isRecording
+                                                      ? Colors.white
+                                                      : AppTheme.primary,
+                                                ),
+                                              ),
+                                            ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
@@ -468,6 +616,124 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     ref.read(chatControllerProvider(widget.peer).notifier).sendMessage(text);
     _controller.clear();
     setState(() {});
+  }
+
+  String _messageKeyFor(ChatMessageModel message) {
+    if (message.id > 0) {
+      return 'id_${message.id}';
+    }
+    if (message.clientMessageId.isNotEmpty) {
+      return 'client_${message.clientMessageId}';
+    }
+    return 'ts_${message.timestamp.microsecondsSinceEpoch}';
+  }
+
+  String _quotedPreviewLabel(ChatMessageModel message) {
+    switch (message.type) {
+      case 'image':
+        return message.content.trim().isEmpty ? '[图片]' : message.content.trim();
+      case 'flash_image':
+        return '[闪照]';
+      case 'audio':
+        return '[语音]';
+      case 'video':
+        return '[视频]';
+      case 'flirt':
+        return message.content.trim().isEmpty ? '[心动动作]' : message.content.trim();
+      default:
+        return message.content.trim();
+    }
+  }
+
+  Future<void> _jumpToQuotedMessage(
+    ChatRoomState roomState,
+    ChatMessageModel message,
+  ) async {
+    final reply = message.replyPreview;
+    if (reply == null) return;
+
+    var target = _findQuotedTarget(roomState.messages, reply);
+
+    while (target == null && roomState.hasMore) {
+      await ref
+          .read(chatControllerProvider(widget.peer).notifier)
+          .loadMoreHistory();
+      final refreshed = ref.read(chatControllerProvider(widget.peer));
+      target = _findQuotedTarget(refreshed.messages, reply);
+      if (!refreshed.hasMore) {
+        break;
+      }
+    }
+
+    if (target == null) {
+      AppFeedback.showToast('原消息暂时找不到了');
+      return;
+    }
+
+    final key = _messageKeyFor(target);
+    _highlightTimer?.cancel();
+    setState(() => _highlightedMessageKey = key);
+    _highlightTimer = Timer(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      setState(() => _highlightedMessageKey = null);
+    });
+
+    await Future<void>.delayed(const Duration(milliseconds: 60));
+    if (!mounted) return;
+    final targetContext = _messageKeys[key]?.currentContext;
+    if (targetContext != null) {
+      await Scrollable.ensureVisible(
+        targetContext,
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+        alignment: 0.35,
+      );
+      return;
+    }
+
+    final refreshed = ref.read(chatControllerProvider(widget.peer));
+    final index = refreshed.messages.indexWhere((item) => _messageKeyFor(item) == key);
+    if (index < 0 || !_scrollController.hasClients) return;
+    final ratio = refreshed.messages.length <= 1
+        ? 0.0
+        : index / (refreshed.messages.length - 1);
+    final targetOffset =
+        lerpDouble(0, _scrollController.position.maxScrollExtent, ratio) ?? 0;
+    await _scrollController.animateTo(
+      targetOffset.clamp(
+        _scrollController.position.minScrollExtent,
+        _scrollController.position.maxScrollExtent,
+      ),
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutCubic,
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 80));
+    if (!mounted) return;
+    final visibleContext = _messageKeys[key]?.currentContext;
+    if (visibleContext != null) {
+      await Scrollable.ensureVisible(
+        visibleContext,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeOutCubic,
+        alignment: 0.35,
+      );
+    }
+  }
+
+  ChatMessageModel? _findQuotedTarget(
+    List<ChatMessageModel> items,
+    ChatReplyPreview reply,
+  ) {
+    for (final item in items) {
+      if (reply.messageId > 0 && item.id == reply.messageId) {
+        return item;
+      }
+      if (reply.clientMessageId.isNotEmpty &&
+          item.clientMessageId == reply.clientMessageId) {
+        return item;
+      }
+    }
+    return null;
   }
 
   void _openPeerProfile() {

@@ -53,6 +53,7 @@ class LikesOverviewPage extends ConsumerStatefulWidget {
 
 class _LikesOverviewPageState extends ConsumerState<LikesOverviewPage> {
   Set<String> _seenReceivedItems = const <String>{};
+  bool _markingVisibleItems = false;
 
   @override
   void initState() {
@@ -60,14 +61,22 @@ class _LikesOverviewPageState extends ConsumerState<LikesOverviewPage> {
     Future<void>.microtask(_loadSeenMarkers);
   }
 
+  @override
+  void didUpdateWidget(covariant LikesOverviewPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.args.type == LikeOverviewType.received) {
+      Future<void>.microtask(_markVisibleReceivedItemsSeen);
+    }
+  }
+
   Future<void> _loadSeenMarkers() async {
     final session = ref.read(authControllerProvider).valueOrNull;
     if (session == null) return;
-    final items = await ref
-        .read(matchAlertStateServiceProvider)
-        .loadSeenReceivedItems(session.user.id);
+    final service = ref.read(matchAlertStateServiceProvider);
+    final items = await service.loadSeenReceivedItems(session.user.id);
     if (!mounted) return;
     setState(() => _seenReceivedItems = items);
+    await _markVisibleReceivedItemsSeen();
   }
 
   Future<void> _markReceivedSeen(LikeUser like) async {
@@ -83,11 +92,49 @@ class _LikesOverviewPageState extends ConsumerState<LikesOverviewPage> {
     setState(() => _seenReceivedItems = {..._seenReceivedItems, key});
   }
 
+  Future<void> _markVisibleReceivedItemsSeen() async {
+    if (_markingVisibleItems || widget.args.type != LikeOverviewType.received) {
+      return;
+    }
+    final session = ref.read(authControllerProvider).valueOrNull;
+    if (session == null) return;
+    final summary =
+        ref.read(matchSummaryControllerProvider).valueOrNull ?? widget.args.summary;
+    if (summary.received.isEmpty) return;
+
+    final service = ref.read(matchAlertStateServiceProvider);
+    final visibleKeys = summary.received
+        .map(
+          (item) => service.receivedItemKey(
+            targetUserId: item.user.id,
+            likedAt: item.likedAt,
+          ),
+        )
+        .toSet();
+    if (visibleKeys.every(_seenReceivedItems.contains)) {
+      return;
+    }
+
+    _markingVisibleItems = true;
+    try {
+      await service.markReceivedItemsSeen(session.user.id, visibleKeys);
+      if (!mounted) return;
+      setState(() => _seenReceivedItems = {..._seenReceivedItems, ...visibleKeys});
+    } finally {
+      _markingVisibleItems = false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final liveSummary = ref.watch(matchSummaryControllerProvider).valueOrNull ??
         widget.args.summary;
     final config = _pageConfig(widget.args.copyWith(summary: liveSummary));
+    if (widget.args.type == LikeOverviewType.received) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _markVisibleReceivedItemsSeen();
+      });
+    }
 
     return Scaffold(
       body: DecoratedBox(
@@ -143,8 +190,7 @@ class _LikesOverviewPageState extends ConsumerState<LikesOverviewPage> {
                               },
                               onPrimary: () =>
                                   _handlePrimaryAction(context, item.user),
-                              showNewBadge: config.title == '喜欢我的' &&
-                                  _isNewReceivedItem(liveSummary, item.user.id),
+                              showNewBadge: false,
                             );
                           },
                         ),
@@ -244,16 +290,6 @@ class _LikesOverviewPageState extends ConsumerState<LikesOverviewPage> {
 
   bool _isMutualUser(MatchSummary summary, int userId) {
     return summary.mutual.any((item) => item.user.id == userId);
-  }
-
-  bool _isNewReceivedItem(MatchSummary summary, int userId) {
-    final item = _findLike(summary.received, userId);
-    if (item == null) return false;
-    final key = ref.read(matchAlertStateServiceProvider).receivedItemKey(
-          targetUserId: item.user.id,
-          likedAt: item.likedAt,
-        );
-    return !_seenReceivedItems.contains(key);
   }
 
   Future<void> _handlePrimaryAction(

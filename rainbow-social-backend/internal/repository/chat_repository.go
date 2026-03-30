@@ -20,9 +20,13 @@ func (r *ChatRepository) SaveMessage(message model.ChatMessage) (*model.ChatMess
 	message.Timestamp = time.Now().UTC()
 	message.DeliveryStatus = "delivered"
 	result, err := r.db.Exec(`
-		INSERT INTO messages (client_message_id, from_user_id, to_user_id, content, type, media_url, duration_seconds, timestamp)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-	`, message.ClientMessageID, message.FromUser, message.ToUser, message.Content, message.Type, message.MediaURL, message.DurationSeconds, message.Timestamp)
+		INSERT INTO messages (
+			client_message_id, from_user_id, to_user_id, content, type, media_url,
+			duration_seconds, reply_to_message_id, reply_to_type, reply_to_content,
+			reply_to_media_url, reply_to_sender_id, timestamp
+		)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`, message.ClientMessageID, message.FromUser, message.ToUser, message.Content, message.Type, message.MediaURL, message.DurationSeconds, message.ReplyToMessageID, replyType(message.ReplyPreview), replyContent(message.ReplyPreview), replyMediaURL(message.ReplyPreview), replyFromUser(message.ReplyPreview), message.Timestamp)
 	if err != nil {
 		return nil, err
 	}
@@ -159,6 +163,11 @@ func (r *ChatRepository) ListMessagesBetweenUsers(userID, peerUserID int64, limi
 			type,
 			media_url,
 			duration_seconds,
+			reply_to_message_id,
+			reply_to_type,
+			reply_to_content,
+			reply_to_media_url,
+			reply_to_sender_id,
 			CASE
 				WHEN from_user_id = ? AND unixepoch(timestamp) <= unixepoch(COALESCE((
 					SELECT state.last_read_at
@@ -202,6 +211,10 @@ func (r *ChatRepository) ListMessagesBetweenUsers(userID, peerUserID int64, limi
 	messages := make([]model.ChatMessage, 0)
 	for rows.Next() {
 		var message model.ChatMessage
+		var replyTypeValue string
+		var replyContentValue string
+		var replyMediaURLValue string
+		var replyFromUserValue int64
 		if err := rows.Scan(
 			&message.ID,
 			&message.ClientMessageID,
@@ -211,10 +224,24 @@ func (r *ChatRepository) ListMessagesBetweenUsers(userID, peerUserID int64, limi
 			&message.Type,
 			&message.MediaURL,
 			&message.DurationSeconds,
+			&message.ReplyToMessageID,
+			&replyTypeValue,
+			&replyContentValue,
+			&replyMediaURLValue,
+			&replyFromUserValue,
 			&message.DeliveryStatus,
 			&message.Timestamp,
 		); err != nil {
 			return nil, err
+		}
+		if message.ReplyToMessageID > 0 {
+			message.ReplyPreview = &model.ChatReplyPreview{
+				MessageID: message.ReplyToMessageID,
+				FromUser:  replyFromUserValue,
+				Type:      replyTypeValue,
+				Content:   replyContentValue,
+				MediaURL:  replyMediaURLValue,
+			}
 		}
 		messages = append(messages, message)
 	}
@@ -225,6 +252,90 @@ func (r *ChatRepository) ListMessagesBetweenUsers(userID, peerUserID int64, limi
 		messages[left], messages[right] = messages[right], messages[left]
 	}
 	return messages, nil
+}
+
+func (r *ChatRepository) GetMessageByID(messageID int64) (*model.ChatMessage, error) {
+	row := r.db.QueryRow(`
+		SELECT
+			id,
+			client_message_id,
+			from_user_id,
+			to_user_id,
+			content,
+			type,
+			media_url,
+			duration_seconds,
+			reply_to_message_id,
+			reply_to_type,
+			reply_to_content,
+			reply_to_media_url,
+			reply_to_sender_id,
+			timestamp
+		FROM messages
+		WHERE id = ?
+	`, messageID)
+
+	var message model.ChatMessage
+	var replyType string
+	var replyContent string
+	var replyMediaURL string
+	var replyFromUser int64
+	if err := row.Scan(
+		&message.ID,
+		&message.ClientMessageID,
+		&message.FromUser,
+		&message.ToUser,
+		&message.Content,
+		&message.Type,
+		&message.MediaURL,
+		&message.DurationSeconds,
+		&message.ReplyToMessageID,
+		&replyType,
+		&replyContent,
+		&replyMediaURL,
+		&replyFromUser,
+		&message.Timestamp,
+	); err != nil {
+		return nil, err
+	}
+	if message.ReplyToMessageID > 0 {
+		message.ReplyPreview = &model.ChatReplyPreview{
+			MessageID: message.ReplyToMessageID,
+			FromUser:  replyFromUser,
+			Type:      replyType,
+			Content:   replyContent,
+			MediaURL:  replyMediaURL,
+		}
+	}
+	return &message, nil
+}
+
+func replyType(reply *model.ChatReplyPreview) string {
+	if reply == nil {
+		return ""
+	}
+	return reply.Type
+}
+
+func replyContent(reply *model.ChatReplyPreview) string {
+	if reply == nil {
+		return ""
+	}
+	return reply.Content
+}
+
+func replyMediaURL(reply *model.ChatReplyPreview) string {
+	if reply == nil {
+		return ""
+	}
+	return reply.MediaURL
+}
+
+func replyFromUser(reply *model.ChatReplyPreview) int64 {
+	if reply == nil {
+		return 0
+	}
+	return reply.FromUser
 }
 
 func (r *ChatRepository) MarkConversationRead(userID, peerUserID int64, readAt time.Time) error {

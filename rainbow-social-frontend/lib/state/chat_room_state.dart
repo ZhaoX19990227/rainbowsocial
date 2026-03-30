@@ -7,6 +7,7 @@ class ChatRoomState {
     this.isLoadingMore = false,
     this.hasMore = true,
     this.sendingCount = 0,
+    this.replyingTo,
     this.errorMessage,
   });
 
@@ -15,6 +16,7 @@ class ChatRoomState {
   final bool isLoadingMore;
   final bool hasMore;
   final int sendingCount;
+  final ChatMessageModel? replyingTo;
   final String? errorMessage;
 
   bool get isSending => sendingCount > 0;
@@ -25,8 +27,10 @@ class ChatRoomState {
     bool? isLoadingMore,
     bool? hasMore,
     int? sendingCount,
+    ChatMessageModel? replyingTo,
     String? errorMessage,
     bool clearError = false,
+    bool clearReplyingTo = false,
   }) {
     return ChatRoomState(
       messages: messages ?? this.messages,
@@ -34,6 +38,7 @@ class ChatRoomState {
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       hasMore: hasMore ?? this.hasMore,
       sendingCount: sendingCount ?? this.sendingCount,
+      replyingTo: clearReplyingTo ? null : (replyingTo ?? this.replyingTo),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
     );
   }

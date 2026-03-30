@@ -10,6 +10,51 @@ enum ChatDeliveryStatus {
   read,
 }
 
+class ChatReplyPreview {
+  const ChatReplyPreview({
+    required this.messageId,
+    this.clientMessageId = '',
+    required this.fromUser,
+    required this.type,
+    required this.content,
+    this.mediaUrl = '',
+  });
+
+  final int messageId;
+  final String clientMessageId;
+  final int fromUser;
+  final String type;
+  final String content;
+  final String mediaUrl;
+
+  bool get isImage => type == 'image';
+  bool get isFlashImage => type == 'flash_image';
+  bool get isAudio => type == 'audio';
+  bool get isVideo => type == 'video';
+
+  factory ChatReplyPreview.fromJson(Map<String, dynamic> json) {
+    return ChatReplyPreview(
+      messageId: ((json['message_id'] ?? json['id'] ?? 0) as num).toInt(),
+      clientMessageId: '${json['client_message_id'] ?? ''}',
+      fromUser: ((json['from_user'] ?? 0) as num).toInt(),
+      type: '${json['type'] ?? 'text'}',
+      content: '${json['content'] ?? ''}',
+      mediaUrl: '${json['media_url'] ?? ''}',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'message_id': messageId,
+      'client_message_id': clientMessageId,
+      'from_user': fromUser,
+      'type': type,
+      'content': content,
+      'media_url': mediaUrl,
+    };
+  }
+}
+
 class ChatMessageModel {
   const ChatMessageModel({
     required this.id,
@@ -21,6 +66,8 @@ class ChatMessageModel {
     required this.timestamp,
     this.mediaUrl = '',
     this.durationSeconds = 0,
+    this.replyToMessageId = 0,
+    this.replyPreview,
     this.localFilePath,
     this.status = ChatMessageStatus.sent,
     this.deliveryStatus = ChatDeliveryStatus.none,
@@ -36,6 +83,8 @@ class ChatMessageModel {
   final DateTime timestamp;
   final String mediaUrl;
   final int durationSeconds;
+  final int replyToMessageId;
+  final ChatReplyPreview? replyPreview;
   final String? localFilePath;
   final ChatMessageStatus status;
   final ChatDeliveryStatus deliveryStatus;
@@ -64,6 +113,8 @@ class ChatMessageModel {
     DateTime? timestamp,
     String? mediaUrl,
     int? durationSeconds,
+    int? replyToMessageId,
+    ChatReplyPreview? replyPreview,
     String? localFilePath,
     ChatMessageStatus? status,
     ChatDeliveryStatus? deliveryStatus,
@@ -80,6 +131,8 @@ class ChatMessageModel {
       timestamp: timestamp ?? this.timestamp,
       mediaUrl: mediaUrl ?? this.mediaUrl,
       durationSeconds: durationSeconds ?? this.durationSeconds,
+      replyToMessageId: replyToMessageId ?? this.replyToMessageId,
+      replyPreview: replyPreview ?? this.replyPreview,
       localFilePath: localFilePath ?? this.localFilePath,
       status: status ?? this.status,
       deliveryStatus: deliveryStatus ?? this.deliveryStatus,
@@ -99,6 +152,12 @@ class ChatMessageModel {
           DateTime.tryParse('${json['timestamp'] ?? ''}') ?? DateTime.now(),
       mediaUrl: '${json['media_url'] ?? ''}',
       durationSeconds: ((json['duration_seconds'] ?? 0) as num).toInt(),
+      replyToMessageId: ((json['reply_to_message_id'] ?? 0) as num).toInt(),
+      replyPreview: json['reply_preview'] is Map
+          ? ChatReplyPreview.fromJson(
+              Map<String, dynamic>.from(json['reply_preview'] as Map),
+            )
+          : null,
       status: ChatMessageStatus.sent,
       deliveryStatus:
           _deliveryStatusFromJson('${json['delivery_status'] ?? ''}'),
@@ -115,6 +174,8 @@ class ChatMessageModel {
       'type': type,
       'media_url': mediaUrl,
       'duration_seconds': durationSeconds,
+      'reply_to_message_id': replyToMessageId,
+      'reply_preview': replyPreview?.toJson(),
       'delivery_status': switch (deliveryStatus) {
         ChatDeliveryStatus.read => 'read',
         ChatDeliveryStatus.delivered => 'delivered',

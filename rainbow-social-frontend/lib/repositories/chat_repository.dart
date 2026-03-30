@@ -47,6 +47,7 @@ class ChatRepository {
     String type = 'text',
     String mediaUrl = '',
     int durationSeconds = 0,
+    int replyToMessageId = 0,
   }) =>
       _service.encodeOutbound(
         clientMessageId: clientMessageId,
@@ -55,5 +56,6 @@ class ChatRepository {
         type: type,
         mediaUrl: mediaUrl,
         durationSeconds: durationSeconds,
+        replyToMessageId: replyToMessageId,
       );
 }
