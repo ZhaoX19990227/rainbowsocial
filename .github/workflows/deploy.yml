@@ -22,7 +22,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: rainbow-social-backend/go.mod
+          go-version: '1.22'
           cache-dependency-path: rainbow-social-backend/go.sum
 
       - name: Set up Flutter
@@ -31,8 +31,18 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Download backend modules
+        working-directory: rainbow-social-backend
+        env:
+          GOPROXY: https://proxy.golang.org,direct
+          GOSUMDB: sum.golang.org
+        run: go mod download
+
       - name: Build backend binary
         working-directory: rainbow-social-backend
+        env:
+          GOPROXY: https://proxy.golang.org,direct
+          GOSUMDB: sum.golang.org
         run: |
           mkdir -p dist
           CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o dist/rainbow-social-backend ./main.go
